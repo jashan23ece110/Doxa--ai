@@ -1,6 +1,9 @@
 fastapi
 uvicorn
-anthropic
-google-generativeai
+groq
 python-dotenv
 httpx
+chromadb
+sentence-transformers
+PyPDF2
+python-multipart

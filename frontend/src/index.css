@@ -16,12 +16,30 @@
   }
 }
 
-@keyframes shimmer {
-  100% {
-    transform: translateX(100%);
-  }
+/* pulsing glow for active buttons */
+@keyframes btn-pulse {
+  0%, 100% { box-shadow: 0 0 12px 2px rgba(99, 102, 241, 0.25); }
+  50%      { box-shadow: 0 0 22px 4px rgba(139, 92, 246, 0.35); }
+}
+.btn-glow-pulse {
+  animation: btn-pulse 2s ease-in-out infinite;
 }
 
-.animate-shimmer {
-  animation: shimmer 1.5s infinite;
+/* focus glow for inputs */
+.input-glow:focus {
+  border-color: rgba(99, 102, 241, 0.6);
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.3), 0 0 16px 2px rgba(139, 92, 246, 0.15);
+  outline: none;
+}
+
+/* static panel glow */
+.panel-glow {
+  border-color: rgba(99, 102, 241, 0.2) !important;
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.1) !important;
+}
+
+/* interactive panel hover glow */
+.panel-glow-hover:hover {
+  border-color: rgba(99, 102, 241, 0.4) !important;
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.25) !important;
 }

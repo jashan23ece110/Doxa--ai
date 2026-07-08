@@ -1,0 +1,92 @@
+ACME CORPORATION — EMPLOYEE HANDBOOK
+Effective Date: January 1, 2026
+Version 3.2
+
+=====================================
+TABLE OF CONTENTS
+=====================================
+1. Remote Work Policy
+2. Paid Time Off (PTO)
+3. Expense Reimbursement
+4. Code of Conduct
+5. Performance Reviews
+
+=====================================
+1. REMOTE WORK POLICY
+=====================================
+
+Acme Corporation embraces a flexible hybrid work model designed to promote productivity, collaboration, and employee well-being. All full-time employees who have completed their 90-day probationary period are eligible to participate in the remote work program, subject to manager approval and role suitability.
+
+Eligible employees may work remotely up to three days per week. The specific remote days must be agreed upon with the employee's direct manager and documented in the team scheduling system. Core collaboration hours are established from 10:00 AM to 3:00 PM in the employee's local time zone, during which all team members must be available for meetings and synchronous communication.
+
+Remote employees are expected to maintain a dedicated, ergonomic workspace that is free from excessive noise and distractions. Acme Corporation provides a one-time home office stipend of $750 for new remote-eligible employees to purchase necessary equipment such as an external monitor, keyboard, mouse, or ergonomic chair. Subsequent equipment requests must be submitted through the IT procurement portal and approved by the department head.
+
+Internet connectivity is the employee's responsibility. A minimum broadband speed of 25 Mbps download and 5 Mbps upload is required for remote work. Employees experiencing chronic connectivity issues must report to their manager and may be required to work on-site until the issue is resolved.
+
+All company data accessed remotely must be handled in accordance with the Information Security Policy. Employees must use the company-provided VPN when accessing internal systems, enable multi-factor authentication on all accounts, and never store sensitive data on personal devices or unauthorized cloud services.
+
+Managers retain the right to require on-site attendance for specific meetings, team events, client engagements, or project milestones with at least 48 hours advance notice. Repeated failure to comply with remote work guidelines may result in revocation of remote work privileges.
+
+=====================================
+2. PAID TIME OFF (PTO)
+=====================================
+
+Acme Corporation offers a comprehensive PTO program that recognizes the importance of rest, personal commitments, and work-life balance. PTO accrual begins on the first day of employment and may be used after the completion of the 90-day probationary period.
+
+Full-time employees accrue PTO based on their years of service. Employees in their first through third year of service accrue 15 days of PTO per year. Employees with four to seven years of service accrue 20 days per year. Employees with eight or more years of service accrue 25 days per year. PTO accrues on a per-pay-period basis and is reflected in the employee's pay stub.
+
+In addition to accrued PTO, all employees receive 10 paid company holidays per calendar year, 5 paid sick days per year, and 3 personal days per year. Sick days do not roll over and reset on January 1 each year. Unused PTO may be carried over to the next calendar year up to a maximum of 10 days; any excess will be forfeited.
+
+PTO requests must be submitted through the HR management system at least two weeks in advance for absences of three or more consecutive days. Shorter absences require a minimum of 48 hours notice. Managers will respond to PTO requests within three business days. During peak business periods, including quarter-end and annual planning cycles, PTO approval may be subject to staffing requirements.
+
+Employees on approved PTO are not expected to check email or attend meetings. In the event of a critical business emergency, the employee's manager may contact them by phone, but extended work during PTO will be compensated with additional time off.
+
+=====================================
+3. EXPENSE REIMBURSEMENT
+=====================================
+
+Acme Corporation reimburses employees for reasonable and necessary business expenses incurred in the performance of their job duties. All expenses must be pre-approved by the employee's manager unless they fall under the standard per-diem allowances.
+
+Travel expenses include airfare (economy class for flights under six hours, business class permitted for flights over six hours with VP approval), hotel accommodations (up to $200 per night in standard markets, up to $350 per night in high-cost markets such as San Francisco, New York, and London), ground transportation (rental cars, rideshare, or public transit), and meals (up to $75 per day domestic, $100 per day international).
+
+Expense reports must be submitted within 30 days of incurring the expense using the company's expense management platform. Original receipts are required for all expenses exceeding $25. Reports submitted after 60 days may be denied at the discretion of the Finance department.
+
+Professional development expenses, including conference registrations, online courses, and certification exams, are reimbursable up to $2,500 per employee per calendar year with prior manager approval. Books and subscriptions related to the employee's role are reimbursable up to $500 per year.
+
+Corporate credit cards are available for employees who travel frequently. Cardholders must reconcile their statements monthly and are personally responsible for any charges that are not approved business expenses.
+
+=====================================
+4. CODE OF CONDUCT
+=====================================
+
+All employees of Acme Corporation are expected to conduct themselves with integrity, professionalism, and respect in all interactions with colleagues, clients, partners, and the public. This Code of Conduct applies to behavior in the workplace, at company events, during business travel, and in any online or digital communication related to company business.
+
+Harassment, discrimination, or retaliation of any kind is strictly prohibited. Acme Corporation is committed to maintaining a workplace free from discrimination based on race, color, religion, sex, gender identity, sexual orientation, national origin, age, disability, veteran status, or any other protected characteristic. Employees who witness or experience harassment should report it immediately to their manager, HR, or through the anonymous ethics hotline.
+
+Employees must avoid conflicts of interest and disclose any situation where personal interests could influence business decisions. Outside employment or consulting engagements must be disclosed to and approved by the employee's department head. Employees may not use company resources, including time, equipment, or proprietary information, for personal financial gain.
+
+Confidential information, including trade secrets, client data, financial projections, and product roadmaps, must be safeguarded at all times. Employees must not disclose confidential information to unauthorized parties, including family members and friends. Upon termination, all company property and confidential materials must be returned immediately.
+
+Social media use related to the company must comply with the Social Media Policy. Employees should not speak on behalf of the company without authorization from the Communications department.
+
+=====================================
+5. PERFORMANCE REVIEWS
+=====================================
+
+Acme Corporation conducts formal performance reviews on a semi-annual basis, in June and December. The review process is designed to provide constructive feedback, recognize achievements, align individual goals with company objectives, and identify opportunities for professional growth.
+
+Each review cycle consists of three components: a self-assessment completed by the employee, a manager assessment, and a one-on-one calibration meeting. Self-assessments and manager assessments must be submitted through the performance management system at least one week before the scheduled calibration meeting.
+
+Employees are evaluated on five core competencies: quality of work, productivity and reliability, collaboration and teamwork, innovation and problem-solving, and leadership and initiative. Each competency is rated on a five-point scale: Exceeds Expectations, Meets Expectations, Developing, Needs Improvement, and Unsatisfactory.
+
+Employees who receive an overall rating of Exceeds Expectations are eligible for merit-based salary increases of 5 to 10 percent and may be considered for accelerated promotion. Employees rated Meets Expectations are eligible for standard annual increases of 3 to 5 percent. Employees rated Needs Improvement or Unsatisfactory will be placed on a Performance Improvement Plan (PIP) with specific, measurable goals and a 90-day timeline for improvement.
+
+In addition to formal reviews, managers are encouraged to conduct monthly one-on-one check-ins with each direct report to discuss progress on goals, provide ongoing feedback, and address any concerns. These informal meetings help ensure that performance issues are identified and addressed promptly rather than waiting for the formal review cycle.
+
+Employees who disagree with their performance rating may submit a written appeal to the HR department within 14 days of receiving their review. The appeal will be reviewed by a panel consisting of the employee's skip-level manager and an HR representative, and a final determination will be communicated within 30 days.
+
+=====================================
+END OF EMPLOYEE HANDBOOK
+=====================================
+
+For questions about any policy in this handbook, please contact the Human Resources department at hr@acmecorp.com or ext. 4500. This handbook is subject to periodic updates. Employees will be notified of material changes via email and the company intranet.

@@ -516,8 +516,13 @@ function App() {
                                    : <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />}
                                 </div>
                                 <div className="min-w-0">
-                                  <p className="text-sm font-medium text-neutral-200 truncate">{step.name || `Step ${idx + 1}`}</p>
-                                  {step.tool && <p className="text-[11px] text-neutral-500 mt-0.5 font-mono truncate">Tool: {step.tool}</p>}
+                                  <p className="text-sm font-medium text-neutral-200 truncate">{step.step || `Step ${idx + 1}`}</p>
+                                  {step.tool_used && step.tool_used !== 'None' && (
+                                    <p className="text-[11px] text-neutral-500 mt-0.5 font-mono truncate flex items-center gap-1">
+                                      {step.tool_used === 'search_documents' ? '🔍' : step.tool_used === 'draft_message' ? '✍️' : step.tool_used === 'summarize_text' ? '📝' : '🔧'}
+                                      {step.tool_used}
+                                    </p>
+                                  )}
                                 </div>
                               </motion.div>
                             )) : <div className="text-sm text-neutral-500 italic">Initializing…</div>}

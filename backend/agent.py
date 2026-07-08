@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 load_dotenv()
 import json
 import asyncio
+import re
 from typing import Dict, Any, List
 from groq import AsyncGroq
 from rag import retrieve_context
@@ -18,11 +19,11 @@ except Exception:
 # Format: { run_id: {"goal": str, "plan": [str], "steps": [{"step": str, "tool_used": str, "input": any, "output": any}], "final_result": str, "self_check": str, "status": "running" | "completed" | "failed", "error": str} }
 global_traces: Dict[str, Dict[str, Any]] = {}
 
-async def call_llama(messages, tools=None):
+async def call_llama(messages, tools=None, model="llama-3.1-8b-instant"):
     if not groq_client:
         raise Exception("Groq client not initialized")
     
-    kwargs = {"model": "llama-3.1-8b-instant", "messages": messages}
+    kwargs = {"model": model, "messages": messages}
     if tools:
         kwargs["tools"] = tools
         kwargs["tool_choice"] = "auto"
@@ -140,7 +141,7 @@ async def run_agent_loop(run_id: str, goal: str):
         agent_messages = [
             {
                 "role": "system", 
-                "content": f"You are an AI assistant executing a plan to achieve a goal.\nGoal: {goal}\nPlan:\n" + "\n".join(plan) + "\n\nUse the provided tools to execute the steps. When you have enough information, write the final result directly to the user and DO NOT call any more tools. Provide a complete, polished final response."
+                "content": f"You are an AI assistant executing a plan to achieve a goal.\nGoal: {goal}\nPlan:\n" + "\n".join(plan) + "\n\nUse the provided tools to execute the steps via standard function calling. When you have enough information, write the final result directly to the user and DO NOT call any more tools. IMPORTANT: Your final response must be clean, natural language. DO NOT include any tool call syntax, XML tags, or raw JSON in your final response."
             },
             {"role": "user", "content": "Begin execution."}
         ]
@@ -149,7 +150,7 @@ async def run_agent_loop(run_id: str, goal: str):
         max_iterations = 8
         
         for _ in range(max_iterations):
-            msg = await call_llama(agent_messages, tools=TOOLS_DEF)
+            msg = await call_llama(agent_messages, tools=TOOLS_DEF, model="llama-3.3-70b-versatile")
             
             # The API might not return a dictionary but an object, so we convert appropriately or append directly.
             # groq Python client message object can be appended back to messages.
@@ -191,6 +192,15 @@ async def run_agent_loop(run_id: str, goal: str):
                     })
             else:
                 final_result = msg.content or "Agent generated empty response."
+                
+                # Regex filter to strip leaked tool-call hallucination syntax
+                final_result = re.sub(r'<[\w_]+>\s*\{.*?\}\s*</[\w_]+>', '', final_result, flags=re.DOTALL)
+                final_result = re.sub(r'={1,2}[\w_]+>\s*\{.*?\}', '', final_result, flags=re.DOTALL)
+                final_result = final_result.strip()
+                
+                if not final_result:
+                    final_result = "Agent completed execution but the final response was empty after filtering."
+                    
                 trace["final_result"] = final_result
                 trace["steps"].append({"step": "Finalizing", "tool_used": "None", "input": "None", "output": "Generated final result."})
                 break

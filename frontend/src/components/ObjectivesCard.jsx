@@ -8,17 +8,17 @@ const MetricItem = ({ icon: Icon, label, value, target, showBar }) => {
   return (
     <div className="flex flex-col gap-1 min-w-[140px]">
       <div className="flex items-center gap-1.5">
-        <Icon size={12} color="#5a6d82" />
+        <Icon size={12} color="#7a7060" />
         <span
           className="text-xs uppercase tracking-wider"
-          style={{ fontFamily: "'Rajdhani', sans-serif", color: '#5a6d82' }}
+          style={{ fontFamily: "'Rajdhani', sans-serif", color: '#7a7060' }}
         >
           {label}
         </span>
       </div>
       <span
         className="text-lg"
-        style={{ fontFamily: "'JetBrains Mono', monospace", color: '#00d9ff' }}
+        style={{ fontFamily: "'JetBrains Mono', monospace", color: '#ffd60a' }}
       >
         {value}
         {target != null && (
@@ -31,14 +31,14 @@ const MetricItem = ({ icon: Icon, label, value, target, showBar }) => {
       {showBar && (
         <div
           className="w-full h-[3px] rounded-full overflow-hidden"
-          style={{ background: 'rgba(0,217,255,0.08)' }}
+          style={{ background: 'rgba(255,214,10,0.08)' }}
         >
           <div
             className="h-full rounded-full transition-all duration-700 ease-out"
             style={{
               width: `${progress}%`,
-              background: 'linear-gradient(90deg, #00d9ff, #00ff88)',
-              boxShadow: '0 0 8px rgba(0,217,255,0.4)',
+              background: 'linear-gradient(90deg, #ffd60a, #00ff88)',
+              boxShadow: '0 0 8px rgba(255,214,10,0.4)',
             }}
           />
         </div>
@@ -74,13 +74,13 @@ const ObjectivesCard = ({ queriesCount = 0, sessionStart }) => {
       transition={{ duration: 0.6, ease: 'easeOut' }}
     >
       <h3
-        className="text-[10px] uppercase tracking-[0.2em] mb-3"
-        style={{ fontFamily: "'Orbitron', sans-serif", color: '#00d9ff' }}
+        className="text-[10px] uppercase tracking-[0.2em] mb-4"
+        style={{ fontFamily: "'Orbitron', sans-serif", color: '#ffd60a' }}
       >
         Objectives
       </h3>
 
-      <div className="flex flex-wrap gap-6">
+      <div className="flex flex-col gap-4">
         <MetricItem
           icon={Zap}
           label="Queries Handled"

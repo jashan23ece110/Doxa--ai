@@ -4,13 +4,14 @@ import {
   X,
   Mic,
   MicOff,
-  Volume2,
-  VolumeX,
   Play,
   Loader2,
   CheckCircle2,
   AlertTriangle,
   Terminal,
+  MessageSquare,
+  Cpu,
+  Send,
 } from 'lucide-react';
 
 const overlayVariants = {
@@ -54,7 +55,7 @@ function StatusBadge({ status }) {
   if (!status) return null;
 
   const config = {
-    running: { icon: Loader2, color: '#00d9ff', label: 'RUNNING', spin: true },
+    running: { icon: Loader2, color: '#ffd60a', label: 'RUNNING', spin: true },
     completed: { icon: CheckCircle2, color: '#00ff88', label: 'COMPLETED', spin: false },
     failed: { icon: AlertTriangle, color: '#ff4757', label: 'FAILED', spin: false },
   };
@@ -88,6 +89,104 @@ function StatusBadge({ status }) {
   );
 }
 
+/* ─── Mode Toggle Switch ─── */
+function ModeToggle({ mode, onChange }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0',
+        padding: '3px',
+        borderRadius: '10px',
+        border: '1px solid rgba(255, 214, 10, 0.15)',
+        background: 'rgba(255, 214, 10, 0.03)',
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => onChange('ask')}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '5px',
+          padding: '5px 12px',
+          borderRadius: '8px',
+          border: 'none',
+          cursor: 'pointer',
+          fontFamily: "'Rajdhani', sans-serif",
+          fontSize: '12px',
+          fontWeight: 600,
+          letterSpacing: '0.04em',
+          transition: 'all 0.2s',
+          background: mode === 'ask' ? 'rgba(255, 214, 10, 0.15)' : 'transparent',
+          color: mode === 'ask' ? '#ffd60a' : '#7a7060',
+          boxShadow: mode === 'ask' ? '0 0 12px rgba(255, 214, 10, 0.12)' : 'none',
+        }}
+      >
+        <MessageSquare size={12} />
+        Ask Anything
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange('agentic')}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '5px',
+          padding: '5px 12px',
+          borderRadius: '8px',
+          border: 'none',
+          cursor: 'pointer',
+          fontFamily: "'Rajdhani', sans-serif",
+          fontSize: '12px',
+          fontWeight: 600,
+          letterSpacing: '0.04em',
+          transition: 'all 0.2s',
+          background: mode === 'agentic' ? 'rgba(255, 214, 10, 0.15)' : 'transparent',
+          color: mode === 'agentic' ? '#ffd60a' : '#7a7060',
+          boxShadow: mode === 'agentic' ? '0 0 12px rgba(255, 214, 10, 0.12)' : 'none',
+        }}
+      >
+        <Cpu size={12} />
+        Agentic
+      </button>
+    </div>
+  );
+}
+
+/* ─── Thinking Dots Animation ─── */
+function ThinkingDots() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '24px 0' }}>
+      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+        {[0, 1, 2].map((i) => (
+          <motion.div
+            key={i}
+            animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.1, 0.8] }}
+            transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+            style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              background: '#ffd60a',
+            }}
+          />
+        ))}
+      </div>
+      <span
+        style={{
+          fontFamily: "'Rajdhani', sans-serif",
+          fontSize: '14px',
+          color: '#7a7060',
+        }}
+      >
+        Thinking...
+      </span>
+    </div>
+  );
+}
+
 export default function ChatOverlay({
   visible,
   onClose,
@@ -98,11 +197,9 @@ export default function ChatOverlay({
   agentError,
   onStartAgent,
 }) {
+  const [chatMode, setChatMode] = useState('ask'); // 'ask' or 'agentic'
   const [isRecording, setIsRecording] = useState(false);
-  const [speakEnabled, setSpeakEnabled] = useState(false);
   const recognitionRef = useRef(null);
-  const synthRef = useRef(window.speechSynthesis);
-  const spokenResultRef = useRef('');
   const inputRef = useRef(null);
 
   // Focus input when overlay becomes visible
@@ -142,26 +239,10 @@ export default function ChatOverlay({
     setIsRecording(true);
   }, [isRecording, setAgentGoal]);
 
-  // Voice output — speak final_result
-  useEffect(() => {
-    if (
-      speakEnabled &&
-      agentStatus?.final_result &&
-      agentStatus.final_result !== spokenResultRef.current
-    ) {
-      spokenResultRef.current = agentStatus.final_result;
-      const utterance = new SpeechSynthesisUtterance(agentStatus.final_result);
-      utterance.rate = 1;
-      utterance.pitch = 1;
-      synthRef.current.speak(utterance);
-    }
-  }, [speakEnabled, agentStatus?.final_result]);
-
   // Clean up on unmount
   useEffect(() => {
     return () => {
       if (recognitionRef.current) recognitionRef.current.abort();
-      synthRef.current.cancel();
     };
   }, []);
 
@@ -171,6 +252,9 @@ export default function ChatOverlay({
       onStartAgent(e);
     }
   };
+
+  const isAskMode = chatMode === 'ask';
+  const isAgenticMode = chatMode === 'agentic';
 
   return (
     <AnimatePresence>
@@ -212,11 +296,11 @@ export default function ChatOverlay({
               overflowY: 'auto',
               padding: '28px 32px',
               borderRadius: '16px',
-              border: '1px solid rgba(0, 217, 255, 0.18)',
+              border: '1px solid rgba(255, 214, 10, 0.18)',
               background:
                 'linear-gradient(145deg, rgba(10, 18, 36, 0.96), rgba(6, 12, 28, 0.98))',
               boxShadow:
-                '0 0 40px rgba(0, 217, 255, 0.08), inset 0 1px 0 rgba(0, 217, 255, 0.06)',
+                '0 0 40px rgba(255, 214, 10, 0.08), inset 0 1px 0 rgba(255, 214, 10, 0.06)',
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -226,51 +310,31 @@ export default function ChatOverlay({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                marginBottom: '20px',
+                marginBottom: '16px',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Terminal size={18} color="#00d9ff" />
+                {isAskMode ? (
+                  <MessageSquare size={18} color="#ffd60a" />
+                ) : (
+                  <Terminal size={18} color="#ffd60a" />
+                )}
                 <h2
                   style={{
                     fontFamily: "'Orbitron', sans-serif",
                     fontSize: '15px',
                     fontWeight: 700,
-                    color: '#00d9ff',
+                    color: '#ffd60a',
                     letterSpacing: '0.18em',
                     margin: 0,
                     textTransform: 'uppercase',
                   }}
                 >
-                  Doxa Agent
+                  {isAskMode ? 'Ask Anything' : 'Agentic Mode'}
                 </h2>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {/* TTS toggle */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSpeakEnabled((v) => !v);
-                    if (speakEnabled) synthRef.current.cancel();
-                  }}
-                  title={speakEnabled ? 'Disable voice output' : 'Enable voice output'}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '4px',
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
-                >
-                  {speakEnabled ? (
-                    <Volume2 size={16} color="#00d9ff" />
-                  ) : (
-                    <VolumeX size={16} color="#5a6d82" />
-                  )}
-                </button>
-
                 {/* Close */}
                 <button
                   type="button"
@@ -284,9 +348,14 @@ export default function ChatOverlay({
                     alignItems: 'center',
                   }}
                 >
-                  <X size={18} color="#5a6d82" />
+                  <X size={18} color="#7a7060" />
                 </button>
               </div>
+            </div>
+
+            {/* Mode Toggle */}
+            <div style={{ marginBottom: '16px' }}>
+              <ModeToggle mode={chatMode} onChange={setChatMode} />
             </div>
 
             {/* Goal Input Form */}
@@ -305,16 +374,16 @@ export default function ChatOverlay({
                     className="input-glow"
                     value={agentGoal || ''}
                     onChange={(e) => setAgentGoal(e.target.value)}
-                    placeholder="Describe your mission objective..."
+                    placeholder={isAskMode ? 'Ask me anything...' : 'Describe your mission objective...'}
                     disabled={agentLoading}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
                       paddingRight: '42px',
                       borderRadius: '10px',
-                      border: '1px solid rgba(0, 217, 255, 0.2)',
-                      background: 'rgba(0, 217, 255, 0.04)',
-                      color: '#c8d6e5',
+                      border: '1px solid rgba(255, 214, 10, 0.2)',
+                      background: 'rgba(255, 214, 10, 0.04)',
+                      color: '#e0d6c2',
                       fontFamily: "'Rajdhani', sans-serif",
                       fontSize: '15px',
                       fontWeight: 500,
@@ -345,23 +414,23 @@ export default function ChatOverlay({
                     {isRecording ? (
                       <Mic size={16} color="#ff4757" style={{ animation: 'pulse-glow 1s ease infinite' }} />
                     ) : (
-                      <MicOff size={16} color="#5a6d82" />
+                      <MicOff size={16} color="#7a7060" />
                     )}
                   </button>
                 </div>
 
-                {/* Execute button */}
+                {/* Execute / Send button */}
                 <button
                   type="submit"
                   disabled={agentLoading || !agentGoal?.trim()}
                   className={agentLoading ? 'btn-glow-pulse' : ''}
                   style={{
-                    padding: '12px 24px',
+                    padding: isAskMode ? '12px 20px' : '12px 24px',
                     borderRadius: '10px',
                     border: 'none',
                     background: agentLoading
-                      ? 'rgba(0, 217, 255, 0.3)'
-                      : 'linear-gradient(135deg, #00d9ff, #0099cc)',
+                      ? 'rgba(255, 214, 10, 0.3)'
+                      : 'linear-gradient(135deg, #ffd60a, #ccab00)',
                     color: '#020612',
                     fontFamily: "'Orbitron', sans-serif",
                     fontSize: '12px',
@@ -379,10 +448,12 @@ export default function ChatOverlay({
                 >
                   {agentLoading ? (
                     <Loader2 size={15} style={{ animation: 'spin 1.2s linear infinite' }} />
+                  ) : isAskMode ? (
+                    <Send size={14} />
                   ) : (
                     <Play size={14} />
                   )}
-                  Execute
+                  {isAskMode ? 'Ask' : 'Execute'}
                 </button>
               </div>
             </form>
@@ -411,11 +482,55 @@ export default function ChatOverlay({
               </motion.div>
             )}
 
-            {/* Execution Trace */}
-            {agentStatus && (
+            {/* ═══ ASK ANYTHING MODE ═══ */}
+            {isAskMode && agentStatus && (
               <div
                 style={{
-                  borderTop: '1px solid rgba(0, 217, 255, 0.1)',
+                  borderTop: '1px solid rgba(255, 214, 10, 0.1)',
+                  paddingTop: '16px',
+                }}
+              >
+                {/* Show thinking dots while running, no trace details */}
+                {agentStatus.status === 'running' && !agentStatus.final_result && (
+                  <ThinkingDots />
+                )}
+
+                {/* Final result — clean, no labels */}
+                {agentStatus.final_result && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                    style={{
+                      padding: '16px 18px',
+                      borderRadius: '12px',
+                      background: 'rgba(255, 214, 10, 0.03)',
+                      border: '1px solid rgba(255, 214, 10, 0.1)',
+                    }}
+                  >
+                    <pre
+                      style={{
+                        fontFamily: "'Rajdhani', sans-serif",
+                        fontSize: '14px',
+                        color: '#e0d6c2',
+                        lineHeight: 1.7,
+                        margin: 0,
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                      }}
+                    >
+                      {agentStatus.final_result}
+                    </pre>
+                  </motion.div>
+                )}
+              </div>
+            )}
+
+            {/* ═══ AGENTIC MODE ═══ */}
+            {isAgenticMode && agentStatus && (
+              <div
+                style={{
+                  borderTop: '1px solid rgba(255, 214, 10, 0.1)',
                   paddingTop: '16px',
                 }}
               >
@@ -433,7 +548,7 @@ export default function ChatOverlay({
                       fontFamily: "'Orbitron', sans-serif",
                       fontSize: '11px',
                       fontWeight: 600,
-                      color: '#5a6d82',
+                      color: '#7a7060',
                       letterSpacing: '0.14em',
                       textTransform: 'uppercase',
                     }}
@@ -469,8 +584,8 @@ export default function ChatOverlay({
                           gap: '10px',
                           padding: '8px 12px',
                           borderRadius: '8px',
-                          background: 'rgba(0, 217, 255, 0.03)',
-                          border: '1px solid rgba(0, 217, 255, 0.06)',
+                          background: 'rgba(255, 214, 10, 0.03)',
+                          border: '1px solid rgba(255, 214, 10, 0.06)',
                         }}
                       >
                         <span
@@ -492,10 +607,10 @@ export default function ChatOverlay({
                               gap: '4px',
                               padding: '2px 8px',
                               borderRadius: '6px',
-                              background: 'rgba(0, 217, 255, 0.08)',
+                              background: 'rgba(255, 214, 10, 0.08)',
                               fontFamily: "'JetBrains Mono', monospace",
                               fontSize: '10px',
-                              color: '#00d9ff',
+                              color: '#ffd60a',
                               whiteSpace: 'nowrap',
                             }}
                           >
@@ -507,7 +622,7 @@ export default function ChatOverlay({
                           style={{
                             fontFamily: "'Rajdhani', sans-serif",
                             fontSize: '13px',
-                            color: '#c8d6e5',
+                            color: '#e0d6c2',
                             flex: 1,
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
@@ -549,8 +664,8 @@ export default function ChatOverlay({
                     style={{
                       padding: '14px 16px',
                       borderRadius: '10px',
-                      background: 'rgba(0, 217, 255, 0.04)',
-                      border: '1px solid rgba(0, 217, 255, 0.12)',
+                      background: 'rgba(255, 214, 10, 0.04)',
+                      border: '1px solid rgba(255, 214, 10, 0.12)',
                     }}
                   >
                     <div
@@ -566,7 +681,7 @@ export default function ChatOverlay({
                           fontFamily: "'Orbitron', sans-serif",
                           fontSize: '10px',
                           fontWeight: 600,
-                          color: '#5a6d82',
+                          color: '#7a7060',
                           letterSpacing: '0.12em',
                           textTransform: 'uppercase',
                         }}
@@ -578,7 +693,7 @@ export default function ChatOverlay({
                       style={{
                         fontFamily: "'JetBrains Mono', monospace",
                         fontSize: '12px',
-                        color: '#c8d6e5',
+                        color: '#e0d6c2',
                         lineHeight: 1.6,
                         margin: 0,
                         whiteSpace: 'pre-wrap',

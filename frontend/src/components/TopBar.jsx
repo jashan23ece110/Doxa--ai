@@ -23,7 +23,7 @@ const TopBar = ({ user }) => {
       style={{
         height: 48,
         background: 'transparent',
-        borderBottom: '1px solid rgba(0,217,255,0.15)',
+        borderBottom: '1px solid rgba(255,214,10,0.15)',
       }}
     >
       {/* Left — Branding */}
@@ -43,11 +43,11 @@ const TopBar = ({ user }) => {
       <div className="flex flex-col items-center leading-tight">
         <span
           className="text-base tracking-wider"
-          style={{ fontFamily: "'JetBrains Mono', monospace", color: '#00d9ff' }}
+          style={{ fontFamily: "'JetBrains Mono', monospace", color: '#ffd60a' }}
         >
           {formatTime(now)}
         </span>
-        <span className="text-[10px]" style={{ color: '#5a6d82' }}>
+        <span className="text-[10px]" style={{ color: '#7a7060' }}>
           {formatDate(now)}
         </span>
       </div>
@@ -60,23 +60,23 @@ const TopBar = ({ user }) => {
             className="inline-block w-[6px] h-[6px] rounded-full"
             style={{ background: '#00ff88', boxShadow: '0 0 6px rgba(0,255,136,0.6)' }}
           />
-          <span className="text-[10px] uppercase tracking-wider" style={{ color: '#5a6d82' }}>
+          <span className="text-[10px] uppercase tracking-wider" style={{ color: '#7a7060' }}>
             Online
           </span>
         </div>
 
         {/* Encrypted */}
         <div className="flex items-center gap-1">
-          <Shield size={11} color="#5a6d82" />
-          <span className="text-[10px] uppercase tracking-wider" style={{ color: '#5a6d82' }}>
+          <Shield size={11} color="#7a7060" />
+          <span className="text-[10px] uppercase tracking-wider" style={{ color: '#7a7060' }}>
             Encrypted
           </span>
         </div>
 
         {/* User */}
         <div className="flex items-center gap-1">
-          <User size={11} color="#5a6d82" />
-          <span className="text-[10px] tracking-wider" style={{ color: '#5a6d82' }}>
+          <User size={11} color="#7a7060" />
+          <span className="text-[10px] tracking-wider" style={{ color: '#7a7060' }}>
             {truncatedEmail || '—'}
           </span>
         </div>

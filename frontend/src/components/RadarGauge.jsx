@@ -19,7 +19,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
         style={{
           fontFamily: "'Orbitron', sans-serif",
           fontSize: '0.7rem',
-          color: '#00d9ff',
+          color: '#ffd60a',
           textTransform: 'uppercase',
           letterSpacing: '0.25em',
           marginBottom: '1rem',
@@ -46,7 +46,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
               cy={CENTER}
               r={RADIUS}
               fill="none"
-              stroke="rgba(0,217,255,0.08)"
+              stroke="rgba(255,214,10,0.08)"
               strokeWidth="6"
             />
 
@@ -56,7 +56,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
               cy={CENTER}
               r={RADIUS}
               fill="none"
-              stroke="#00d9ff"
+              stroke="#ffd60a"
               strokeWidth="6"
               strokeLinecap="round"
               strokeDasharray={CIRCUMFERENCE}
@@ -65,7 +65,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
                 transition: 'stroke-dashoffset 0.8s ease-in-out',
                 transform: 'rotate(-90deg)',
                 transformOrigin: '50% 50%',
-                filter: 'drop-shadow(0 0 6px rgba(0,217,255,0.7))',
+                filter: 'drop-shadow(0 0 6px rgba(255,214,10,0.7))',
               }}
             />
 
@@ -78,7 +78,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
               style={{
                 fontFamily: "'JetBrains Mono', monospace",
                 fontSize: '1.4rem',
-                fill: '#00d9ff',
+                fill: '#ffd60a',
               }}
             >
               {clampedCount}
@@ -89,7 +89,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
             style={{
               fontFamily: "'Orbitron', sans-serif",
               fontSize: '0.6rem',
-              color: '#00d9ff',
+              color: '#ffd60a',
               textTransform: 'uppercase',
               letterSpacing: '0.2em',
               marginTop: '0.35rem',
@@ -108,7 +108,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
               cy={CENTER}
               r={RADIUS}
               fill="none"
-              stroke="rgba(0,217,255,0.08)"
+              stroke="rgba(255,214,10,0.08)"
               strokeWidth="1.5"
             />
 
@@ -118,7 +118,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
               cy={CENTER}
               r={RADIUS - 10}
               fill="none"
-              stroke="rgba(0,217,255,0.06)"
+              stroke="rgba(255,214,10,0.06)"
               strokeWidth="1"
             />
 
@@ -128,7 +128,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
               cy={CENTER}
               r={RADIUS - 20}
               fill="none"
-              stroke="rgba(0,217,255,0.04)"
+              stroke="rgba(255,214,10,0.04)"
               strokeWidth="1"
             />
 
@@ -143,7 +143,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
                   cx={x}
                   cy={y}
                   r="2"
-                  fill="#00d9ff"
+                  fill="#ffd60a"
                   opacity="0.6"
                 />
               );
@@ -155,7 +155,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
               y1={CENTER}
               x2={CENTER}
               y2={CENTER - RADIUS + 4}
-              stroke="#00d9ff"
+              stroke="#ffd60a"
               strokeWidth="1.5"
               strokeLinecap="round"
               opacity="0.7"
@@ -172,7 +172,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
               style={{
                 fontFamily: "'JetBrains Mono', monospace",
                 fontSize: '1.2rem',
-                fill: '#00d9ff',
+                fill: '#ffd60a',
               }}
             >
               98%
@@ -183,7 +183,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
             style={{
               fontFamily: "'Orbitron', sans-serif",
               fontSize: '0.6rem',
-              color: '#00d9ff',
+              color: '#ffd60a',
               textTransform: 'uppercase',
               letterSpacing: '0.2em',
               marginTop: '0.35rem',

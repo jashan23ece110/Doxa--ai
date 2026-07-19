@@ -25,7 +25,7 @@ export default function HudNav({ activeOverlay, onNavigate }) {
         borderRadius: '0 12px 12px 0',
         background: 'rgba(6, 12, 28, 0.82)',
         backdropFilter: 'blur(12px)',
-        border: '1px solid rgba(0, 217, 255, 0.08)',
+        border: '1px solid rgba(255, 214, 10, 0.08)',
         borderLeft: 'none',
         boxShadow: '4px 0 24px rgba(0, 0, 0, 0.3)',
       }}
@@ -51,7 +51,7 @@ export default function HudNav({ activeOverlay, onNavigate }) {
               justifyContent: 'center',
               gap: '2px',
               background: isActive
-                ? 'rgba(0, 217, 255, 0.08)'
+                ? 'rgba(255, 214, 10, 0.08)'
                 : 'transparent',
               border: 'none',
               borderRadius: '8px',
@@ -59,17 +59,17 @@ export default function HudNav({ activeOverlay, onNavigate }) {
               padding: 0,
               transition: 'background 0.2s ease',
               borderLeft: isActive
-                ? '2px solid #00d9ff'
+                ? '2px solid #ffd60a'
                 : '2px solid transparent',
             }}
           >
             <Icon
               size={17}
-              color={isActive ? '#00d9ff' : '#5a6d82'}
+              color={isActive ? '#ffd60a' : '#7a7060'}
               style={{
                 transition: 'color 0.2s ease',
                 filter: isActive
-                  ? 'drop-shadow(0 0 4px rgba(0, 217, 255, 0.5))'
+                  ? 'drop-shadow(0 0 4px rgba(255, 214, 10, 0.5))'
                   : 'none',
               }}
             />
@@ -79,7 +79,7 @@ export default function HudNav({ activeOverlay, onNavigate }) {
                 fontSize: '6px',
                 fontWeight: 600,
                 letterSpacing: '0.08em',
-                color: isActive ? '#00d9ff' : '#3a4d62',
+                color: isActive ? '#ffd60a' : '#3a4d62',
                 textTransform: 'uppercase',
                 lineHeight: 1,
                 transition: 'color 0.2s ease',

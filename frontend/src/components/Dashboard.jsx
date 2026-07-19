@@ -23,6 +23,7 @@ export default function Dashboard({
   user,
   agentLoading,
   agentStatus,
+  isSpeaking,
   queriesCount,
   sessionStart,
   activeOverlay,
@@ -36,9 +37,9 @@ export default function Dashboard({
     <div className="h-full w-full flex flex-col relative overflow-hidden scan-lines grid-bg">
       {/* ── ambient glow blobs ── */}
       <div className="absolute inset-0 pointer-events-none z-0">
-        <div className="absolute -top-[15%] -right-[10%] w-[700px] h-[700px] rounded-full bg-[radial-gradient(circle,rgba(0,217,255,0.08)_0%,transparent_60%)]" />
-        <div className="absolute top-[50%] -left-[15%] w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle,rgba(123,45,255,0.06)_0%,transparent_55%)]" />
-        <div className="absolute bottom-[5%] right-[20%] w-[400px] h-[400px] rounded-full bg-[radial-gradient(circle,rgba(0,217,255,0.04)_0%,transparent_50%)]" />
+        <div className="absolute -top-[15%] -right-[10%] w-[700px] h-[700px] rounded-full bg-[radial-gradient(circle,rgba(255,214,10,0.08)_0%,transparent_60%)]" />
+        <div className="absolute top-[50%] -left-[15%] w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle,rgba(184,134,11,0.06)_0%,transparent_55%)]" />
+        <div className="absolute bottom-[5%] right-[20%] w-[400px] h-[400px] rounded-full bg-[radial-gradient(circle,rgba(255,214,10,0.04)_0%,transparent_50%)]" />
       </div>
 
       {/* ── top bar ── */}
@@ -54,43 +55,32 @@ export default function Dashboard({
           variants={slideUp}
           initial="initial"
           animate="animate"
-          className="hidden lg:flex flex-col w-64 xl:w-72 p-4 gap-4 shrink-0"
+          className="hidden lg:flex flex-col w-64 xl:w-72 p-4 gap-4 shrink-0 z-20"
         >
           <StatsPanel />
+          <ObjectivesCard queriesCount={queriesCount} sessionStart={sessionStart} />
         </motion.div>
 
-        {/* center: sphere + objectives */}
-        <div className="flex-1 flex flex-col items-center justify-center p-4 gap-4 min-w-0">
+        <div className="flex-1 flex flex-col items-center justify-center p-4 gap-4 min-w-0 pointer-events-none">
           {/* central core sphere */}
           <motion.div
             variants={fadeIn}
             initial="initial"
             animate="animate"
-            className="flex-1 w-full max-w-[500px] xl:max-w-[600px] flex items-center justify-center relative"
+            className="flex-1 w-full max-w-[800px] xl:max-w-[1000px] flex items-center justify-center relative pointer-events-auto"
           >
-            <CentralCore isActive={isAgentActive} isThinking={isAgentThinking} />
+            <CentralCore isActive={isAgentActive} isThinking={isAgentThinking} isSpeaking={isSpeaking} />
 
             {/* floating mic button (manual chat trigger) */}
             <motion.button
               onClick={onOpenChat}
-              whileHover={{ scale: 1.1, boxShadow: '0 0 30px rgba(0,217,255,0.4)' }}
+              whileHover={{ scale: 1.1, boxShadow: '0 0 30px rgba(255,214,10,0.4)' }}
               whileTap={{ scale: 0.95 }}
-              className="absolute bottom-4 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full bg-[rgba(0,217,255,0.1)] border border-[rgba(0,217,255,0.3)] flex items-center justify-center text-[#00d9ff] hover:bg-[rgba(0,217,255,0.2)] transition-colors z-20 backdrop-blur-sm"
+              className="absolute bottom-10 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full bg-[rgba(255,214,10,0.1)] border border-[rgba(255,214,10,0.3)] flex items-center justify-center text-[#ffd60a] hover:bg-[rgba(255,214,10,0.2)] transition-colors z-20 backdrop-blur-sm"
               title="Open Doxa Agent"
             >
               <Mic className="w-6 h-6" />
             </motion.button>
-          </motion.div>
-
-          {/* objectives card (below sphere) */}
-          <motion.div
-            variants={slideUp}
-            initial="initial"
-            animate="animate"
-            transition={{ delay: 0.3 }}
-            className="w-full max-w-3xl"
-          >
-            <ObjectivesCard queriesCount={queriesCount} sessionStart={sessionStart} />
           </motion.div>
         </div>
 

@@ -7,6 +7,7 @@ import re
 from typing import Dict, Any, List
 from groq import AsyncGroq
 from rag import retrieve_context
+from tools.web_search import web_search
 
 # Initialize Groq Client
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
@@ -100,6 +101,20 @@ TOOLS_DEF = [
                 "required": ["context", "purpose"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "brave_search",
+            "description": "Searches the web for current events, news, latest information, or facts outside the existing knowledge base, or when the user explicitly requests a web search.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "The web search query to look up"}
+                },
+                "required": ["query"]
+            }
+        }
     }
 ]
 
@@ -141,7 +156,7 @@ async def run_agent_loop(run_id: str, goal: str):
         agent_messages = [
             {
                 "role": "system", 
-                "content": f"You are an AI assistant executing a plan to achieve a goal.\nGoal: {goal}\nPlan:\n" + "\n".join(plan) + "\n\nUse the provided tools to execute the steps via standard function calling. When you have enough information, write the final result directly to the user and DO NOT call any more tools. IMPORTANT: Your final response must be clean, natural language. DO NOT include any tool call syntax, XML tags, or raw JSON in your final response."
+                "content": f"You are an AI assistant executing a plan to achieve a goal.\nGoal: {goal}\nPlan:\n" + "\n".join(plan) + "\n\nUse the provided tools to execute the steps via standard function calling. When you need up-to-date facts, news, or latest events (e.g. 'today', 'latest', 'recent') or when explicitly asked to search the web, use the 'brave_search' tool. IMPORTANT: When you use 'brave_search', naturally integrate the findings into your final response and cite the sources/URLs. When you have enough information, write the final result directly to the user and DO NOT call any more tools. IMPORTANT: Your final response must be clean, natural language. DO NOT include any tool call syntax, XML tags, or raw JSON in your final response."
             },
             {"role": "user", "content": "Begin execution."}
         ]
@@ -177,6 +192,8 @@ async def run_agent_loop(run_id: str, goal: str):
                             tool_output = await summarize_text(args.get("text", ""))
                         elif func_name == "draft_message":
                             tool_output = await draft_message(args.get("context", ""), args.get("purpose", ""))
+                        elif func_name == "brave_search":
+                            tool_output = web_search(args.get("query", ""))
                         else:
                             tool_output = f"Unknown tool: {func_name}"
                     except Exception as ex:

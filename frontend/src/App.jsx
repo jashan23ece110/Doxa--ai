@@ -5,7 +5,7 @@ import axios from 'axios';
 
 /* ── new Jarvis components ── */
 import Dashboard from './components/Dashboard';
-import ChatOverlay from './components/ChatOverlay';
+import ChatPanel from './components/ChatPanel';
 import VoiceListener from './components/VoiceListener';
 
 /* ── animation variants (kept for overlay tab views) ── */
@@ -84,6 +84,15 @@ function App() {
   const [voiceFallbackText, setVoiceFallbackText] = useState(null);
   const spokenResultRef = useRef('');
   const synthRef = useRef(window.speechSynthesis);
+
+  const [chatHistory, setChatHistory] = useState([]);
+  const [chatMode, setChatMode] = useState('ask');
+  const [language, setLanguage] = useState(() => localStorage.getItem('doxa_language') || 'english');
+
+  const handleLanguageChange = (lang) => {
+    setLanguage(lang);
+    localStorage.setItem('doxa_language', lang);
+  };
 
   /* ── auth ── */
   const handleAuth = (e) => {
@@ -178,15 +187,33 @@ function App() {
     setAgentLoading(true); setAgentError(null); setAgentRunId(null); setAgentStatus(null);
     setVoiceFallbackText(null);
     spokenResultRef.current = '';
-    // Auto-close the chat overlay so user sees the sphere
-    setChatVisible(false);
+    
+    // Add user query to chat history
+    const userMsg = { id: Date.now(), role: 'user', text: agentGoal, mode: chatMode };
+    setChatHistory(prev => [...prev, userMsg]);
+    
+    const goalToSend = agentGoal;
+    setAgentGoal(''); // clear the input
+
     try {
-      const res = await fetch(`${API_BASE}/agent/start`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ goal: agentGoal }) });
+      const res = await fetch(`${API_BASE}/agent/start`, { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ 
+          goal: goalToSend,
+          language: language,
+          mode: chatMode
+        }) 
+      });
       if (!res.ok) { const d = await res.json(); throw new Error(d.detail || 'Failed to start agent'); }
       const data = await res.json();
       setAgentRunId(data.run_id);
       setAgentStatus({ status: 'running', steps: [], final_result: null });
-    } catch (err) { setAgentError(err.message); setAgentLoading(false); setChatVisible(true); }
+    } catch (err) { 
+      setAgentError(err.message); 
+      setAgentLoading(false); 
+      setChatHistory(prev => [...prev, { id: Date.now(), role: 'assistant', text: `Error starting agent: ${err.message}` }]);
+    }
   };
 
   /* ── Voice output: speak final_result when it arrives ── */
@@ -222,6 +249,29 @@ function App() {
       synth.speak(utterance);
     }
   }, [agentStatus?.final_result]);
+
+  // Handle completed agent runs and append to chat history
+  useEffect(() => {
+    if (agentStatus && agentRunId) {
+      if (agentStatus.status === 'completed' && agentStatus.final_result) {
+        const alreadyAdded = chatHistory.some(h => h.runId === agentRunId);
+        if (!alreadyAdded) {
+          setChatHistory(prev => [
+            ...prev,
+            { id: Date.now(), role: 'assistant', text: agentStatus.final_result, mode: chatMode, runId: agentRunId }
+          ]);
+        }
+      } else if (agentStatus.status === 'failed') {
+        const alreadyAdded = chatHistory.some(h => h.runId === agentRunId);
+        if (!alreadyAdded) {
+          setChatHistory(prev => [
+            ...prev,
+            { id: Date.now(), role: 'assistant', text: `Execution failed: ${agentStatus.error || 'Unknown error'}`, mode: chatMode, runId: agentRunId }
+          ]);
+        }
+      }
+    }
+  }, [agentStatus, agentRunId, chatHistory, chatMode]);
 
   /* ── overlay navigation ── */
   const handleNavigate = (view) => {
@@ -357,37 +407,57 @@ function App() {
      MAIN LAYOUT — Dashboard + Overlays
      ═══════════════════════════════════════════ */
   return (
-    <div className="h-screen w-screen bg-[#0a0a0a] overflow-hidden relative" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
+    <div className="h-screen w-screen bg-[#0a0a0a] overflow-hidden flex flex-col relative" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
 
       {/* ── Voice Listener (always active) ── */}
       <VoiceListener
-        onActivate={() => setChatVisible(true)}
-        onDeactivate={() => setChatVisible(false)}
+        onActivate={() => {
+          // Play a subtle beep
+          try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.setValueAtTime(580, ctx.currentTime);
+            gain.gain.setValueAtTime(0.08, ctx.currentTime);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.08);
+          } catch {}
+          
+          // Focus the input
+          const inputEl = document.querySelector('input[placeholder*="Doxa"]');
+          if (inputEl) inputEl.focus();
+        }}
+        onDeactivate={() => {}}
       />
 
-      {/* ── Dashboard (always rendered) ── */}
-      <Dashboard
-        user={user}
-        agentLoading={agentLoading}
-        agentStatus={agentStatus}
-        isSpeaking={isSpeaking}
-        queriesCount={history.length}
-        sessionStart={sessionStart}
-        activeOverlay={activeOverlay}
-        onNavigate={handleNavigate}
-        onOpenChat={() => setChatVisible(true)}
-      />
+      {/* ── Dashboard Area (takes remaining vertical space) ── */}
+      <div className="flex-1 min-h-0 relative">
+        <Dashboard
+          user={user}
+          agentLoading={agentLoading}
+          agentStatus={agentStatus}
+          isSpeaking={isSpeaking}
+          queriesCount={history.length}
+          sessionStart={sessionStart}
+          activeOverlay={activeOverlay}
+          onNavigate={handleNavigate}
+        />
+      </div>
 
-      {/* ── Chat Overlay (hidden by default) ── */}
-      <ChatOverlay
-        visible={chatVisible}
-        onClose={() => setChatVisible(false)}
+      {/* ── Sleek Fixed Bottom Chat Panel ── */}
+      <ChatPanel
+        chatHistory={chatHistory}
         agentGoal={agentGoal}
         setAgentGoal={setAgentGoal}
         agentLoading={agentLoading}
-        agentStatus={agentStatus}
         agentError={agentError}
         onStartAgent={handleStartAgent}
+        chatMode={chatMode}
+        setChatMode={setChatMode}
+        language={language}
+        setLanguage={handleLanguageChange}
       />
 
       {/* Voice fallback notification */}

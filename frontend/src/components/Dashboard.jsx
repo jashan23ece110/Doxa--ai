@@ -28,7 +28,6 @@ export default function Dashboard({
   sessionStart,
   activeOverlay,
   onNavigate,
-  onOpenChat,
 }) {
   const isAgentActive = agentLoading || agentStatus?.status === 'running';
   const isAgentThinking = agentStatus?.status === 'running' && (agentStatus?.steps?.length || 0) < 2;
@@ -70,17 +69,6 @@ export default function Dashboard({
             className="flex-1 w-full max-w-[800px] xl:max-w-[1000px] flex items-center justify-center relative pointer-events-auto"
           >
             <CentralCore isActive={isAgentActive} isThinking={isAgentThinking} isSpeaking={isSpeaking} />
-
-            {/* floating mic button (manual chat trigger) */}
-            <motion.button
-              onClick={onOpenChat}
-              whileHover={{ scale: 1.1, boxShadow: '0 0 30px rgba(255,214,10,0.4)' }}
-              whileTap={{ scale: 0.95 }}
-              className="absolute bottom-10 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full bg-[rgba(255,214,10,0.1)] border border-[rgba(255,214,10,0.3)] flex items-center justify-center text-[#ffd60a] hover:bg-[rgba(255,214,10,0.2)] transition-colors z-20 backdrop-blur-sm"
-              title="Open Doxa Agent"
-            >
-              <Mic className="w-6 h-6" />
-            </motion.button>
           </motion.div>
         </div>
 

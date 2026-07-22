@@ -107,9 +107,9 @@ export default function VoiceListener({ onActivate, onDeactivate }) {
         width: '8px',
         height: '8px',
         borderRadius: '50%',
-        backgroundColor: isListening ? '#ffd60a' : '#2a3444',
+        backgroundColor: isListening ? '#dc143c' : '#2a3444',
         boxShadow: isListening
-          ? '0 0 8px rgba(255, 214, 10, 0.6), 0 0 20px rgba(255, 214, 10, 0.2)'
+          ? '0 0 8px rgba(220, 20, 60, 0.6), 0 0 20px rgba(220, 20, 60, 0.2)'
           : 'none',
         transition: 'all 0.3s ease',
         pointerEvents: 'none',

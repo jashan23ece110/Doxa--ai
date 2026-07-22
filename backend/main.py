@@ -16,7 +16,7 @@ from rag import (
     retrieve_context,
     build_rag_prompt,
 )
-from agent import run_agent_loop, global_traces
+from agent import run_agent_loop
 
 # Load environment variables
 load_dotenv()
@@ -154,25 +154,72 @@ def remove_document(doc_id: str):
 # Agent endpoints
 # ---------------------------------------------------------------------------
 
+from agent import get_trace
+import json
+from fastapi.responses import StreamingResponse
+
 class AgentRequest(BaseModel):
     goal: str
     language: str = "english"
     mode: str = "normal"
+    history: list = []
 
 @app.post("/agent/start")
 async def start_agent(req: AgentRequest, background_tasks: BackgroundTasks):
     """Start an agent run in the background."""
     run_id = str(uuid.uuid4())
-    background_tasks.add_task(run_agent_loop, run_id, req.goal, req.language, req.mode)
+    background_tasks.add_task(run_agent_loop, run_id, req.goal, req.language, req.mode, req.history)
     return {"run_id": run_id, "status": "started"}
 
 @app.get("/agent/status/{run_id}")
 def get_agent_status(run_id: str):
     """Get the current state/trace of an agent run."""
-    trace = global_traces.get(run_id)
+    trace = get_trace(run_id)
     if not trace:
         raise HTTPException(status_code=404, detail="Run ID not found")
     return trace
+
+@app.get("/agent/stream/{run_id}")
+async def stream_agent(run_id: str):
+    """Yields Server-Sent Events (SSE) detailing the trace and chunks of the response."""
+    async def event_generator():
+        last_idx = 0
+        last_step_count = 0
+        while True:
+            trace = get_trace(run_id)
+            if not trace:
+                yield "data: " + json.dumps({"status": "not_found"}) + "\n\n"
+                break
+            
+            current_steps = trace.get("steps", [])
+            plan = trace.get("plan", [])
+            status = trace.get("status", "running")
+            final_res = trace.get("final_result", "") or ""
+            
+            payload = {
+                "status": status,
+                "plan": plan,
+                "steps": current_steps,
+                "self_check": trace.get("self_check", None),
+                "error": trace.get("error", None)
+            }
+            
+            # Yield new final result tokens if any have been streamed
+            if len(final_res) > last_idx:
+                payload["chunk"] = final_res[last_idx:]
+                last_idx = len(final_res)
+                yield f"data: {json.dumps(payload)}\n\n"
+            # If no new final result tokens, check if new steps are completed
+            elif len(current_steps) > last_step_count or status != "running":
+                last_step_count = len(current_steps)
+                yield f"data: {json.dumps(payload)}\n\n"
+                
+            if status in ("completed", "failed"):
+                break
+                
+            await asyncio.sleep(0.18)
+            
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @app.get("/health")
 def health_check():

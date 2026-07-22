@@ -12,16 +12,16 @@ export const THEME = {
   panel: 'rgba(10, 10, 10, 0.85)',
 
   // Primary accent — electric yellow/amber
-  accent: '#ffd60a',
-  accentHover: '#ffe44d',
-  accentDim: '#b8860b',
+  accent: '#dc143c',
+  accentHover: '#ff4500',
+  accentDim: '#8b0000',
   accentRgb: '255,214,10',      // for rgba() template literals
   accentDimRgb: '184,134,11',   // muted gold for rgba()
 
   // Glow presets
-  accentGlow: 'rgba(255,214,10,0.4)',
-  accentGlowSoft: 'rgba(255,214,10,0.15)',
-  accentGlowSubtle: 'rgba(255,214,10,0.06)',
+  accentGlow: 'rgba(220, 20, 60,0.4)',
+  accentGlowSoft: 'rgba(220, 20, 60,0.15)',
+  accentGlowSubtle: 'rgba(220, 20, 60,0.06)',
 
   // Text
   text: '#e0d6c2',
@@ -29,8 +29,8 @@ export const THEME = {
   textBright: '#fff8e1',
 
   // Borders
-  border: 'rgba(255,214,10,0.15)',
-  borderBright: 'rgba(255,214,10,0.35)',
+  border: 'rgba(220, 20, 60,0.15)',
+  borderBright: 'rgba(220, 20, 60,0.35)',
 
   // Semantic colors (unchanged)
   green: '#00ff88',
@@ -38,8 +38,8 @@ export const THEME = {
   amber: '#ffaa00',
 
   // Three.js specific
-  particleColor: 0xffd60a,      // hex int for THREE.Color
-  glowColor: 0xffd60a,
+  particleColor: 0xdc143c,      // hex int for THREE.Color
+  glowColor: 0xdc143c,
   thinkingGlowColor: 0xfff8e1,  // warm white-yellow for thinking state
 };
 

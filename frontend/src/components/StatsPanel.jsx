@@ -72,7 +72,7 @@ const StatsPanel = () => {
         style={{
           fontFamily: "'Orbitron', sans-serif",
           fontSize: '0.7rem',
-          color: '#ffd60a',
+          color: '#dc143c',
           textTransform: 'uppercase',
           letterSpacing: '0.25em',
           marginBottom: '1rem',
@@ -100,7 +100,7 @@ const StatsPanel = () => {
             >
               <Icon
                 size={16}
-                style={{ color: '#ffd60a', flexShrink: 0 }}
+                style={{ color: '#dc143c', flexShrink: 0 }}
               />
 
               <span
@@ -129,7 +129,7 @@ const StatsPanel = () => {
                 style={{
                   fontFamily: "'JetBrains Mono', monospace",
                   fontSize: '0.75rem',
-                  color: '#ffd60a',
+                  color: '#dc143c',
                   width: '2.5rem',
                   textAlign: 'right',
                   flexShrink: 0,

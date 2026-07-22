@@ -1,7 +1,7 @@
 import React, { useRef, useMemo, useEffect, useState } from 'react';
 import { Canvas, useFrame, extend, useThree } from '@react-three/fiber';
 import { Effects } from '@react-three/drei';
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { UnrealBloomPass } from 'three-stdlib';
 import * as THREE from 'three';
 import { motion } from 'framer-motion';
 
@@ -9,12 +9,26 @@ extend({ UnrealBloomPass });
 
 function ParticleSwarm({ isActive, isThinking, isSpeaking, count }) {
   const meshRef = useRef();
-  const { camera, pointer, raycaster } = useThree();
+  const { camera, pointer, raycaster, gl } = useThree();
   
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const target = useMemo(() => new THREE.Vector3(), []);
   const pColor = useMemo(() => new THREE.Color(), []);
   
+  // Shockwave tracking ref
+  const shockwave = useRef({ active: false, time: 0 });
+
+  // Add direct canvas click listener to trigger shockwave
+  useEffect(() => {
+    const handleCanvasClick = () => {
+      shockwave.current.active = true;
+      shockwave.current.time = 0;
+    };
+    const canvasEl = gl.domElement;
+    canvasEl.addEventListener('pointerdown', handleCanvasClick);
+    return () => canvasEl.removeEventListener('pointerdown', handleCanvasClick);
+  }, [gl]);
+
   // Precomputed positions list for lerping
   const positions = useMemo(() => {
     const pos = [];
@@ -45,11 +59,12 @@ function ParticleSwarm({ isActive, isThinking, isSpeaking, count }) {
 
   // Morphable simulation parameters
   const currentParams = useRef({
-    radius: 35,
-    turbulence: 5,
-    pulse: 4,
-    speed: 1.0,
-    swirl: 2
+    radius: 22,
+    turbulence: 3.5,
+    pulse: 2.5,
+    speed: 0.3,
+    swirl: 1.5,
+    colorIntensity: 0.5
   });
 
   useFrame((state, delta) => {
@@ -57,51 +72,65 @@ function ParticleSwarm({ isActive, isThinking, isSpeaking, count }) {
     const time = state.clock.getElapsedTime();
 
     // Rotate the whole mesh slowly for ambient rotation
-    meshRef.current.rotation.y = time * 0.05;
-    meshRef.current.rotation.x = Math.sin(time * 0.02) * 0.1;
+    meshRef.current.rotation.y = time * 0.04;
+    meshRef.current.rotation.x = Math.sin(time * 0.015) * 0.08;
 
-    // Define target parameters based on state
-    let targetRadius = 35;
-    let targetTurbulence = 5;
-    let targetPulse = 4;
-    let targetSpeed = 1.0;
-    let targetSwirl = 2;
+    // Define target parameters based on active state
+    let targetRadius = 22;
+    let targetTurbulence = 3.5;
+    let targetPulse = 2.5;
+    let targetSpeed = 0.3;
+    let targetSwirl = 1.5;
+    let targetColorIntensity = 0.55;
 
-    if (isThinking) {
-      targetRadius = 28;
-      targetTurbulence = 15;
-      targetPulse = 10;
-      targetSpeed = 2.6;
-      targetSwirl = 7;
-    } else if (isSpeaking) {
-      // Breathing pulse during voice synthesis
-      const speakPulse = Math.sin(time * 12) * 5;
-      targetRadius = 36 + speakPulse;
-      targetTurbulence = 9;
-      targetPulse = 12;
-      targetSpeed = 1.8;
-      targetSwirl = 4;
-    } else if (isActive) {
-      targetRadius = 39;
-      targetTurbulence = 7;
-      targetPulse = 5;
-      targetSpeed = 1.3;
-      targetSwirl = 3;
+    // Voice envelope simulation (syllable frequency ~4Hz + intonation jitter ~18Hz)
+    let speechEnvelope = 0.1;
+    if (isSpeaking) {
+      const syllableWave = Math.sin(time * 3.8 * Math.PI * 2);
+      const intonationWave = Math.sin(time * 18.0);
+      speechEnvelope = (syllableWave * 0.55 + intonationWave * 0.15 + 0.45);
+      speechEnvelope = Math.max(0.05, Math.min(1.0, speechEnvelope));
     }
 
-    // Smooth transition between parameter sets
-    const lerpFactor = 1 - Math.exp(-4 * delta);
+    if (isThinking) {
+      targetRadius = 45;
+      targetTurbulence = 16.5;
+      targetPulse = 11;
+      targetSpeed = 1.7;
+      targetSwirl = 7.0;
+      targetColorIntensity = 1.0;
+    } else if (isSpeaking) {
+      // Dynamic voice reactive envelope
+      targetRadius = 32.5 + speechEnvelope * 10.0;
+      targetTurbulence = 9.0;
+      targetPulse = 4.0 + speechEnvelope * 11.0;
+      targetSpeed = 1.05;
+      targetSwirl = 4.5;
+      targetColorIntensity = 0.85 + speechEnvelope * 0.15;
+    } else if (isActive) {
+      targetRadius = 30;
+      targetTurbulence = 7;
+      targetPulse = 4;
+      targetSpeed = 0.8;
+      targetSwirl = 2.5;
+      targetColorIntensity = 0.75;
+    }
+
+    // Smooth transition between parameters (easing/lerp took ~0.8s)
+    const lerpFactor = 1 - Math.exp(-2.8 * delta);
     currentParams.current.radius = THREE.MathUtils.lerp(currentParams.current.radius, targetRadius, lerpFactor);
     currentParams.current.turbulence = THREE.MathUtils.lerp(currentParams.current.turbulence, targetTurbulence, lerpFactor);
     currentParams.current.pulse = THREE.MathUtils.lerp(currentParams.current.pulse, targetPulse, lerpFactor);
     currentParams.current.speed = THREE.MathUtils.lerp(currentParams.current.speed, targetSpeed, lerpFactor);
     currentParams.current.swirl = THREE.MathUtils.lerp(currentParams.current.swirl, targetSwirl, lerpFactor);
+    currentParams.current.colorIntensity = THREE.MathUtils.lerp(currentParams.current.colorIntensity, targetColorIntensity, lerpFactor);
 
     const radius = currentParams.current.radius;
     const turbulence = currentParams.current.turbulence;
     const pulse = currentParams.current.pulse;
     const speed = currentParams.current.speed;
     const swirl = currentParams.current.swirl;
+    const intensity = currentParams.current.colorIntensity;
 
     const t = time * speed;
     const tau = 6.28318530718;
@@ -117,7 +146,15 @@ function ParticleSwarm({ isActive, isThinking, isSpeaking, count }) {
     const invMatrix = new THREE.Matrix4().copy(meshRef.current.matrixWorld).invert();
     cursorLocal.applyMatrix4(invMatrix);
 
-    const pushRadius = 24.0;
+    const pushRadius = 30.0;
+
+    // Shockwave timeline handler
+    if (shockwave.current.active) {
+      shockwave.current.time += delta;
+      if (shockwave.current.time > 1.5) {
+        shockwave.current.active = false;
+      }
+    }
 
     for (let i = 0; i < count; i++) {
       const f = i / count;
@@ -140,7 +177,7 @@ function ParticleSwarm({ isActive, isThinking, isSpeaking, count }) {
       y *= flicker;
       z *= flicker;
 
-      // Cursor repel vector math
+      // Cursor attract/repel force displacement (Noticeable response)
       const dx = x - cursorLocal.x;
       const dy = y - cursorLocal.y;
       const dz = z - cursorLocal.z;
@@ -148,24 +185,38 @@ function ParticleSwarm({ isActive, isThinking, isSpeaking, count }) {
 
       if (distSq < pushRadius * pushRadius && distSq > 0.01) {
         const dist = Math.sqrt(distSq);
-        const force = (1.0 - dist / pushRadius) * 14.0;
+        const force = (1.0 - dist / pushRadius) * 20.0; // Strengthened displacement push
         x += (dx / dist) * force;
         y += (dy / dist) * force;
         z += (dz / dist) * force;
       }
 
+      // Dynamic shockwave calculation (radial burst)
+      if (shockwave.current.active) {
+        const waveRadius = shockwave.current.time * 65.0; // propagation speed
+        const waveWidth = 7.0;
+        const pDist = Math.sqrt(x * x + y * y + z * z);
+        const distToWave = Math.abs(pDist - waveRadius);
+        if (distToWave < waveWidth && pDist > 0.1) {
+          const strength = (1.0 - distToWave / waveWidth) * 22.0 * Math.max(0, 1 - waveRadius / 95.0);
+          x += (x / pDist) * strength;
+          y += (y / pDist) * strength;
+          z += (z / pDist) * strength;
+        }
+      }
+
       target.set(x, y, z);
-      positions[i].lerp(target, 0.12);
+      positions[i].lerp(target, 0.14);
 
       dummy.position.copy(positions[i]);
       dummy.updateMatrix();
       meshRef.current.setMatrixAt(i, dummy.matrix);
 
-      // Colors: Overriding to gold/amber spectrum (#ffd60a based)
+      // Smooth color states morphing
       const heat = Math.abs(noise1 * 0.5 + noise2 * 0.5);
-      const hue = 0.08 + heat * 0.06; // HSL yellow-gold range
+      const hue = 0.95 + heat * 0.11; // crimson-red to orange-red range
       const saturation = 0.95 - heat * 0.15;
-      const lightness = 0.38 + heat * 0.35 + Math.abs(noise3) * 0.12;
+      const lightness = (0.28 + heat * 0.32) * intensity + Math.abs(noise3) * 0.12 * intensity;
 
       pColor.setHSL(hue, saturation, lightness);
       meshRef.current.setColorAt(i, pColor);
@@ -209,7 +260,7 @@ export default function CentralCore({ isActive = false, isThinking = false, isSp
         <ambientLight intensity={0.4} />
         <ParticleSwarm isActive={isActive} isThinking={isThinking} isSpeaking={isSpeaking} count={count} />
         <Effects disableGamma>
-          <unrealBloomPass threshold={0} strength={1.5} radius={0.45} />
+          <unrealBloomPass threshold={0.04} strength={1.35} radius={0.55} />
         </Effects>
       </Canvas>
     </motion.div>

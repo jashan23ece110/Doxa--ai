@@ -36,9 +36,9 @@ export default function Dashboard({
     <div className="h-full w-full flex flex-col relative overflow-hidden scan-lines grid-bg">
       {/* ── ambient glow blobs ── */}
       <div className="absolute inset-0 pointer-events-none z-0">
-        <div className="absolute -top-[15%] -right-[10%] w-[700px] h-[700px] rounded-full bg-[radial-gradient(circle,rgba(255,214,10,0.08)_0%,transparent_60%)]" />
+        <div className="absolute -top-[15%] -right-[10%] w-[700px] h-[700px] rounded-full bg-[radial-gradient(circle,rgba(220, 20, 60,0.08)_0%,transparent_60%)]" />
         <div className="absolute top-[50%] -left-[15%] w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle,rgba(184,134,11,0.06)_0%,transparent_55%)]" />
-        <div className="absolute bottom-[5%] right-[20%] w-[400px] h-[400px] rounded-full bg-[radial-gradient(circle,rgba(255,214,10,0.04)_0%,transparent_50%)]" />
+        <div className="absolute bottom-[5%] right-[20%] w-[400px] h-[400px] rounded-full bg-[radial-gradient(circle,rgba(220, 20, 60,0.04)_0%,transparent_50%)]" />
       </div>
 
       {/* ── top bar ── */}

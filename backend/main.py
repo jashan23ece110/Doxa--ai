@@ -156,12 +156,14 @@ def remove_document(doc_id: str):
 
 class AgentRequest(BaseModel):
     goal: str
+    language: str = "english"
+    mode: str = "normal"
 
 @app.post("/agent/start")
 async def start_agent(req: AgentRequest, background_tasks: BackgroundTasks):
     """Start an agent run in the background."""
     run_id = str(uuid.uuid4())
-    background_tasks.add_task(run_agent_loop, run_id, req.goal)
+    background_tasks.add_task(run_agent_loop, run_id, req.goal, req.language, req.mode)
     return {"run_id": run_id, "status": "started"}
 
 @app.get("/agent/status/{run_id}")

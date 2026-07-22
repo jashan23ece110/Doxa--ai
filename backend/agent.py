@@ -118,7 +118,7 @@ TOOLS_DEF = [
     }
 ]
 
-async def run_agent_loop(run_id: str, goal: str):
+async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode: str = "normal"):
     trace = {
         "goal": goal,
         "plan": [],
@@ -130,10 +130,39 @@ async def run_agent_loop(run_id: str, goal: str):
     global_traces[run_id] = trace
     
     try:
-        # Step 1: Planning
+        # Set up language prompt
+        lang_str = "Hinglish (a mix of Hindi and English using Latin/Roman script)" if language.lower() == "hinglish" else "English"
+        
+        if mode == "normal":
+            trace["steps"].append({"step": "Direct Completion", "tool_used": "None", "input": goal, "output": "Retrieving context and generating response..."})
+            
+            # Retrieve RAG context if applicable
+            contexts = retrieve_context(goal, n_results=3)
+            system_content = (
+                f"You are Doxa, a helpful AI assistant. Answer the user's query directly and naturally in {lang_str}.\n"
+                "Keep your response concise, conversational, and suitable for Text-to-Speech playback (avoid complex formatting, markdown tables, long lists, or code blocks).\n"
+            )
+            if contexts:
+                system_content += "\nHere is some context from our knowledge base that might help:\n"
+                system_content += "\n\n".join([f"Document: {c['filename']}\nContent: {c['text']}" for c in contexts])
+            
+            messages = [
+                {"role": "system", "content": system_content},
+                {"role": "user", "content": goal}
+            ]
+            
+            resp = await call_llama(messages, model="llama-3.3-70b-versatile")
+            final_result = (resp.content or "Empty response generated.").strip()
+            
+            trace["final_result"] = final_result
+            trace["steps"].append({"step": "Finalizing", "tool_used": "None", "input": "None", "output": "Completed direct response."})
+            trace["status"] = "completed"
+            return
+
+        # Step 1: Planning (Agentic Mode)
         trace["steps"].append({"step": "Planning", "tool_used": "None", "input": goal, "output": "Generating plan..."})
         plan_messages = [
-            {"role": "system", "content": "You are a planning agent. Break this goal into 3-5 concrete steps. Output ONLY a valid JSON list of strings, e.g. [\"Step 1: ...\", \"Step 2: ...\"]. Do not output markdown code blocks."},
+            {"role": "system", "content": f"You are a planning agent. Break this goal into 3-5 concrete steps. Output ONLY a valid JSON list of strings, e.g. [\"Step 1: ...\", \"Step 2: ...\"]. Do not output markdown code blocks. Respond in {lang_str}."},
             {"role": "user", "content": f"Goal: {goal}"}
         ]
         plan_msg = await call_llama(plan_messages)
@@ -152,11 +181,11 @@ async def run_agent_loop(run_id: str, goal: str):
         trace["plan"] = plan
         trace["steps"][-1]["output"] = "Plan generated."
 
-        # Step 2: Execution
+        # Step 2: Execution (Agentic Mode)
         agent_messages = [
             {
                 "role": "system", 
-                "content": f"You are an AI assistant executing a plan to achieve a goal.\nGoal: {goal}\nPlan:\n" + "\n".join(plan) + "\n\nUse the provided tools to execute the steps via standard function calling. When you need up-to-date facts, news, or latest events (e.g. 'today', 'latest', 'recent') or when explicitly asked to search the web, use the 'brave_search' tool. IMPORTANT: When you use 'brave_search', naturally integrate the findings into your final response and cite the sources/URLs. When you have enough information, write the final result directly to the user and DO NOT call any more tools. IMPORTANT: Your final response must be clean, natural language. DO NOT include any tool call syntax, XML tags, or raw JSON in your final response."
+                "content": f"You are an AI assistant executing a plan to achieve a goal.\nGoal: {goal}\nPlan:\n" + "\n".join(plan) + f"\n\nUse the provided tools to execute the steps via standard function calling. When you need up-to-date facts, news, or latest events (e.g. 'today', 'latest', 'recent') or when explicitly asked to search the web, use the 'brave_search' tool. IMPORTANT: When you use 'brave_search', naturally integrate the findings into your final response and cite the sources/URLs. When you have enough information, write the final result directly to the user and DO NOT call any more tools. IMPORTANT: Your final response must be clean, natural language in {lang_str}. DO NOT include any tool call syntax, XML tags, or raw JSON in your final response."
             },
             {"role": "user", "content": "Begin execution."}
         ]

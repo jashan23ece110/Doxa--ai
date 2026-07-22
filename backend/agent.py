@@ -47,16 +47,52 @@ def get_trace(run_id: str) -> dict:
             print(f"Error getting from Firestore: {e}")
     return global_traces.get(run_id)
 
-async def call_llama(messages, tools=None, model="llama-3.1-8b-instant"):
+async def call_llama(messages, tools=None, model="llama-3.3-70b-versatile"):
     if not groq_client:
         raise Exception("Groq client not initialized")
     
-    kwargs = {"model": model, "messages": messages}
+    kwargs = {"model": model, "messages": messages, "temperature": 0.0}
     if tools:
         kwargs["tools"] = tools
         kwargs["tool_choice"] = "auto"
-    response = await groq_client.chat.completions.create(**kwargs)
-    return response.choices[0].message
+    
+    try:
+        response = await groq_client.chat.completions.create(**kwargs)
+        return response.choices[0].message
+    except Exception as e:
+        if tools:
+            print(f"Warning: Tool calling failed with model {model} ({e}). Retrying with tools and formatting correction...")
+            try:
+                retry_messages = list(messages)
+                retry_messages.append({
+                    "role": "system",
+                    "content": "SYSTEM WARNING: Your previous tool call failed because of a syntax error. Please invoke the tool natively using the API's function calling feature. Do NOT write '<function=...' tags, equal signs, or JSON in the text message content."
+                })
+                kwargs_retry = {
+                    "model": model,
+                    "messages": retry_messages,
+                    "tools": tools,
+                    "tool_choice": "auto",
+                    "temperature": 0.0
+                }
+                response = await groq_client.chat.completions.create(**kwargs_retry)
+                return response.choices[0].message
+            except Exception as e2:
+                print(f"Warning: Retry with formatting correction failed ({e2}). Falling back to direct completion without tools...")
+                try:
+                    kwargs_fallback = {"model": model, "messages": messages, "temperature": 0.0}
+                    response = await groq_client.chat.completions.create(**kwargs_fallback)
+                    msg = response.choices[0].message
+                    if msg.content:
+                        try:
+                            msg.content = "*(Note: Web search or calculation was temporarily unavailable. Returning direct response.)*\n\n" + msg.content
+                        except Exception:
+                            pass
+                    return msg
+                except Exception as retry_err:
+                    print(f"Error during fallback retry: {retry_err}")
+                    raise retry_err
+        raise e
 
 # --- Tools implementation ---
 def search_documents(query: str) -> str:
@@ -253,7 +289,7 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
         agent_messages = [
             {
                 "role": "system", 
-                "content": f"You are an AI assistant executing a plan to achieve a goal.\nGoal: {goal}\nPlan:\n" + "\n".join(plan) + f"\n\nUse the provided tools to execute the steps via standard function calling. When you need up-to-date facts, news, or latest events (e.g. 'today', 'latest', 'recent') or when explicitly asked to search the web, use the 'brave_search' tool. To calculate mathematical expressions, use the 'calculate' tool. IMPORTANT: When you use 'brave_search', naturally integrate the findings into your final response and cite the sources/URLs. When you have enough information, write the final result directly to the user and DO NOT call any more tools. IMPORTANT: Your final response must be clean, natural language in {lang_str}. DO NOT include any tool call syntax, XML tags, or raw JSON in your final response."
+                "content": f"You are Doxa, an advanced agentic AI assistant executing a plan to achieve a goal.\nGoal: {goal}\nPlan:\n" + "\n".join(plan) + f"\n\nUse your available tools to retrieve facts, search the web, or perform calculations as needed. When you invoke a tool, make sure you format the call natively as: <function=tool_name>{{\"parameter\": \"value\"}}</function>. For example, to search the web: <function=brave_search>{{\"query\": \"latest news today\"}}</function>. To calculate: <function=calculate>{{\"expression\": \"4529 * 93\"}}</function>. When you have enough information, provide a natural and complete final response directly in {lang_str}. Cite the sources/URLs when you present search findings."
             }
         ]
         if history:

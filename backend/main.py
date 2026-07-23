@@ -328,6 +328,50 @@ def oauth2callback(code: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Google OAuth callback exchange failed: {e}")
 
+class SuggestionRequest(BaseModel):
+    history: list = []
+    language: str = "english"
+
+@app.post("/agent/proactive_suggestions")
+async def get_proactive_suggestions(req: SuggestionRequest):
+    """Generate 1-2 proactive questions or insights based on recent history."""
+    if not req.history:
+        return {"suggestions": []}
+        
+    lang_str = "Hinglish (mix of Hindi & English using Roman script)" if req.language.lower() == "hinglish" else "English"
+    
+    # Extract recent message history
+    formatted_history = ""
+    for msg in req.history[-4:]: # last 4 messages are enough context
+        role = msg.get("role", "user")
+        text = msg.get("text", "")
+        formatted_history += f"{role.upper()}: {text}\n"
+        
+    from agent import call_llama
+    prompt = [
+        {"role": "system", "content": (
+            "You are Doxa's Ambient Insight Engine. Analyze the recent conversation history and generate exactly 2 short, engaging follow-up questions or proactive suggestions that the user might want to ask next.\n"
+            "Keep each suggestion extremely concise (under 8 words each) and relevant.\n"
+            f"Write the output in {lang_str}.\n"
+            "Return the output as a valid JSON object matching this schema:\n"
+            '{\n  "suggestions": [\n    {"text": "Suggestion 1 description", "prompt": "Exact query prompt to run"},\n    {"text": "Suggestion 2 description", "prompt": "Exact query prompt to run"}\n  ]\n}'
+        )},
+        {"role": "user", "content": f"Conversation history:\n{formatted_history}\n\nJSON output:"}
+    ]
+    
+    try:
+        msg = await call_llama(prompt, model="llama-3.3-70b-versatile")
+        content = msg.content or "{}"
+        if "```json" in content:
+            content = content.split("```json")[1].split("```")[0].strip()
+        elif "```" in content:
+            content = content.split("```")[1].split("```")[0].strip()
+        data = json.loads(content)
+        return data
+    except Exception as e:
+        print(f"Error generating suggestions: {e}")
+        return {"suggestions": []}
+
 @app.get("/health")
 def health_check():
     return {"status": "ok"}

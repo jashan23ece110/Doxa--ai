@@ -200,6 +200,46 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [chatHistory, setChatHistory] = useState([]);
   const [activeMessageId, setActiveMessageId] = useState(null);
+  const [proactiveSuggestions, setProactiveSuggestions] = useState([]);
+
+  // Fetch proactive ambient suggestions from backend
+  const fetchSuggestions = async (historyList) => {
+    if (!historyList || historyList.length === 0) return;
+    try {
+      const getActiveChain = () => {
+        if (!activeMessageId) return [];
+        const chain = [];
+        let current = historyList.find(m => m.id === activeMessageId);
+        while (current) {
+          chain.unshift(current);
+          current = historyList.find(m => m.id === current.parentId);
+        }
+        return chain;
+      };
+      const activeChain = getActiveChain();
+      if (activeChain.length === 0) return;
+
+      const res = await fetch(`${API_BASE}/agent/proactive_suggestions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          history: activeChain.map(m => ({ role: m.role, text: m.text })),
+          language: language
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setProactiveSuggestions(data.suggestions || []);
+      }
+    } catch (e) {
+      console.error("Failed to fetch suggestions:", e);
+    }
+  };
+
+  // Clear suggestions on session switch
+  useEffect(() => {
+    setProactiveSuggestions([]);
+  }, [currentSessionId]);
 
   // Sync active session's history to chatHistory
   useEffect(() => {
@@ -389,6 +429,11 @@ function App() {
             eventSource.close();
             if (data.status === 'failed') {
               setAgentError(`Agent Execution Failed: ${data.error || 'Unknown error'}`);
+            } else {
+              // Trigger suggestions generation based on completed history
+              setTimeout(() => {
+                fetchSuggestions(chatHistory);
+              }, 500);
             }
           }
         } catch (err) {
@@ -765,6 +810,8 @@ function App() {
         toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         onExportChat={handleExportChat}
         onUploadDoc={handleUploadDoc}
+        proactiveSuggestions={proactiveSuggestions}
+        setProactiveSuggestions={setProactiveSuggestions}
       />
 
       {/* ── Left Collapsible Conversational History Sidebar ── */}

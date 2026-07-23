@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Mic, MicOff, Globe, Bot, User, Loader2, Cpu, MessageSquare, Upload, GitBranch } from 'lucide-react';
+import { Send, Mic, MicOff, Globe, Bot, User, Loader2, Cpu, MessageSquare, Upload, GitBranch, Sparkles } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
 
 export default function ChatPanel({
@@ -21,6 +21,8 @@ export default function ChatPanel({
   toggleSidebar,
   onExportChat,
   onUploadDoc,
+  proactiveSuggestions = [],
+  setProactiveSuggestions,
 }) {
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef(null);
@@ -387,6 +389,38 @@ export default function ChatPanel({
             </div>
           </div>
         </div>
+
+        {/* Proactive Suggestions Chips */}
+        {proactiveSuggestions.length > 0 && !agentLoading && (
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--jarvis-accent)]/5 bg-neutral-950/30 flex-wrap">
+            <span className="text-[9px] font-mono text-[#7a7060] uppercase tracking-wider select-none mr-1 flex items-center gap-1">
+              <Sparkles className="w-2.5 h-2.5 text-[var(--jarvis-accent)] animate-pulse" />
+              Suggested:
+            </span>
+            {proactiveSuggestions.map((s, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  setAgentGoal(s.prompt);
+                  setProactiveSuggestions([]);
+                  setTimeout(() => {
+                    if (inputRef.current) {
+                      const form = inputRef.current.form;
+                      if (form) {
+                        const event = new Event('submit', { cancelable: true, bubbles: true });
+                        form.dispatchEvent(event);
+                      }
+                    }
+                  }, 100);
+                }}
+                className="px-2.5 py-1 bg-neutral-900/60 border border-neutral-850 rounded-lg text-[10px] text-[#e0d6c2] hover:text-[var(--jarvis-accent)] hover:border-[var(--jarvis-accent)]/30 hover:bg-neutral-800 transition-all duration-150 font-medium cursor-pointer"
+              >
+                {s.text}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* ── Main Input Form ── */}
         <form onSubmit={onStartAgent} className="flex items-center p-3 gap-2 bg-neutral-950/20">

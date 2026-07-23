@@ -52,6 +52,24 @@ function ParticleSwarm({
     return pos;
   }, [count]);
 
+  // Precompute random offsets for node clusters in Thought Graph mode
+  const nodeOffsets = useMemo(() => {
+    const arr = [];
+    for (let i = 0; i < count; i++) {
+      const radius = Math.random() * 5.0 + 1.0;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2.0 * Math.random() - 1.0);
+      arr.push(new THREE.Vector3(
+        radius * Math.sin(phi) * Math.cos(theta),
+        radius * Math.sin(phi) * Math.sin(theta),
+        radius * Math.cos(phi)
+      ));
+    }
+    return arr;
+  }, [count]);
+
+  const morphProgress = useRef(0);
+
   // Precompute phi and theta values (Fibonacci spiral distribution)
   const phiTheta = useMemo(() => {
     const arr = new Float32Array(count * 2);
@@ -210,6 +228,10 @@ function ParticleSwarm({
       }
     }
 
+    // Update morphProgress for Thought Graph mode
+    const targetMorph = isThinking ? 1.0 : 0.0;
+    morphProgress.current = THREE.MathUtils.lerp(morphProgress.current, targetMorph, 2.5 * delta);
+
     for (let i = 0; i < count; i++) {
       const phi = phiTheta[i * 2];
       const theta = phiTheta[i * 2 + 1];
@@ -226,6 +248,29 @@ function ParticleSwarm({
       let x = dRadius * Math.sin(phi) * Math.cos(dTheta);
       let y = dRadius * Math.sin(phi) * Math.sin(dTheta);
       let z = dRadius * Math.cos(phi);
+
+      // Morph coordinates to node centers if in Thought Graph mode
+      if (morphProgress.current > 0.001) {
+        const pOffset = nodeOffsets[i];
+        const nodeIdx = i % 3;
+        let nodeX = 0, nodeY = 0, nodeZ = 0;
+        if (nodeIdx === 0) {
+          nodeX = -25 + pOffset.x;
+          nodeY = 12 + pOffset.y;
+          nodeZ = pOffset.z;
+        } else if (nodeIdx === 1) {
+          nodeX = 0 + pOffset.x;
+          nodeY = 0 + pOffset.y;
+          nodeZ = pOffset.z;
+        } else {
+          nodeX = 25 + pOffset.x;
+          nodeY = -12 + pOffset.y;
+          nodeZ = pOffset.z;
+        }
+        x = THREE.MathUtils.lerp(x, nodeX, morphProgress.current);
+        y = THREE.MathUtils.lerp(y, nodeY, morphProgress.current);
+        z = THREE.MathUtils.lerp(z, nodeZ, morphProgress.current);
+      }
 
       // Cursor hover repulsion effect (within threshold ~22px)
       const pPos = positions[i];
@@ -333,6 +378,34 @@ function ParticleSwarm({
       posAttr.needsUpdate = true;
       lineMeshRef.current.rotation.copy(meshRef.current.rotation);
     }
+
+    // Project node centers to 2D screen space for Thought Graph labels
+    if (typeof window !== 'undefined') {
+      const nodeCenters = [
+        new THREE.Vector3(-25, 12, 0),
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(25, -12, 0)
+      ];
+
+      const width = gl.domElement.clientWidth;
+      const height = gl.domElement.clientHeight;
+
+      nodeCenters.forEach((center, idx) => {
+        const tempV = center.clone();
+        tempV.project(camera);
+
+        const x = (tempV.x * 0.5 + 0.5) * width;
+        const y = (-(tempV.y * 0.5) + 0.5) * height;
+
+        const el = document.getElementById(`doxa-node-label-${idx}`);
+        if (el) {
+          el.style.left = `${x}px`;
+          el.style.top = `${y}px`;
+          el.style.opacity = morphProgress.current;
+          el.style.pointerEvents = morphProgress.current > 0.3 ? 'auto' : 'none';
+        }
+      });
+    }
   });
 
   return (
@@ -390,6 +463,45 @@ export default function CentralCore({
           <unrealBloomPass threshold={0.04} strength={1.35} radius={0.55} />
         </Effects>
       </Canvas>
+
+      {/* Thought Graph Floating Labels */}
+      {!isMobile && (
+        <>
+          <div
+            id="doxa-node-label-0"
+            className="absolute transform -translate-x-1/2 -translate-y-1/2 opacity-0 z-30 pointer-events-none transition-all duration-150"
+          >
+            <div className="bg-black/85 backdrop-blur-md border border-[rgba(var(--jarvis-accent-rgb),0.35)] px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-2xl">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]" />
+              <span className="text-[10px] tracking-wider uppercase font-semibold text-[#e0d6c2] font-mono">
+                PLANNING CORE
+              </span>
+            </div>
+          </div>
+          <div
+            id="doxa-node-label-1"
+            className="absolute transform -translate-x-1/2 -translate-y-1/2 opacity-0 z-30 pointer-events-none transition-all duration-150"
+          >
+            <div className="bg-black/85 backdrop-blur-md border border-[rgba(var(--jarvis-accent-rgb),0.35)] px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-2xl">
+              <span className={`w-2 h-2 rounded-full ${steps.some(s => s.step.toLowerCase().includes('execut')) ? 'bg-amber-500 animate-pulse shadow-[0_0_8px_#f59e0b]' : steps.length > 2 ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-neutral-600'}`} />
+              <span className="text-[10px] tracking-wider uppercase font-semibold text-[#e0d6c2] font-mono">
+                RUNTIME EXECUTOR
+              </span>
+            </div>
+          </div>
+          <div
+            id="doxa-node-label-2"
+            className="absolute transform -translate-x-1/2 -translate-y-1/2 opacity-0 z-30 pointer-events-none transition-all duration-150"
+          >
+            <div className="bg-black/85 backdrop-blur-md border border-[rgba(var(--jarvis-accent-rgb),0.35)] px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-2xl">
+              <span className={`w-2 h-2 rounded-full ${steps.some(s => s.step.toLowerCase().includes('final')) ? 'bg-amber-500 animate-pulse shadow-[0_0_8px_#f59e0b]' : steps.some(s => s.step.toLowerCase().includes('finaliz')) ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-neutral-600'}`} />
+              <span className="text-[10px] tracking-wider uppercase font-semibold text-[#e0d6c2] font-mono">
+                SYNTHESIS ENGINE
+              </span>
+            </div>
+          </div>
+        </>
+      )}
     </motion.div>
   );
 }

@@ -175,6 +175,39 @@ export default function ChatPanel({
                 </div>
               ))}
 
+              {/* Parallel Debate Panel */}
+              {(agentStatus?.debate_a || agentStatus?.debate_b || (agentLoading && agentStatus?.steps?.some(s => s.step.toLowerCase().includes('debate')))) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-3 w-full animate-fade-in font-mono text-xs">
+                  {/* Perspective A: Optimist */}
+                  <div className="backdrop-blur-md bg-[rgba(220,20,60,0.06)] border border-red-500/25 p-4 rounded-xl shadow-lg flex flex-col gap-2 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 px-2 py-0.5 bg-red-600/35 border-l border-b border-red-500/30 text-[8px] tracking-wider uppercase font-bold text-red-400">
+                      OPTIMIST CORE
+                    </div>
+                    <div className="text-[10px] tracking-widest text-red-400 uppercase font-semibold border-b border-red-500/10 pb-1 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
+                      Perspective A
+                    </div>
+                    <p className="text-[#e0d6c2]/90 leading-relaxed text-[11px] font-sans">
+                      {agentStatus?.debate_a || "Generating optimistic argument..."}
+                    </p>
+                  </div>
+
+                  {/* Perspective B: Skeptic */}
+                  <div className="backdrop-blur-md bg-[rgba(0,217,255,0.06)] border border-cyan-500/25 p-4 rounded-xl shadow-lg flex flex-col gap-2 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 px-2 py-0.5 bg-cyan-600/35 border-l border-b border-cyan-500/30 text-[8px] tracking-wider uppercase font-bold text-cyan-400">
+                      SKEPTIC CORE
+                    </div>
+                    <div className="text-[10px] tracking-widest text-cyan-400 uppercase font-semibold border-b border-cyan-500/10 pb-1 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-ping" />
+                      Perspective B
+                    </div>
+                    <p className="text-[#e0d6c2]/90 leading-relaxed text-[11px] font-sans">
+                      {agentStatus?.debate_b || "Generating skeptical counter-argument..."}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Agent Active Processing / Thinking Indicator & Step Progress Timeline */}
               {agentLoading && (
                 <div className="flex flex-col gap-3.5 self-start w-full max-w-[480px]">

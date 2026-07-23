@@ -202,6 +202,9 @@ async def stream_agent(run_id: str):
                 "steps": current_steps,
                 "self_check": trace.get("self_check", None),
                 "sentiment": trace.get("sentiment", "neutral"),
+                "is_debating": trace.get("is_debating", False),
+                "debate_a": trace.get("debate_a", ""),
+                "debate_b": trace.get("debate_b", ""),
                 "error": trace.get("error", None)
             }
             

@@ -374,7 +374,9 @@ function App() {
               steps: data.steps || [],
               self_check: data.self_check,
               error: data.error,
-              final_result: prev?.final_result || ""
+              final_result: prev?.final_result || "",
+              debate_a: data.debate_a || "",
+              debate_b: data.debate_b || ""
             };
             if (data.chunk) {
               updated.final_result = (prev?.final_result || "") + data.chunk;

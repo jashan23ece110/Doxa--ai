@@ -69,6 +69,7 @@ function ParticleSwarm({
   }, [count]);
 
   const morphProgress = useRef(0);
+  const debateProgress = useRef(0);
 
   // Precompute phi and theta values (Fibonacci spiral distribution)
   const phiTheta = useMemo(() => {
@@ -232,6 +233,10 @@ function ParticleSwarm({
     const targetMorph = isThinking ? 1.0 : 0.0;
     morphProgress.current = THREE.MathUtils.lerp(morphProgress.current, targetMorph, 2.5 * delta);
 
+    // Update debateProgress for Multi-Agent Debate mode
+    const targetDebate = isDebating ? 1.0 : 0.0;
+    debateProgress.current = THREE.MathUtils.lerp(debateProgress.current, targetDebate, 2.5 * delta);
+
     for (let i = 0; i < count; i++) {
       const phi = phiTheta[i * 2];
       const theta = phiTheta[i * 2 + 1];
@@ -270,6 +275,17 @@ function ParticleSwarm({
         x = THREE.MathUtils.lerp(x, nodeX, morphProgress.current);
         y = THREE.MathUtils.lerp(y, nodeY, morphProgress.current);
         z = THREE.MathUtils.lerp(z, nodeZ, morphProgress.current);
+      }
+
+      // Morph coordinates to two separate split centers if in Multi-Agent Debate mode
+      if (debateProgress.current > 0.001) {
+        const cx = i < count / 2 ? -18 : 18;
+        const targetX = cx + x * 0.55;
+        const targetY = y * 0.55;
+        const targetZ = z * 0.55;
+        x = THREE.MathUtils.lerp(x, targetX, debateProgress.current);
+        y = THREE.MathUtils.lerp(y, targetY, debateProgress.current);
+        z = THREE.MathUtils.lerp(z, targetZ, debateProgress.current);
       }
 
       // Cursor hover repulsion effect (within threshold ~22px)
@@ -326,6 +342,21 @@ function ParticleSwarm({
         lightness = (0.28 + heat * 0.32) * intensity + Math.abs(noise3) * 0.12 * intensity;
       }
 
+      // Morph colors in Multi-Agent Debate mode
+      if (debateProgress.current > 0.001) {
+        if (i < count / 2) {
+          // Left sphere: crimson red (hue ~0.95)
+          hue = THREE.MathUtils.lerp(hue, 0.95, debateProgress.current);
+          saturation = THREE.MathUtils.lerp(saturation, 0.95, debateProgress.current);
+          lightness = THREE.MathUtils.lerp(lightness, 0.38 * intensity, debateProgress.current);
+        } else {
+          // Right sphere: cyan blue (hue ~0.54)
+          hue = THREE.MathUtils.lerp(hue, 0.54, debateProgress.current);
+          saturation = THREE.MathUtils.lerp(saturation, 0.90, debateProgress.current);
+          lightness = THREE.MathUtils.lerp(lightness, 0.42 * intensity, debateProgress.current);
+        }
+      }
+
       pColor.setHSL(hue, saturation, lightness);
       meshRef.current.setColorAt(i, pColor);
     }
@@ -352,6 +383,18 @@ function ParticleSwarm({
 
       for (let i = 0; i < connectionPairs.length; i++) {
         const [p1Idx, p2Idx] = connectionPairs[i];
+        
+        // Skip drawing cross-boundary lines in Multi-Agent Debate mode
+        if (debateProgress.current > 0.1 && ((p1Idx < count / 2 && p2Idx >= count / 2) || (p1Idx >= count / 2 && p2Idx < count / 2))) {
+          linePositions[ptr++] = 0;
+          linePositions[ptr++] = 0;
+          linePositions[ptr++] = 0;
+          linePositions[ptr++] = 0;
+          linePositions[ptr++] = 0;
+          linePositions[ptr++] = 0;
+          continue;
+        }
+
         const p1 = positions[p1Idx];
         const p2 = positions[p2Idx];
 

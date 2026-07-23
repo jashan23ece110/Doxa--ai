@@ -279,6 +279,9 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
         "final_result": None,
         "self_check": None,
         "sentiment": "neutral",
+        "is_debating": False,
+        "debate_a": "",
+        "debate_b": "",
         "status": "running"
     }
     save_trace(run_id, trace)
@@ -287,6 +290,52 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
         # Set up language prompt
         lang_str = "Hinglish (a mix of Hindi and English using Latin/Roman script)" if language.lower() == "hinglish" else "English"
         
+        # Check for debate mode (subjective comparison queries)
+        debatable_keywords = ["should i", "which is better", "what's better", "compare", "vs", "versus", "debate", "opinion", "pros and cons", "should we", "should they", "is it good", "advantages and disadvantages", "kya mujhe", "kaunsa accha hai"]
+        is_debatable = any(kw in goal.lower() for kw in debatable_keywords)
+        
+        if is_debatable:
+            trace["is_debating"] = True
+            trace["steps"].append({"step": "Debate Mode Triggered", "tool_used": "DebateEngine", "input": goal, "output": "Initiating parallel debate between Agent Optimist and Agent Skeptic..."})
+            save_trace(run_id, trace)
+            
+            prompt_a = [
+                {"role": "system", "content": f"You are Agent Optimist. Argue STRONGLY in favor of the idea, focusing on pros, advantages, and benefits. Write a clear, brief perspective (2-4 sentences) in {lang_str}."},
+                {"role": "user", "content": f"Topic: {goal}"}
+            ]
+            prompt_b = [
+                {"role": "system", "content": f"You are Agent Skeptic. Argue STRONGLY against the idea, highlighting risks, cons, challenges, and concerns. Write a clear, brief perspective (2-4 sentences) in {lang_str}."},
+                {"role": "user", "content": f"Topic: {goal}"}
+            ]
+            
+            msg_a, msg_b = await asyncio.gather(
+                call_llama(prompt_a, model="llama-3.3-70b-versatile"),
+                call_llama(prompt_b, model="llama-3.3-70b-versatile")
+            )
+            
+            res_a = msg_a.content or "No argument generated."
+            res_b = msg_b.content or "No counter-argument generated."
+            
+            trace["debate_a"] = res_a
+            trace["debate_b"] = res_b
+            trace["steps"].append({"step": "Synthesizing Perspectives", "tool_used": "DebateEngine", "input": "Consolidating perspectives", "output": "Drafting balanced synthesis..."})
+            save_trace(run_id, trace)
+            
+            prompt_synth = [
+                {"role": "system", "content": f"You are Doxa. Synthesize this debate (Perspective A: Optimistic, Perspective B: Skeptical) into a single, balanced, cohesive final response in {lang_str}. Address the user directly, summarize both sides neutrally, and help them make a decision. Keep it concise."},
+                {"role": "user", "content": f"Topic: {goal}\n\nPerspective A (Optimist):\n{res_a}\n\nPerspective B (Skeptic):\n{res_b}\n\nWrite the balanced final response:"}
+            ]
+            
+            msg_synth = await call_llama(prompt_synth, model="llama-3.3-70b-versatile")
+            final_result = msg_synth.content or "Synthesis failed."
+            
+            trace["final_result"] = final_result
+            trace["sentiment"] = classify_sentiment(final_result)
+            trace["is_debating"] = False
+            trace["status"] = "completed"
+            save_trace(run_id, trace)
+            return
+            
         if mode == "normal":
             trace["steps"].append({"step": "Direct Completion", "tool_used": "None", "input": goal, "output": "Retrieving context and generating response..."})
             save_trace(run_id, trace)

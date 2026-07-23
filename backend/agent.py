@@ -336,7 +336,17 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
             save_trace(run_id, trace)
             return
             
-        if mode == "normal":
+        # Auto-detect simple greetings or casual chat to bypass planning mode entirely
+        chat_words = goal.strip().lower().replace("?", "").replace("!", "").replace(",", "").split()
+        greetings = {"hi", "hello", "hey", "hola", "namaste", "greetings", "good morning", "good afternoon", "good evening", "howdy", "sup", "yo", "kaise ho"}
+        is_simple_greeting = False
+        if len(chat_words) <= 3:
+            is_simple_greeting = any(w in greetings for w in chat_words)
+            
+        if is_simple_greeting:
+            mode = "normal"
+
+        if mode in ("normal", "ask"):
             trace["steps"].append({"step": "Direct Completion", "tool_used": "None", "input": goal, "output": "Retrieving context and generating response..."})
             save_trace(run_id, trace)
             
@@ -552,6 +562,34 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
             else:
                 break
                 
+        # Safeguard check for raw planning / meta-text leak
+        if trace.get("final_result"):
+            red_flag_phrases = [
+                "the goal is to", 
+                "potential response could be", 
+                "the plan to achieve", 
+                "a potential response", 
+                "steps to achieve", 
+                "my planning is",
+                "first step is to",
+                "the context of the greeting",
+                "responding to the greeting"
+            ]
+            has_leak = any(phrase in trace["final_result"].lower() for phrase in red_flag_phrases)
+            
+            if has_leak:
+                trace["steps"].append({"step": "Safeguard Triggered", "tool_used": "SafeguardEngine", "input": "Meta-text detected", "output": "Re-synthesizing response to ensure directness..."})
+                save_trace(run_id, trace)
+                
+                clean_messages = [
+                    {"role": "system", "content": f"You are Doxa. The previous response was raw internal planning text. Rewrite it into a direct, natural, conversational final response in {lang_str}. Avoid meta-commentary, lists, or mentioning the plan/goal. Respond directly to the user's input: '{goal}'."},
+                    {"role": "user", "content": f"Raw internal response: {trace['final_result']}\n\nDirect response:"}
+                ]
+                clean_msg = await call_llama(clean_messages, model="llama-3.3-70b-versatile")
+                trace["final_result"] = (clean_msg.content or "").strip()
+                trace["sentiment"] = classify_sentiment(trace["final_result"])
+                save_trace(run_id, trace)
+
         trace["status"] = "completed"
         save_trace(run_id, trace)
         

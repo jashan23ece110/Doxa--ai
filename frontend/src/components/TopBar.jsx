@@ -47,7 +47,7 @@ const TopBar = ({ user }) => {
         >
           {formatTime(now)}
         </span>
-        <span className="text-[10px]" style={{ color: '#7a7060' }}>
+        <span className="text-[10px]" style={{ color: 'var(--jarvis-text-dim)' }}>
           {formatDate(now)}
         </span>
       </div>
@@ -60,23 +60,23 @@ const TopBar = ({ user }) => {
             className="inline-block w-[6px] h-[6px] rounded-full"
             style={{ background: '#00ff88', boxShadow: '0 0 6px rgba(0,255,136,0.6)' }}
           />
-          <span className="text-[10px] uppercase tracking-wider" style={{ color: '#7a7060' }}>
+          <span className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--jarvis-text-dim)' }}>
             Online
           </span>
         </div>
 
         {/* Encrypted */}
         <div className="flex items-center gap-1">
-          <Shield size={11} color="#7a7060" />
-          <span className="text-[10px] uppercase tracking-wider" style={{ color: '#7a7060' }}>
+          <Shield size={11} color="var(--jarvis-text-dim)" />
+          <span className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--jarvis-text-dim)' }}>
             Encrypted
           </span>
         </div>
 
         {/* User */}
         <div className="flex items-center gap-1">
-          <User size={11} color="#7a7060" />
-          <span className="text-[10px] tracking-wider" style={{ color: '#7a7060' }}>
+          <User size={11} color="var(--jarvis-text-dim)" />
+          <span className="text-[10px] tracking-wider" style={{ color: 'var(--jarvis-text-dim)' }}>
             {truncatedEmail || '—'}
           </span>
         </div>

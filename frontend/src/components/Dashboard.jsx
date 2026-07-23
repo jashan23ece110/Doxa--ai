@@ -99,10 +99,19 @@ export default function Dashboard({
         </motion.div>
       </div>
 
-      {/* ── mobile: stats + telemetry (collapsed into bottom sheet) ── */}
-      <div className="lg:hidden px-4 pb-4 flex gap-3 overflow-x-auto">
-        <div className="min-w-[250px]">
+      {/* ── mobile: stats + telemetry (collapsed into bottom sheet swipeable slider) ── */}
+      <div className="lg:hidden px-4 pb-4 flex gap-4 overflow-x-auto hud-scrollbar shrink-0 select-none pb-5 border-t border-[rgba(var(--jarvis-accent-rgb),0.05)] bg-neutral-950/20 backdrop-blur-sm z-20 pointer-events-auto">
+        <div className="min-w-[280px] shrink-0">
+          <StatsPanel />
+        </div>
+        <div className="min-w-[280px] shrink-0">
+          <ObjectivesCard queriesCount={queriesCount} sessionStart={sessionStart} />
+        </div>
+        <div className="min-w-[280px] shrink-0">
           <RadarGauge queriesCount={queriesCount} />
+        </div>
+        <div className="min-w-[280px] shrink-0 h-[220px]">
+          <TelemetryLog agentSteps={agentStatus?.steps} />
         </div>
       </div>
     </div>

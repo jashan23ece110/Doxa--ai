@@ -40,15 +40,15 @@ export default function MarkdownRenderer({ content = '' }) {
 
         // Even indices are regular markdown text
         return (
-          <div key={index} className="markdown-inline flex flex-col gap-1 text-[#e0d6c2]">
+          <div key={index} className="markdown-inline flex flex-col gap-1.5 text-[var(--jarvis-text)]">
             {part.split('\n').map((line, lIdx) => {
               const trimmed = line.trim();
-              if (!trimmed) return <div key={lIdx} className="h-2" />;
+              if (!trimmed) return <div key={lIdx} className="h-1.5" />;
 
               // Headers
               if (trimmed.startsWith('### ')) {
                 return (
-                  <h3 key={lIdx} className="text-sm font-bold text-neutral-100 uppercase tracking-wide mt-3 mb-1 font-orbitron" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                  <h3 key={lIdx} className="text-sm font-bold text-white uppercase tracking-wide mt-3 mb-1 font-orbitron" style={{ fontFamily: 'Orbitron, sans-serif' }}>
                     {parseInline(trimmed.substring(4))}
                   </h3>
                 );
@@ -71,15 +71,16 @@ export default function MarkdownRenderer({ content = '' }) {
               // Bullet lists
               if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
                 return (
-                  <ul key={lIdx} className="list-disc list-inside ml-2.5 my-0.5 text-neutral-300">
-                    <li className="list-item">{parseInline(trimmed.substring(2))}</li>
-                  </ul>
+                  <div key={lIdx} className="flex items-start gap-2 ml-2 my-1 text-[var(--jarvis-text)]/90">
+                    <span className="text-[var(--jarvis-accent)] select-none shrink-0 mt-1">•</span>
+                    <span className="flex-1">{parseInline(trimmed.substring(2))}</span>
+                  </div>
                 );
               }
 
               // Normal paragraph line
               return (
-                <p key={lIdx} className="my-0.5">
+                <p key={lIdx} className="my-0.5 leading-relaxed">
                   {parseInline(line)}
                 </p>
               );

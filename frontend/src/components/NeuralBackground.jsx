@@ -4,8 +4,6 @@ const PARTICLE_COUNT = 120;
 const CONNECTION_DISTANCE = 120;
 const MIN_SPEED = 0.1;
 const MAX_SPEED = 0.3;
-const PARTICLE_COLOR = 'rgba(var(--jarvis-accent-rgb),0.06)';
-const LINE_COLOR = 'rgba(var(--jarvis-accent-rgb),0.03)';
 const LINE_WIDTH = 0.5;
 const MIN_RADIUS = 1;
 const MAX_RADIUS = 2;
@@ -73,7 +71,8 @@ export default function NeuralBackground() {
       }
 
       // Draw connections
-      ctx.strokeStyle = LINE_COLOR;
+      const accentRgb = getComputedStyle(document.documentElement).getPropertyValue('--jarvis-accent-rgb').trim() || '220, 20, 60';
+      ctx.strokeStyle = `rgba(${accentRgb}, 0.03)`;
       ctx.lineWidth = LINE_WIDTH;
       ctx.beginPath();
       for (let i = 0; i < PARTICLE_COUNT; i++) {
@@ -99,7 +98,7 @@ export default function NeuralBackground() {
       ctx.stroke();
 
       // Draw particles
-      ctx.fillStyle = PARTICLE_COLOR;
+      ctx.fillStyle = `rgba(${accentRgb}, 0.06)`;
       ctx.beginPath();
       for (let i = 0; i < PARTICLE_COUNT; i++) {
         const p = particles[i];

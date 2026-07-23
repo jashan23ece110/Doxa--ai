@@ -8,10 +8,10 @@ const MetricItem = ({ icon: Icon, label, value, target, showBar }) => {
   return (
     <div className="flex flex-col gap-1 min-w-[140px]">
       <div className="flex items-center gap-1.5">
-        <Icon size={12} color="#7a7060" />
+        <Icon size={12} color="var(--jarvis-text-dim)" />
         <span
           className="text-xs uppercase tracking-wider"
-          style={{ fontFamily: "'Rajdhani', sans-serif", color: '#7a7060' }}
+          style={{ fontFamily: "'Rajdhani', sans-serif", color: 'var(--jarvis-text-dim)' }}
         >
           {label}
         </span>
@@ -22,7 +22,7 @@ const MetricItem = ({ icon: Icon, label, value, target, showBar }) => {
       >
         {value}
         {target != null && (
-          <span className="text-[10px]" style={{ color: '#3a4a5c' }}>
+          <span className="text-[10px]" style={{ color: 'rgba(var(--jarvis-accent-rgb), 0.35)' }}>
             {' '}
             / {target}
           </span>

@@ -65,7 +65,7 @@ export default function HudNav({ activeOverlay, onNavigate }) {
           >
             <Icon
               size={17}
-              color={isActive ? 'var(--jarvis-accent)' : '#7a7060'}
+              color={isActive ? 'var(--jarvis-accent)' : 'var(--jarvis-text-dim)'}
               style={{
                 transition: 'color 0.2s ease',
                 filter: isActive

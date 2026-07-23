@@ -201,18 +201,32 @@ function App() {
   const [chatHistory, setChatHistory] = useState([]);
   const [activeMessageId, setActiveMessageId] = useState(null);
   const [proactiveSuggestions, setProactiveSuggestions] = useState([]);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
+  
+  // Auto-dismiss toast effect
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   // Fetch proactive ambient suggestions from backend
   const fetchSuggestions = async (historyList) => {
     if (!historyList || historyList.length === 0) return;
     try {
       const getActiveChain = () => {
-        if (!activeMessageId) return [];
+        if (!activeMessageId || !Array.isArray(historyList)) return [];
         const chain = [];
-        let current = historyList.find(m => m.id === activeMessageId);
-        while (current) {
+        let current = historyList.find(m => m && m.id === activeMessageId);
+        const visited = new Set();
+        while (current && !visited.has(current.id)) {
+          visited.add(current.id);
           chain.unshift(current);
-          current = historyList.find(m => m.id === current.parentId);
+          current = historyList.find(m => m && m.id === current.parentId);
         }
         return chain;
       };
@@ -303,7 +317,10 @@ function App() {
   };
 
   const handleExportChat = () => {
-    if (chatHistory.length === 0) return;
+    if (chatHistory.length === 0) {
+      showToast("No conversation to export.", "info");
+      return;
+    }
     const mdContent = chatHistory.map(msg => {
       const header = msg.role === 'user' ? '## User' : '## Doxa (Assistant)';
       return `${header} [${msg.mode || 'normal'}]\n\n${msg.text}\n\n---\n`;
@@ -316,6 +333,7 @@ function App() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    showToast("Conversation exported!", "success");
   };
 
   /* ── auth ── */
@@ -341,15 +359,37 @@ function App() {
 
   const handleUploadDoc = async (file) => {
     if (!file) return;
+    
+    // File format validation
+    const allowedExtensions = ['.txt', '.pdf', '.md', '.csv', '.json'];
+    const fileName = file.name || '';
+    const fileExtension = fileName.substring(fileName.lastIndexOf('.')).toLowerCase();
+    if (!allowedExtensions.includes(fileExtension)) {
+      showToast('Unsupported file format. Please upload TXT, PDF, MD, CSV, or JSON.', 'error');
+      return;
+    }
+
     setUploadingDoc(true);
     const fd = new FormData(); fd.append('file', file);
-    try { await axios.post(`${API_BASE}/documents/upload`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }); await fetchDocuments(); }
-    catch { alert('Failed to upload document.'); }
+    try { 
+      await axios.post(`${API_BASE}/documents/upload`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }); 
+      await fetchDocuments(); 
+      showToast('Document uploaded successfully!', 'success');
+    }
+    catch (err) { 
+      showToast('Failed to upload document.', 'error'); 
+    }
     finally { setUploadingDoc(false); }
   };
   const handleDeleteDoc = async (docId) => {
     if (!window.confirm('Delete this document?')) return;
-    try { await axios.delete(`${API_BASE}/documents/${docId}`); await fetchDocuments(); } catch {}
+    try { 
+      await axios.delete(`${API_BASE}/documents/${docId}`); 
+      await fetchDocuments(); 
+      showToast('Document deleted.', 'info');
+    } catch {
+      showToast('Failed to delete document.', 'error');
+    }
   };
 
   /* ── eval ── */
@@ -671,7 +711,7 @@ function App() {
      ═══════════════════════════════════════════ */
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 selection:bg-[rgba(var(--jarvis-accent-rgb),0.2)]" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
+      <div className="min-h-screen bg-[var(--jarvis-bg)] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 selection:bg-[rgba(var(--jarvis-accent-rgb),0.2)]" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="sm:mx-auto sm:w-full sm:max-w-md">
           <div className="flex justify-center mb-6">
             <div className="p-3 bg-[#141414] rounded-xl border panel-glow"><Sparkles className="w-8 h-8 text-[var(--jarvis-accent)]" /></div>
@@ -712,7 +752,7 @@ function App() {
             </form>
 
             <div className="mt-6">
-              <div className="relative"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[rgba(var(--jarvis-accent-rgb),0.1)]" /></div><div className="relative flex justify-center text-sm"><span className="px-2 bg-[#0a0a0a] text-[#7a7060]">Or continue with</span></div></div>
+              <div className="relative"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[rgba(var(--jarvis-accent-rgb),0.1)]" /></div><div className="relative flex justify-center text-sm"><span className="px-2 bg-[var(--jarvis-surface)] text-[#7a7060]">Or continue with</span></div></div>
               <div className="mt-6 grid grid-cols-2 gap-3">
                 <button type="button" onClick={() => setAuthMode('phone')} className="w-full py-2 px-4 border panel-glow rounded-lg bg-[#141414] text-sm font-medium text-[#e0d6c2] hover:bg-[#1e1e1e] transition-colors">Phone</button>
                 <button type="button" onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} className="w-full py-2 px-4 border panel-glow rounded-lg bg-[#141414] text-sm font-medium text-[#e0d6c2] hover:bg-[#1e1e1e] transition-colors">
@@ -730,7 +770,7 @@ function App() {
      MAIN LAYOUT — Dashboard + Overlays
      ═══════════════════════════════════════════ */
   return (
-    <div className="h-screen w-screen bg-[#0a0a0a] overflow-hidden flex flex-col relative" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
+    <div className="h-screen w-screen bg-[var(--jarvis-bg)] overflow-hidden flex flex-col relative" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
 
       {/* ── Voice Listener (always active) ── */}
       <VoiceListener
@@ -785,12 +825,14 @@ function App() {
       {/* ── Sleek Fixed Bottom Chat Panel ── */}
       <ChatPanel
         chatHistory={(() => {
-          if (!activeMessageId) return [];
+          if (!activeMessageId || !Array.isArray(chatHistory)) return [];
           const chain = [];
-          let current = chatHistory.find(m => m.id === activeMessageId);
-          while (current) {
+          let current = chatHistory.find(m => m && m.id === activeMessageId);
+          const visited = new Set();
+          while (current && !visited.has(current.id)) {
+            visited.add(current.id);
             chain.unshift(current);
-            current = chatHistory.find(m => m.id === current.parentId);
+            current = chatHistory.find(m => m && m.id === current.parentId);
           }
           return chain;
         })()}
@@ -1276,6 +1318,30 @@ function App() {
           ))}
         </AnimatePresence>
       </div>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            className={`fixed bottom-6 right-6 z-[100] px-4 py-3 rounded-xl border backdrop-blur-md shadow-2xl flex items-center gap-3 text-sm ${
+              toast.type === 'error'
+                ? 'bg-red-950/85 border-red-500/35 text-red-200 shadow-[0_0_20px_rgba(239,68,68,0.15)]'
+                : toast.type === 'info'
+                ? 'bg-neutral-900/90 border-[var(--jarvis-accent)]/20 text-[#c8d6e5] shadow-[0_0_20px_rgba(var(--jarvis-accent-rgb),0.1)]'
+                : 'bg-emerald-950/85 border-emerald-500/35 text-emerald-200 shadow-[0_0_20px_rgba(16,185,129,0.15)]'
+            }`}
+            style={{ fontFamily: 'Rajdhani, sans-serif' }}
+          >
+            <span className={`w-2 h-2 rounded-full ${
+              toast.type === 'error' ? 'bg-red-500 animate-pulse' : toast.type === 'info' ? 'bg-[var(--jarvis-accent)] animate-pulse' : 'bg-emerald-500 animate-pulse'
+            }`} />
+            <p className="font-semibold">{toast.message}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

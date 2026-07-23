@@ -107,7 +107,7 @@ const StatsPanel = () => {
                 style={{
                   fontFamily: "'Rajdhani', sans-serif",
                   fontSize: '0.8rem',
-                  color: '#e0d6c2',
+                  color: 'var(--jarvis-text)',
                   width: '5.5rem',
                   flexShrink: 0,
                 }}

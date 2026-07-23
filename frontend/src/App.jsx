@@ -89,9 +89,69 @@ function App() {
     localStorage.setItem('doxa_theme', theme);
   }, [theme]);
 
+  // Notifications EventSource SSE Listener for background reminders complete alerts
+  useEffect(() => {
+    const sseUrl = `${API_BASE}/notifications/stream`;
+    console.log("Connecting to alerts system at:", sseUrl);
+    
+    let eventSource;
+    const connectSSE = () => {
+      eventSource = new EventSource(sseUrl);
+      
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'timer_completed') {
+            try {
+              const ctx = new (window.AudioContext || window.webkitAudioContext)();
+              const beep = (delay) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.setValueAtTime(880, ctx.currentTime + delay);
+                gain.gain.setValueAtTime(0.12, ctx.currentTime + delay);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + delay + 0.15);
+                osc.start(ctx.currentTime + delay);
+                osc.stop(ctx.currentTime + delay + 0.18);
+              };
+              beep(0);
+              beep(0.22);
+              beep(0.44);
+            } catch (soundErr) {
+              console.error("Audio Context beep alert failed:", soundErr);
+            }
+            
+            const newAlert = {
+              id: 'alert_' + Date.now(),
+              title: data.title,
+              seconds: data.seconds,
+              timestamp: new Date().toLocaleTimeString()
+            };
+            setActiveAlerts(prev => [newAlert, ...prev]);
+          }
+        } catch (parseErr) {
+          console.error("Failed to parse SSE timer alert payload:", parseErr);
+        }
+      };
+      
+      eventSource.onerror = (err) => {
+        console.error("SSE EventSource error, closing and scheduled retry:", err);
+        eventSource.close();
+      };
+    };
+    
+    connectSSE();
+    return () => {
+      if (eventSource) eventSource.close();
+    };
+  }, []);
+
   /* RAG state */
   const [useRag, setUseRag] = useState(false);
   const [documents, setDocuments] = useState([]);
+  const [docSearchQuery, setDocSearchQuery] = useState('');
+  const [activeAlerts, setActiveAlerts] = useState([]);
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [retrievedContext, setRetrievedContext] = useState(null);
   const [showContext, setShowContext] = useState(false);
@@ -877,6 +937,20 @@ function App() {
                       </label>
                     </motion.div>
 
+                    {/* Search filter input */}
+                    {documents.length > 0 && (
+                      <motion.div variants={staggerItem}>
+                        <input
+                          type="text"
+                          placeholder="Search uploaded files by name..."
+                          value={docSearchQuery}
+                          onChange={(e) => setDocSearchQuery(e.target.value)}
+                          className="w-full bg-[#141414] border border-[rgba(var(--jarvis-accent-rgb),0.15)] rounded-lg px-4 py-2.5 text-sm text-[#e0d6c2] placeholder-[#7a7060] focus:outline-none focus:border-[var(--jarvis-accent)] transition-all font-medium"
+                          style={{ fontFamily: 'Rajdhani, sans-serif' }}
+                        />
+                      </motion.div>
+                    )}
+
                     {documents.length === 0 ? (
                       <motion.div variants={staggerItem} className="text-center py-16 hud-panel border-dashed">
                         <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-[#141414] flex items-center justify-center">
@@ -885,8 +959,12 @@ function App() {
                         <p className="text-[#e0d6c2] text-sm font-medium">No documents uploaded</p>
                         <p className="text-[#7a7060] text-xs mt-1">Upload files to enable RAG-powered evaluations.</p>
                       </motion.div>
+                    ) : documents.filter(doc => doc.filename.toLowerCase().includes(docSearchQuery.toLowerCase())).length === 0 ? (
+                      <motion.div variants={staggerItem} className="text-center py-12 hud-panel border-dashed">
+                        <p className="text-[#7a7060] text-sm">No files matching "{docSearchQuery}" found.</p>
+                      </motion.div>
                     ) : (
-                      documents.map((doc, idx) => (
+                      documents.filter(doc => doc.filename.toLowerCase().includes(docSearchQuery.toLowerCase())).map((doc, idx) => (
                         <motion.div key={doc.id || idx} variants={staggerItem} whileHover={cardHover}
                           className="hud-panel p-3.5 flex items-center justify-between gap-3"
                         >
@@ -999,6 +1077,25 @@ function App() {
                     </motion.div>
 
                     <motion.div variants={staggerItem} className="pt-5 mt-4 border-t border-[rgba(var(--jarvis-accent-rgb),0.15)]">
+                      <h3 className="text-[15px] font-medium text-white mb-1" style={{ fontFamily: 'Rajdhani, sans-serif' }}>Integration Roadmap</h3>
+                      <p className="text-xs text-[#7a7060] mb-4">Third-party automations and companion services on the development path.</p>
+                      <div className="grid grid-cols-3 gap-3 text-center text-[10px] uppercase font-bold tracking-wider" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                        <div className="p-3.5 bg-neutral-900/40 border border-neutral-800/80 rounded-xl text-neutral-500 relative overflow-hidden group">
+                          <span className="text-[8px] bg-[rgba(var(--jarvis-accent-rgb),0.1)] text-[var(--jarvis-accent)] px-1.5 py-0.5 rounded absolute top-0.5 right-0.5 scale-90">SOON</span>
+                          WhatsApp
+                        </div>
+                        <div className="p-3.5 bg-neutral-900/40 border border-neutral-800/80 rounded-xl text-neutral-500 relative overflow-hidden group">
+                          <span className="text-[8px] bg-[rgba(var(--jarvis-accent-rgb),0.1)] text-[var(--jarvis-accent)] px-1.5 py-0.5 rounded absolute top-0.5 right-0.5 scale-90">SOON</span>
+                          Spotify
+                        </div>
+                        <div className="p-3.5 bg-neutral-900/40 border border-neutral-800/80 rounded-xl text-neutral-500 relative overflow-hidden group">
+                          <span className="text-[8px] bg-[rgba(var(--jarvis-accent-rgb),0.1)] text-[var(--jarvis-accent)] px-1.5 py-0.5 rounded absolute top-0.5 right-0.5 scale-90">SOON</span>
+                          Desktop UI
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    <motion.div variants={staggerItem} className="pt-5 mt-4 border-t border-[rgba(var(--jarvis-accent-rgb),0.15)]">
                       <h3 className="text-[15px] font-medium text-white mb-1">Account</h3>
                       <p className="text-xs text-[#7a7060] mb-3">Signed in as <span className="text-[var(--jarvis-accent)] font-medium">{user}</span></p>
                       <motion.button onClick={handleLogout} whileHover={hoverScale} whileTap={tapScale}
@@ -1014,6 +1111,40 @@ function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── Active HUD Notifications Alerts Overlay ── */}
+      <div className="fixed top-4 right-4 z-[90] flex flex-col gap-3 max-w-sm pointer-events-auto">
+        <AnimatePresence>
+          {activeAlerts.map(alert => (
+            <motion.div
+              key={alert.id}
+              initial={{ opacity: 0, x: 50, scale: 0.9 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 50, scale: 0.9 }}
+              transition={{ duration: 0.3 }}
+              className="hud-panel hud-panel-bright p-4 bg-neutral-950/95 border-l-4 border-l-[#00ff88] flex flex-col gap-1.5 shadow-[0_10px_30px_rgba(0,255,136,0.15)] relative"
+            >
+              <button
+                type="button"
+                onClick={() => setActiveAlerts(prev => prev.filter(x => x.id !== alert.id))}
+                className="absolute top-2.5 right-2.5 text-neutral-500 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+              <div className="text-[10px] tracking-wider uppercase font-bold text-[#00ff88] font-orbitron" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                SYSTEM ALERT // TIMER COMPLETE
+              </div>
+              <div className="text-sm font-semibold text-white">
+                {alert.title || "Untitled Reminder"}
+              </div>
+              <div className="text-[10px] text-neutral-500 font-mono">
+                TRIGGERED AT: {alert.timestamp}
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+
     </div>
   );
 }

@@ -10,6 +10,9 @@ from google.cloud import firestore
 from rag import retrieve_context
 from tools.web_search import web_search
 from tools.calculator import calculate
+from tools.calendar_tool import list_calendar_events, create_calendar_event
+from tools.python_sandbox import execute_python_code
+from tools.timer_manager import schedule_timer
 
 # Initialize Groq Client
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
@@ -192,6 +195,63 @@ TOOLS_DEF = [
                 "required": ["expression"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_calendar_events",
+            "description": "Lists upcoming events and meetings from the user's primary calendar.",
+            "parameters": {
+                "type": "object",
+                "properties": {}
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "create_calendar_event",
+            "description": "Creates a new calendar event or meeting. Time parameter is best provided in ISO format (e.g. 2026-07-25T14:00:00).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "summary": {"type": "string", "description": "The event title or name"},
+                    "start_time": {"type": "string", "description": "The starting date/time of the event, preferred in ISO format (e.g., 2026-07-25T10:30:00)"},
+                    "duration_minutes": {"type": "integer", "description": "The duration of the event in minutes (default 30)"},
+                    "description": {"type": "string", "description": "Optional description or meeting agenda"}
+                },
+                "required": ["summary", "start_time"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "execute_python_code",
+            "description": "Runs a script of Python code safely in a restricted sandbox process and returns its standard output/error. Ideal for algorithms, sorting, complex loops, string processing, or multi-step logic. No imports, file operations, or network calls are allowed.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "code": {"type": "string", "description": "The Python code block to execute"}
+                },
+                "required": ["code"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "set_timer",
+            "description": "Sets an in-app alarm or reminder timer for a specific duration.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string", "description": "The reminder label or reason for the timer"},
+                    "duration_seconds": {"type": "integer", "description": "The duration of the timer in seconds (e.g., 300 for 5 minutes, 60 for 1 minute)"}
+                },
+                "required": ["title", "duration_seconds"]
+            }
+        }
     }
 ]
 
@@ -289,7 +349,15 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
         agent_messages = [
             {
                 "role": "system", 
-                "content": f"You are Doxa, an advanced agentic AI assistant executing a plan to achieve a goal.\nGoal: {goal}\nPlan:\n" + "\n".join(plan) + f"\n\nUse your available tools to retrieve facts, search the web, or perform calculations as needed. When you invoke a tool, make sure you format the call natively as: <function=tool_name>{{\"parameter\": \"value\"}}</function>. For example, to search the web: <function=brave_search>{{\"query\": \"latest news today\"}}</function>. To calculate: <function=calculate>{{\"expression\": \"4529 * 93\"}}</function>. When you have enough information, provide a natural and complete final response directly in {lang_str}. Cite the sources/URLs when you present search findings."
+                "content": (
+                    f"You are Doxa, an advanced agentic AI assistant executing a plan to achieve a goal.\nGoal: {goal}\nPlan:\n" + "\n".join(plan) + 
+                    f"\n\nUse your available tools to retrieve facts, search the web, execute Python code, manage calendar events, or perform calculations. "
+                    "When you invoke a tool, make sure you format the call natively as: <function=tool_name>{\"parameter\": \"value\"}</function>. "
+                    "For example, to list events: <function=list_calendar_events>{}</function>. To execute python: <function=execute_python_code>{\"code\": \"print('hello')\"}</function>. "
+                    "Note: Third-party integrations like WhatsApp messaging, Spotify control, and desktop automation are currently Coming Soon on the roadmap. "
+                    "If the user asks for these, do not attempt to invoke any tool; simply state that these features are coming soon on the roadmap.\n\n"
+                    f"When you have enough information, provide a natural and complete final response directly in {lang_str}. Cite sources/URLs when presenting search findings."
+                )
             }
         ]
         if history:
@@ -334,6 +402,22 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
                                 tool_output = web_search(args.get("query", ""))
                             elif func_name == "calculate":
                                 tool_output = calculate(args.get("expression", ""))
+                            elif func_name == "list_calendar_events":
+                                tool_output = list_calendar_events()
+                            elif func_name == "create_calendar_event":
+                                tool_output = create_calendar_event(
+                                    summary=args.get("summary", ""),
+                                    start_time=args.get("start_time", ""),
+                                    duration_minutes=int(args.get("duration_minutes", 30)),
+                                    description=args.get("description", "")
+                                )
+                            elif func_name == "execute_python_code":
+                                tool_output = execute_python_code(args.get("code", ""))
+                            elif func_name == "set_timer":
+                                tool_output = schedule_timer(
+                                    title=args.get("title", ""),
+                                    seconds=int(args.get("duration_seconds", 60))
+                                )
                             else:
                                 tool_output = f"Unknown tool: {func_name}"
                         except Exception as ex:

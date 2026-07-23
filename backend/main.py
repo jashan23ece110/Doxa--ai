@@ -221,6 +221,109 @@ async def stream_agent(run_id: str):
             
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
+from tools.timer_manager import notification_queues
+
+@app.get("/notifications/stream")
+async def notifications_stream():
+    """
+    SSE endpoint pushing real-time timer completion alerts to the frontend.
+    """
+    async def event_generator():
+        queue = asyncio.Queue()
+        notification_queues.append(queue)
+        try:
+            while True:
+                alert = await queue.get()
+                yield f"data: {json.dumps(alert)}\n\n"
+        except asyncio.CancelledError:
+            pass
+        finally:
+            if queue in notification_queues:
+                notification_queues.remove(queue)
+                
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+class TimerRequest(BaseModel):
+    title: str
+    seconds: int
+
+@app.post("/timers")
+def create_timer(req: TimerRequest):
+    from tools.timer_manager import schedule_timer
+    msg = schedule_timer(req.title, req.seconds)
+    return {"status": "ok", "message": msg}
+
+@app.get("/google/connect")
+def google_connect():
+    """
+    Generates Google OAuth authorization URL.
+    """
+    client_id = os.getenv("GOOGLE_CLIENT_ID")
+    client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+    if not client_id or not client_secret:
+        raise HTTPException(status_code=400, detail="Google Calendar OAuth credentials not configured in backend.")
+        
+    try:
+        from google_auth_oauthlib.flow import Flow
+        flow = Flow.from_client_config(
+            {
+                "web": {
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                    "token_uri": "https://oauth2.googleapis.com/token",
+                }
+            },
+            scopes=["https://www.googleapis.com/auth/calendar"]
+        )
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/oauth2callback")
+        flow.redirect_uri = redirect_uri
+        
+        authorization_url, state = flow.authorization_url(
+            access_type="offline",
+            include_granted_scopes="true"
+        )
+        return {"authorization_url": authorization_url}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Google OAuth initialization failed: {e}")
+
+@app.get("/oauth2callback")
+def oauth2callback(code: str):
+    """
+    Google OAuth callback code exchange handler.
+    """
+    client_id = os.getenv("GOOGLE_CLIENT_ID")
+    client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+    if not client_id or not client_secret:
+        raise HTTPException(status_code=400, detail="Credentials missing.")
+        
+    try:
+        from google_auth_oauthlib.flow import Flow
+        flow = Flow.from_client_config(
+            {
+                "web": {
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                    "token_uri": "https://oauth2.googleapis.com/token",
+                }
+            },
+            scopes=["https://www.googleapis.com/auth/calendar"]
+        )
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/oauth2callback")
+        flow.redirect_uri = redirect_uri
+        
+        flow.fetch_token(code=code)
+        credentials = flow.credentials
+        
+        # Save to token.json
+        with open("token.json", "w") as token:
+            token.write(credentials.to_json())
+            
+        return {"status": "success", "message": "Google Calendar connected successfully! You can close this window now."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Google OAuth callback exchange failed: {e}")
+
 @app.get("/health")
 def health_check():
     return {"status": "ok"}

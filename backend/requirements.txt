@@ -9,3 +9,6 @@ PyPDF2
 python-multipart
 tavily-python
 google-cloud-firestore
+apscheduler
+google-auth-oauthlib
+google-api-python-client

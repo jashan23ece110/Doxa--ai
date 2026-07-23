@@ -25,7 +25,7 @@ export default function HudNav({ activeOverlay, onNavigate }) {
         borderRadius: '0 12px 12px 0',
         background: 'rgba(6, 12, 28, 0.82)',
         backdropFilter: 'blur(12px)',
-        border: '1px solid rgba(220, 20, 60, 0.08)',
+        border: '1px solid rgba(var(--jarvis-accent-rgb), 0.08)',
         borderLeft: 'none',
         boxShadow: '4px 0 24px rgba(0, 0, 0, 0.3)',
       }}
@@ -51,7 +51,7 @@ export default function HudNav({ activeOverlay, onNavigate }) {
               justifyContent: 'center',
               gap: '2px',
               background: isActive
-                ? 'rgba(220, 20, 60, 0.08)'
+                ? 'rgba(var(--jarvis-accent-rgb), 0.08)'
                 : 'transparent',
               border: 'none',
               borderRadius: '8px',
@@ -59,17 +59,17 @@ export default function HudNav({ activeOverlay, onNavigate }) {
               padding: 0,
               transition: 'background 0.2s ease',
               borderLeft: isActive
-                ? '2px solid #dc143c'
+                ? '2px solid var(--jarvis-accent)'
                 : '2px solid transparent',
             }}
           >
             <Icon
               size={17}
-              color={isActive ? '#dc143c' : '#7a7060'}
+              color={isActive ? 'var(--jarvis-accent)' : '#7a7060'}
               style={{
                 transition: 'color 0.2s ease',
                 filter: isActive
-                  ? 'drop-shadow(0 0 4px rgba(220, 20, 60, 0.5))'
+                  ? 'drop-shadow(0 0 4px rgba(var(--jarvis-accent-rgb), 0.5))'
                   : 'none',
               }}
             />
@@ -79,7 +79,7 @@ export default function HudNav({ activeOverlay, onNavigate }) {
                 fontSize: '6px',
                 fontWeight: 600,
                 letterSpacing: '0.08em',
-                color: isActive ? '#dc143c' : '#3a4d62',
+                color: isActive ? 'var(--jarvis-accent)' : '#3a4d62',
                 textTransform: 'uppercase',
                 lineHeight: 1,
                 transition: 'color 0.2s ease',

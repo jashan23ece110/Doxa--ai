@@ -19,7 +19,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
         style={{
           fontFamily: "'Orbitron', sans-serif",
           fontSize: '0.7rem',
-          color: '#dc143c',
+          color: 'var(--jarvis-accent)',
           textTransform: 'uppercase',
           letterSpacing: '0.25em',
           marginBottom: '1rem',
@@ -46,7 +46,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
               cy={CENTER}
               r={RADIUS}
               fill="none"
-              stroke="rgba(220, 20, 60,0.08)"
+              stroke="rgba(var(--jarvis-accent-rgb),0.08)"
               strokeWidth="6"
             />
 
@@ -56,7 +56,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
               cy={CENTER}
               r={RADIUS}
               fill="none"
-              stroke="#dc143c"
+              stroke="var(--jarvis-accent)"
               strokeWidth="6"
               strokeLinecap="round"
               strokeDasharray={CIRCUMFERENCE}
@@ -65,7 +65,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
                 transition: 'stroke-dashoffset 0.8s ease-in-out',
                 transform: 'rotate(-90deg)',
                 transformOrigin: '50% 50%',
-                filter: 'drop-shadow(0 0 6px rgba(220, 20, 60,0.7))',
+                filter: 'drop-shadow(0 0 6px rgba(var(--jarvis-accent-rgb),0.7))',
               }}
             />
 
@@ -78,7 +78,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
               style={{
                 fontFamily: "'JetBrains Mono', monospace",
                 fontSize: '1.4rem',
-                fill: '#dc143c',
+                fill: 'var(--jarvis-accent)',
               }}
             >
               {clampedCount}
@@ -89,7 +89,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
             style={{
               fontFamily: "'Orbitron', sans-serif",
               fontSize: '0.6rem',
-              color: '#dc143c',
+              color: 'var(--jarvis-accent)',
               textTransform: 'uppercase',
               letterSpacing: '0.2em',
               marginTop: '0.35rem',
@@ -108,7 +108,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
               cy={CENTER}
               r={RADIUS}
               fill="none"
-              stroke="rgba(220, 20, 60,0.08)"
+              stroke="rgba(var(--jarvis-accent-rgb),0.08)"
               strokeWidth="1.5"
             />
 
@@ -118,7 +118,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
               cy={CENTER}
               r={RADIUS - 10}
               fill="none"
-              stroke="rgba(220, 20, 60,0.06)"
+              stroke="rgba(var(--jarvis-accent-rgb),0.06)"
               strokeWidth="1"
             />
 
@@ -128,7 +128,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
               cy={CENTER}
               r={RADIUS - 20}
               fill="none"
-              stroke="rgba(220, 20, 60,0.04)"
+              stroke="rgba(var(--jarvis-accent-rgb),0.04)"
               strokeWidth="1"
             />
 
@@ -143,7 +143,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
                   cx={x}
                   cy={y}
                   r="2"
-                  fill="#dc143c"
+                  fill="var(--jarvis-accent)"
                   opacity="0.6"
                 />
               );
@@ -155,7 +155,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
               y1={CENTER}
               x2={CENTER}
               y2={CENTER - RADIUS + 4}
-              stroke="#dc143c"
+              stroke="var(--jarvis-accent)"
               strokeWidth="1.5"
               strokeLinecap="round"
               opacity="0.7"
@@ -172,7 +172,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
               style={{
                 fontFamily: "'JetBrains Mono', monospace",
                 fontSize: '1.2rem',
-                fill: '#dc143c',
+                fill: 'var(--jarvis-accent)',
               }}
             >
               98%
@@ -183,7 +183,7 @@ const RadarGauge = ({ queriesCount = 0 }) => {
             style={{
               fontFamily: "'Orbitron', sans-serif",
               fontSize: '0.6rem',
-              color: '#dc143c',
+              color: 'var(--jarvis-accent)',
               textTransform: 'uppercase',
               letterSpacing: '0.2em',
               marginTop: '0.35rem',

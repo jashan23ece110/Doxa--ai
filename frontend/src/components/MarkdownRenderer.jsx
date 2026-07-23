@@ -19,9 +19,9 @@ export default function MarkdownRenderer({ content = '' }) {
           const codeText = codeLines.join('\n').replace(/^\n+|\n+$/g, '');
           
           return (
-            <div key={index} className="my-2 border border-[#dc143c]/15 rounded-xl overflow-hidden shadow-inner bg-neutral-950/90 font-mono text-[12px]">
+            <div key={index} className="my-2 border border-[var(--jarvis-accent)]/15 rounded-xl overflow-hidden shadow-inner bg-neutral-950/90 font-mono text-[12px]">
               {hasLang && (
-                <div className="bg-neutral-900 border-b border-[#dc143c]/10 px-4 py-1.5 text-[10px] text-neutral-400 font-bold uppercase tracking-wider flex justify-between items-center" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                <div className="bg-neutral-900 border-b border-[var(--jarvis-accent)]/10 px-4 py-1.5 text-[10px] text-neutral-400 font-bold uppercase tracking-wider flex justify-between items-center" style={{ fontFamily: 'Orbitron, sans-serif' }}>
                   <span>{firstLine}</span>
                   <button 
                     onClick={() => navigator.clipboard.writeText(codeText)}
@@ -31,7 +31,7 @@ export default function MarkdownRenderer({ content = '' }) {
                   </button>
                 </div>
               )}
-              <pre className="p-4 overflow-x-auto hud-scrollbar max-h-96 text-[#ff4500]">
+              <pre className="p-4 overflow-x-auto hud-scrollbar max-h-96 text-[var(--jarvis-accent-hover)]">
                 <code>{codeText}</code>
               </pre>
             </div>
@@ -55,7 +55,7 @@ export default function MarkdownRenderer({ content = '' }) {
               }
               if (trimmed.startsWith('## ')) {
                 return (
-                  <h2 key={lIdx} className="text-md font-bold text-[#dc143c] uppercase tracking-wider mt-4 mb-1 font-orbitron" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                  <h2 key={lIdx} className="text-md font-bold text-[var(--jarvis-accent)] uppercase tracking-wider mt-4 mb-1 font-orbitron" style={{ fontFamily: 'Orbitron, sans-serif' }}>
                     {parseInline(trimmed.substring(3))}
                   </h2>
                 );
@@ -106,7 +106,7 @@ function parseInline(text) {
     }
     if (token.startsWith('`') && token.endsWith('`')) {
       return (
-        <code key={index} className="px-1.5 py-0.5 bg-neutral-900 border border-[#dc143c]/15 text-[#ff4500] rounded font-mono text-xs mx-0.5">
+        <code key={index} className="px-1.5 py-0.5 bg-neutral-900 border border-[var(--jarvis-accent)]/15 text-[var(--jarvis-accent-hover)] rounded font-mono text-xs mx-0.5">
           {token.slice(1, -1)}
         </code>
       );

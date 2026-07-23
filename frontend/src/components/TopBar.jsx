@@ -23,7 +23,7 @@ const TopBar = ({ user }) => {
       style={{
         height: 48,
         background: 'transparent',
-        borderBottom: '1px solid rgba(220, 20, 60,0.15)',
+        borderBottom: '1px solid rgba(var(--jarvis-accent-rgb),0.15)',
       }}
     >
       {/* Left — Branding */}
@@ -43,7 +43,7 @@ const TopBar = ({ user }) => {
       <div className="flex flex-col items-center leading-tight">
         <span
           className="text-base tracking-wider"
-          style={{ fontFamily: "'JetBrains Mono', monospace", color: '#dc143c' }}
+          style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--jarvis-accent)' }}
         >
           {formatTime(now)}
         </span>

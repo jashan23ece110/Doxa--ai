@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Activity, Clock, Zap, History, Settings, Bot, Code2, AlertTriangle, LogOut, CheckCircle2, Play, Download, Loader2, FileText, Upload, Trash2, BookOpen, ChevronDown, ChevronUp, Terminal, Menu, X, Cpu, Layers, Inbox } from 'lucide-react';
+import { Sparkles, Activity, Clock, Zap, History, Settings, Bot, Code2, AlertTriangle, LogOut, CheckCircle2, Play, Download, Loader2, FileText, Upload, Trash2, BookOpen, ChevronDown, ChevronUp, Terminal, Menu, X, Cpu, Layers, Inbox, Paintbrush } from 'lucide-react';
 import axios from 'axios';
 
 /* ── new Jarvis components ── */
 import Dashboard from './components/Dashboard';
 import ChatPanel from './components/ChatPanel';
 import VoiceListener from './components/VoiceListener';
+import VoiceTelemetry from './components/VoiceTelemetry';
+import { THEMES } from './theme';
 
 /* ── animation variants (kept for overlay tab views) ── */
 const pageVariants = {
@@ -66,6 +68,26 @@ function App() {
     model1Name: 'Llama 3.1 8B (Instant)',
     model2Name: 'Llama 3.3 70B (Versatile)',
   });
+
+  /* Theme configuration */
+  const [theme, setTheme] = useState(() => localStorage.getItem('doxa_theme') || 'ultron');
+
+  useEffect(() => {
+    const t = theme === 'aether' ? THEMES.aether : THEMES.ultron;
+    const root = document.documentElement;
+    root.style.setProperty('--jarvis-accent', t.accent);
+    root.style.setProperty('--jarvis-accent-hover', t.accentHover);
+    root.style.setProperty('--jarvis-accent-rgb', t.accentRgb);
+    root.style.setProperty('--jarvis-accent-hover-rgb', t.accentHoverRgb);
+    root.style.setProperty('--jarvis-bg', t.bg);
+    root.style.setProperty('--jarvis-surface', t.surface);
+    root.style.setProperty('--jarvis-panel', t.panel);
+    root.style.setProperty('--jarvis-border', t.border);
+    root.style.setProperty('--jarvis-border-bright', t.borderBright);
+    root.style.setProperty('--jarvis-text', t.text);
+    root.style.setProperty('--jarvis-text-dim', t.textDim);
+    localStorage.setItem('doxa_theme', theme);
+  }, [theme]);
 
   /* RAG state */
   const [useRag, setUseRag] = useState(false);
@@ -416,14 +438,14 @@ function App() {
       variants={staggerItem}
       className="bg-[#141414] border panel-glow rounded-xl flex flex-col overflow-hidden shadow-sm h-full"
     >
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[rgba(220, 20, 60,0.1)] bg-[#0a0a0a]">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[rgba(var(--jarvis-accent-rgb),0.1)] bg-[#0a0a0a]">
         <h3 className="font-medium text-[14px] text-white" style={{ fontFamily: 'Rajdhani, sans-serif' }}>{title}</h3>
         <div className="flex items-center gap-2">
           {data?.latency_ms && (
             <span className="text-[11px] px-2 py-0.5 bg-[#0a0a0a] border panel-glow rounded text-[#7a7060]" style={{ fontFamily: 'JetBrains Mono, monospace' }}>{data.latency_ms}ms</span>
           )}
           {data && (
-            <span className={`text-[11px] font-medium px-2 py-0.5 rounded border ${data._useRag ? 'bg-[rgba(220, 20, 60,0.1)] border-[rgba(220, 20, 60,0.2)] text-[#dc143c]' : 'bg-[#0a0a0a] border-[rgba(220, 20, 60,0.1)] text-[#7a7060]'}`}>
+            <span className={`text-[11px] font-medium px-2 py-0.5 rounded border ${data._useRag ? 'bg-[rgba(var(--jarvis-accent-rgb),0.1)] border-[rgba(var(--jarvis-accent-rgb),0.2)] text-[var(--jarvis-accent)]' : 'bg-[#0a0a0a] border-[rgba(var(--jarvis-accent-rgb),0.1)] text-[#7a7060]'}`}>
               {data._useRag ? 'RAG' : 'Model'}
             </span>
           )}
@@ -442,7 +464,7 @@ function App() {
       {/* context drawer */}
       <AnimatePresence>
         {retrievedContext?.length > 0 && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="border-t border-[rgba(220, 20, 60,0.1)] overflow-hidden">
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="border-t border-[rgba(var(--jarvis-accent-rgb),0.1)] overflow-hidden">
             <button onClick={() => setShowContext(!showContext)} className="w-full flex items-center justify-between px-4 py-2 text-[12px] text-[#7a7060] hover:bg-[#141414] transition-colors">
               <span className="flex items-center gap-1.5"><BookOpen className="w-3.5 h-3.5" /> Context ({retrievedContext.length})</span>
               {showContext ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -453,7 +475,7 @@ function App() {
                   {retrievedContext.map((c, i) => (
                     <div key={i} className="p-2.5 bg-[#0a0a0a] rounded border panel-glow text-[12px]">
                       <div className="flex justify-between mb-1">
-                        <span className="text-[#dc143c] font-medium flex items-center gap-1"><FileText className="w-3 h-3" />{c.filename || 'Unknown'}</span>
+                        <span className="text-[var(--jarvis-accent)] font-medium flex items-center gap-1"><FileText className="w-3 h-3" />{c.filename || 'Unknown'}</span>
                         <span className="text-[#7a7060]" style={{ fontFamily: 'JetBrains Mono, monospace' }}>{c.similarity ? `${(c.similarity * 100).toFixed(1)}%` : ''}</span>
                       </div>
                       <p className="text-[#e0d6c2] leading-relaxed whitespace-pre-wrap">{c.text}</p>
@@ -474,10 +496,10 @@ function App() {
      ═══════════════════════════════════════════ */
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 selection:bg-[rgba(220, 20, 60,0.2)]" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
+      <div className="min-h-screen bg-[#0a0a0a] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 selection:bg-[rgba(var(--jarvis-accent-rgb),0.2)]" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="sm:mx-auto sm:w-full sm:max-w-md">
           <div className="flex justify-center mb-6">
-            <div className="p-3 bg-[#141414] rounded-xl border panel-glow"><Sparkles className="w-8 h-8 text-[#dc143c]" /></div>
+            <div className="p-3 bg-[#141414] rounded-xl border panel-glow"><Sparkles className="w-8 h-8 text-[var(--jarvis-accent)]" /></div>
           </div>
           <h2 className="text-center text-2xl font-bold text-white" style={{ fontFamily: 'Orbitron, sans-serif' }}>DOXA</h2>
           <p className="mt-2 text-center text-sm text-[#7a7060]">
@@ -509,13 +531,13 @@ function App() {
                   <input id="otp" name="otp" type="text" required placeholder="123456" className="mt-1 block w-full px-3 py-2.5 border panel-glow rounded-lg bg-[#141414] text-white placeholder-[#7a7060] input-glow sm:text-sm text-center tracking-widest text-lg" style={{ fontFamily: 'JetBrains Mono, monospace' }} />
                 </div>
               )}
-              <motion.button type="submit" whileHover={hoverScale} whileTap={tapScale} className="w-full py-2.5 px-4 rounded-lg text-sm font-bold text-[#0a0a0a] bg-[#dc143c] hover:bg-[#ff4500] hover:shadow-[0_0_25px_rgba(220, 20, 60,0.4)] transition-all duration-100" style={{ fontFamily: 'Orbitron, sans-serif', letterSpacing: '0.1em' }}>
+              <motion.button type="submit" whileHover={hoverScale} whileTap={tapScale} className="w-full py-2.5 px-4 rounded-lg text-sm font-bold text-[#0a0a0a] bg-[var(--jarvis-accent)] hover:bg-[var(--jarvis-accent-hover)] hover:shadow-[0_0_25px_rgba(var(--jarvis-accent-rgb),0.4)] transition-all duration-100" style={{ fontFamily: 'Orbitron, sans-serif', letterSpacing: '0.1em' }}>
                 {authMode === 'login' ? 'SIGN IN' : authMode === 'signup' ? 'CREATE ACCOUNT' : authMode === 'phone' ? 'SEND CODE' : 'VERIFY'}
               </motion.button>
             </form>
 
             <div className="mt-6">
-              <div className="relative"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[rgba(220, 20, 60,0.1)]" /></div><div className="relative flex justify-center text-sm"><span className="px-2 bg-[#0a0a0a] text-[#7a7060]">Or continue with</span></div></div>
+              <div className="relative"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[rgba(var(--jarvis-accent-rgb),0.1)]" /></div><div className="relative flex justify-center text-sm"><span className="px-2 bg-[#0a0a0a] text-[#7a7060]">Or continue with</span></div></div>
               <div className="mt-6 grid grid-cols-2 gap-3">
                 <button type="button" onClick={() => setAuthMode('phone')} className="w-full py-2 px-4 border panel-glow rounded-lg bg-[#141414] text-sm font-medium text-[#e0d6c2] hover:bg-[#1e1e1e] transition-colors">Phone</button>
                 <button type="button" onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} className="w-full py-2 px-4 border panel-glow rounded-lg bg-[#141414] text-sm font-medium text-[#e0d6c2] hover:bg-[#1e1e1e] transition-colors">
@@ -569,8 +591,18 @@ function App() {
           sessionStart={sessionStart}
           activeOverlay={activeOverlay}
           onNavigate={handleNavigate}
+          themeName={theme}
         />
       </div>
+
+      {/* ── Voice Speaking Telemetry HUD ── */}
+      <AnimatePresence>
+        {isSpeaking && (
+          <div className="px-6 pb-2 shrink-0 z-20">
+            <VoiceTelemetry isSpeaking={isSpeaking} />
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* ── Sleek Fixed Bottom Chat Panel ── */}
       <ChatPanel
@@ -608,12 +640,12 @@ function App() {
               animate={{ x: 0 }}
               exit={{ x: -280 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed left-0 top-0 bottom-0 w-[280px] bg-neutral-950/95 border-r border-[#dc143c]/15 backdrop-blur-lg z-50 p-4 flex flex-col gap-4 shadow-2xl"
+              className="fixed left-0 top-0 bottom-0 w-[280px] bg-neutral-950/95 border-r border-[var(--jarvis-accent)]/15 backdrop-blur-lg z-50 p-4 flex flex-col gap-4 shadow-2xl"
               style={{ fontFamily: 'Rajdhani, sans-serif' }}
             >
               {/* Header */}
-              <div className="flex items-center justify-between border-b border-[#dc143c]/10 pb-3">
-                <h3 className="text-sm font-bold text-[#dc143c] uppercase tracking-wider font-orbitron" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+              <div className="flex items-center justify-between border-b border-[var(--jarvis-accent)]/10 pb-3">
+                <h3 className="text-sm font-bold text-[var(--jarvis-accent)] uppercase tracking-wider font-orbitron" style={{ fontFamily: 'Orbitron, sans-serif' }}>
                   Conversations
                 </h3>
                 <button
@@ -640,7 +672,7 @@ function App() {
                   setCurrentSessionId(newId);
                   setSidebarOpen(false);
                 }}
-                className="w-full py-2 px-3 rounded-xl border border-[#dc143c]/20 hover:border-[#dc143c]/40 text-[#dc143c] bg-[#dc143c]/5 hover:bg-[#dc143c]/10 text-xs font-bold tracking-wider transition-all uppercase flex items-center justify-center gap-1.5"
+                className="w-full py-2 px-3 rounded-xl border border-[var(--jarvis-accent)]/20 hover:border-[var(--jarvis-accent)]/40 text-[var(--jarvis-accent)] bg-[var(--jarvis-accent)]/5 hover:bg-[var(--jarvis-accent)]/10 text-xs font-bold tracking-wider transition-all uppercase flex items-center justify-center gap-1.5"
                 style={{ fontFamily: 'Orbitron, sans-serif' }}
               >
                 <span>+ New Chat</span>
@@ -659,12 +691,12 @@ function App() {
                       }}
                       className={`group p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 ${
                         isActive
-                          ? 'bg-[#dc143c]/10 border-[#dc143c]/30 text-white shadow-md'
+                          ? 'bg-[var(--jarvis-accent)]/10 border-[var(--jarvis-accent)]/30 text-white shadow-md'
                           : 'bg-neutral-900/50 border-neutral-800 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/80 hover:border-neutral-700'
                       }`}
                     >
                       <div className="flex items-center gap-2 truncate">
-                        <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-[#dc143c]' : 'text-neutral-500'}`} />
+                        <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-[var(--jarvis-accent)]' : 'text-neutral-500'}`} />
                         <span className="text-xs font-medium truncate">{s.title}</span>
                       </div>
                       
@@ -715,14 +747,14 @@ function App() {
               width: '90%',
               padding: '16px 20px',
               borderRadius: '14px',
-              border: '1px solid rgba(220, 20, 60, 0.2)',
+              border: '1px solid rgba(var(--jarvis-accent-rgb), 0.2)',
               background: 'linear-gradient(145deg, rgba(10, 18, 36, 0.96), rgba(6, 12, 28, 0.98))',
               backdropFilter: 'blur(12px)',
-              boxShadow: '0 0 30px rgba(220, 20, 60, 0.1)',
+              boxShadow: '0 0 30px rgba(var(--jarvis-accent-rgb), 0.1)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '10px', color: '#dc143c', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Voice not supported — showing text</span>
+              <span style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '10px', color: 'var(--jarvis-accent)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Voice not supported — showing text</span>
               <button onClick={() => setVoiceFallbackText(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px', display: 'flex' }}>
                 <X className="w-4 h-4" style={{ color: '#7a7060' }} />
               </button>
@@ -753,8 +785,8 @@ function App() {
               onClick={(e) => e.stopPropagation()}
             >
               {/* overlay header */}
-              <div className="flex items-center justify-between px-5 py-3 border-b border-[rgba(220, 20, 60,0.15)]">
-                <h2 className="text-sm font-bold text-[#dc143c] uppercase tracking-[0.15em]" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+              <div className="flex items-center justify-between px-5 py-3 border-b border-[rgba(var(--jarvis-accent-rgb),0.15)]">
+                <h2 className="text-sm font-bold text-[var(--jarvis-accent)] uppercase tracking-[0.15em]" style={{ fontFamily: 'Orbitron, sans-serif' }}>
                   {activeOverlay === 'eval' && 'MODEL EVALUATION'}
                   {activeOverlay === 'documents' && 'KNOWLEDGE BASE'}
                   {activeOverlay === 'history' && 'EVALUATION HISTORY'}
@@ -778,7 +810,7 @@ function App() {
                           <button
                             type="button" onClick={() => setUseRag(!useRag)}
                             className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all border ${
-                              useRag ? 'bg-[rgba(220, 20, 60,0.1)] text-[#dc143c] border-[rgba(220, 20, 60,0.2)]' : 'bg-[#141414] text-[#7a7060] border-[rgba(220, 20, 60,0.1)] hover:border-[rgba(220, 20, 60,0.2)]'
+                              useRag ? 'bg-[rgba(var(--jarvis-accent-rgb),0.1)] text-[var(--jarvis-accent)] border-[rgba(var(--jarvis-accent-rgb),0.2)]' : 'bg-[#141414] text-[#7a7060] border-[rgba(var(--jarvis-accent-rgb),0.1)] hover:border-[rgba(var(--jarvis-accent-rgb),0.2)]'
                             }`}
                           >
                             <BookOpen className="w-3.5 h-3.5" /> KB {useRag ? 'ON' : 'OFF'}
@@ -805,7 +837,7 @@ function App() {
                             )}
                             <motion.button type="submit" disabled={!prompt.trim() || loading} whileHover={prompt.trim() && !loading ? hoverScale : {}} whileTap={prompt.trim() && !loading ? tapScale : {}}
                               className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold transition-all duration-100 ${
-                                !prompt.trim() || loading ? 'bg-[#1e1e1e] text-[#7a7060] cursor-not-allowed' : 'bg-[#dc143c] hover:bg-[#ff4500] text-[#0a0a0a] hover:shadow-[0_0_25px_rgba(220, 20, 60,0.4)]'
+                                !prompt.trim() || loading ? 'bg-[#1e1e1e] text-[#7a7060] cursor-not-allowed' : 'bg-[var(--jarvis-accent)] hover:bg-[var(--jarvis-accent-hover)] text-[#0a0a0a] hover:shadow-[0_0_25px_rgba(var(--jarvis-accent-rgb),0.4)]'
                               } ${loading ? 'btn-glow-pulse' : ''}`}
                               style={{ fontFamily: 'Orbitron, sans-serif', letterSpacing: '0.1em' }}
                             >
@@ -831,13 +863,13 @@ function App() {
                     <motion.div variants={staggerItem}>
                       <label
                         className={`flex flex-col items-center justify-center gap-3 py-8 sm:py-10 hud-panel border-dashed cursor-pointer transition-all ${
-                          uploadingDoc ? 'border-[rgba(220, 20, 60,0.5)] bg-[rgba(220, 20, 60,0.05)]' : 'hover:border-[rgba(220, 20, 60,0.3)] hover:bg-[#141414]'
+                          uploadingDoc ? 'border-[rgba(var(--jarvis-accent-rgb),0.5)] bg-[rgba(var(--jarvis-accent-rgb),0.05)]' : 'hover:border-[rgba(var(--jarvis-accent-rgb),0.3)] hover:bg-[#141414]'
                         }`}
                         onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                         onDrop={(e) => { e.preventDefault(); e.stopPropagation(); const f = e.dataTransfer.files[0]; if (f) handleUploadDoc(f); }}
                       >
                         <input type="file" className="hidden" accept=".txt,.pdf,.md,.csv,.json" onChange={(e) => { const f = e.target.files[0]; if (f) handleUploadDoc(f); }} />
-                        {uploadingDoc ? <Loader2 className="w-7 h-7 text-[#dc143c] animate-spin" /> : <Upload className="w-7 h-7 text-[#7a7060]" />}
+                        {uploadingDoc ? <Loader2 className="w-7 h-7 text-[var(--jarvis-accent)] animate-spin" /> : <Upload className="w-7 h-7 text-[#7a7060]" />}
                         <div className="text-center">
                           <p className="text-sm font-medium text-[#e0d6c2]">{uploadingDoc ? 'Uploading…' : 'Drop files here or click to upload'}</p>
                           <p className="text-[11px] text-[#7a7060] mt-1" style={{ fontFamily: 'JetBrains Mono, monospace' }}>TXT, PDF, MD, CSV, JSON</p>
@@ -932,9 +964,43 @@ function App() {
                         </div>
                       </div>
                     </motion.div>
-                    <motion.div variants={staggerItem} className="pt-5 mt-4 border-t border-[rgba(220, 20, 60,0.1)]">
+                    
+                    <motion.div variants={staggerItem} className="pt-5 mt-4 border-t border-[rgba(var(--jarvis-accent-rgb),0.15)]">
+                      <h3 className="text-[15px] font-medium text-white mb-1" style={{ fontFamily: 'Rajdhani, sans-serif' }}>Theme Switcher</h3>
+                      <p className="text-xs text-[#7a7060] mb-4">Choose the visual style of your Mission Control interface.</p>
+                      <div className="flex gap-4">
+                        <button
+                          type="button"
+                          onClick={() => setTheme('ultron')}
+                          className={`flex-1 py-3 px-4 rounded-xl border flex items-center justify-center gap-2.5 transition-all font-bold tracking-wider text-xs uppercase cursor-pointer ${
+                            theme === 'ultron'
+                              ? 'bg-[rgba(var(--jarvis-accent-rgb),0.12)] border-[var(--jarvis-accent)] text-white shadow-[0_0_15px_rgba(var(--jarvis-accent-rgb),0.25)]'
+                              : 'bg-neutral-900/60 border-neutral-800 text-neutral-400 hover:text-neutral-200 hover:border-neutral-700'
+                          }`}
+                          style={{ fontFamily: 'Orbitron, sans-serif' }}
+                        >
+                          <span className="w-2.5 h-2.5 rounded-full bg-[var(--jarvis-accent)]" />
+                          Ultron Crimson
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTheme('aether')}
+                          className={`flex-1 py-3 px-4 rounded-xl border flex items-center justify-center gap-2.5 transition-all font-bold tracking-wider text-xs uppercase cursor-pointer ${
+                            theme === 'aether'
+                              ? 'bg-[rgba(0,217,255,0.12)] border-[var(--jarvis-accent)] text-white shadow-[0_0_15px_rgba(0,217,255,0.25)]'
+                              : 'bg-neutral-900/60 border-neutral-800 text-neutral-400 hover:text-neutral-200 hover:border-neutral-700'
+                          }`}
+                          style={{ fontFamily: 'Orbitron, sans-serif' }}
+                        >
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#00d9ff]" />
+                          Aether Blue
+                        </button>
+                      </div>
+                    </motion.div>
+
+                    <motion.div variants={staggerItem} className="pt-5 mt-4 border-t border-[rgba(var(--jarvis-accent-rgb),0.15)]">
                       <h3 className="text-[15px] font-medium text-white mb-1">Account</h3>
-                      <p className="text-xs text-[#7a7060] mb-3">Signed in as <span className="text-[#dc143c] font-medium">{user}</span></p>
+                      <p className="text-xs text-[#7a7060] mb-3">Signed in as <span className="text-[var(--jarvis-accent)] font-medium">{user}</span></p>
                       <motion.button onClick={handleLogout} whileHover={hoverScale} whileTap={tapScale}
                         className="px-4 py-2 bg-[rgba(255,51,102,0.1)] hover:bg-[rgba(255,51,102,0.2)] text-[#ff3366] border border-[rgba(255,51,102,0.2)] rounded-md text-sm font-medium transition-colors flex items-center gap-2">
                         <LogOut className="w-4 h-4" /> Sign Out

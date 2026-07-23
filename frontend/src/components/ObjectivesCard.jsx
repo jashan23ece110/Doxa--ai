@@ -18,7 +18,7 @@ const MetricItem = ({ icon: Icon, label, value, target, showBar }) => {
       </div>
       <span
         className="text-lg"
-        style={{ fontFamily: "'JetBrains Mono', monospace", color: '#dc143c' }}
+        style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--jarvis-accent)' }}
       >
         {value}
         {target != null && (
@@ -31,14 +31,14 @@ const MetricItem = ({ icon: Icon, label, value, target, showBar }) => {
       {showBar && (
         <div
           className="w-full h-[3px] rounded-full overflow-hidden"
-          style={{ background: 'rgba(220, 20, 60,0.08)' }}
+          style={{ background: 'rgba(var(--jarvis-accent-rgb),0.08)' }}
         >
           <div
             className="h-full rounded-full transition-all duration-700 ease-out"
             style={{
               width: `${progress}%`,
-              background: 'linear-gradient(90deg, #dc143c, #00ff88)',
-              boxShadow: '0 0 8px rgba(220, 20, 60,0.4)',
+              background: 'linear-gradient(90deg, var(--jarvis-accent), #00ff88)',
+              boxShadow: '0 0 8px rgba(var(--jarvis-accent-rgb),0.4)',
             }}
           />
         </div>
@@ -75,7 +75,7 @@ const ObjectivesCard = ({ queriesCount = 0, sessionStart }) => {
     >
       <h3
         className="text-[10px] uppercase tracking-[0.2em] mb-4"
-        style={{ fontFamily: "'Orbitron', sans-serif", color: '#dc143c' }}
+        style={{ fontFamily: "'Orbitron', sans-serif", color: 'var(--jarvis-accent)' }}
       >
         Objectives
       </h3>

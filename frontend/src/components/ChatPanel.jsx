@@ -75,7 +75,7 @@ export default function ChatPanel({
   return (
     <div className="w-full max-w-4xl mx-auto px-4 pb-6 pt-2 z-30 pointer-events-auto">
       <div 
-        className="backdrop-blur-md bg-neutral-950/75 border border-[#dc143c]/15 rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col transition-all duration-300"
+        className="backdrop-blur-md bg-neutral-950/75 border border-[var(--jarvis-accent)]/15 rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col transition-all duration-300"
       >
         {/* ── Chat History (only shown when history has items or agent is loading) ── */}
         <AnimatePresence>
@@ -84,7 +84,7 @@ export default function ChatPanel({
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="border-b border-[#dc143c]/10 max-h-48 overflow-y-auto hud-scrollbar p-4 flex flex-col gap-3 bg-neutral-950/40"
+              className="border-b border-[var(--jarvis-accent)]/10 max-h-48 overflow-y-auto hud-scrollbar p-4 flex flex-col gap-3 bg-neutral-950/40"
             >
               {chatHistory.map((msg, i) => (
                 <div 
@@ -93,15 +93,15 @@ export default function ChatPanel({
                 >
                   <div className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 ${
                     msg.role === 'user' 
-                      ? 'bg-neutral-900 border-[#dc143c]/20 text-[#dc143c]' 
-                      : 'bg-[#dc143c]/10 border-[#dc143c]/30 text-[#dc143c]'
+                      ? 'bg-neutral-900 border-[var(--jarvis-accent)]/20 text-[var(--jarvis-accent)]' 
+                      : 'bg-[var(--jarvis-accent)]/10 border-[var(--jarvis-accent)]/30 text-[var(--jarvis-accent)]'
                   }`}>
                     {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                   </div>
                   <div className={`p-3 rounded-xl text-sm leading-relaxed border ${
                     msg.role === 'user'
-                      ? 'bg-neutral-900/80 border-[#dc143c]/10 text-[#e0d6c2]'
-                      : 'bg-[#dc143c]/5 border-[#dc143c]/15 text-white'
+                      ? 'bg-neutral-900/80 border-[var(--jarvis-accent)]/10 text-[#e0d6c2]'
+                      : 'bg-[var(--jarvis-accent)]/5 border-[var(--jarvis-accent)]/15 text-white'
                   }`} style={{ fontFamily: 'Rajdhani, sans-serif' }}>
                     {msg.role === 'user' ? (
                       <p className="whitespace-pre-wrap">{msg.text}</p>
@@ -121,10 +121,10 @@ export default function ChatPanel({
               {agentLoading && (
                 <div className="flex flex-col gap-3.5 self-start w-full max-w-[480px]">
                   <div className="flex gap-3 items-center">
-                    <div className="w-7 h-7 rounded-lg border bg-[#dc143c]/10 border-[#dc143c]/30 text-[#dc143c] flex items-center justify-center animate-pulse">
+                    <div className="w-7 h-7 rounded-lg border bg-[var(--jarvis-accent)]/10 border-[var(--jarvis-accent)]/30 text-[var(--jarvis-accent)] flex items-center justify-center animate-pulse">
                       <Bot className="w-4 h-4" />
                     </div>
-                    <div className="flex items-center gap-1.5 px-3 py-2 bg-[#dc143c]/5 border border-[#dc143c]/10 rounded-xl text-xs text-[#dc143c]">
+                    <div className="flex items-center gap-1.5 px-3 py-2 bg-[var(--jarvis-accent)]/5 border border-[var(--jarvis-accent)]/10 rounded-xl text-xs text-[var(--jarvis-accent)]">
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       <span>
                         {(() => {
@@ -163,13 +163,13 @@ export default function ChatPanel({
                     }
 
                     return (
-                      <div className="flex items-center justify-between px-3 py-2 bg-neutral-900/60 border border-[#dc143c]/10 rounded-xl text-[10px] tracking-wider text-neutral-400 font-medium w-full" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                      <div className="flex items-center justify-between px-3 py-2 bg-neutral-900/60 border border-[var(--jarvis-accent)]/10 rounded-xl text-[10px] tracking-wider text-neutral-400 font-medium w-full" style={{ fontFamily: 'Orbitron, sans-serif' }}>
                         {/* Planning Step */}
                         <div className="flex items-center gap-1.5">
                           <span className={`w-1.5 h-1.5 rounded-full ${
-                            currentPhase === 'Planning' ? 'bg-[#ff4500] animate-pulse' : 'bg-[#dc143c]'
+                            currentPhase === 'Planning' ? 'bg-[var(--jarvis-accent-hover)] animate-pulse' : 'bg-[var(--jarvis-accent)]'
                           }`} />
-                          <span className={currentPhase === 'Planning' ? 'text-[#ff4500] font-bold' : 'text-neutral-400'}>PLANNING</span>
+                          <span className={currentPhase === 'Planning' ? 'text-[var(--jarvis-accent-hover)] font-bold' : 'text-neutral-400'}>PLANNING</span>
                         </div>
                         
                         <span className="text-neutral-600">➔</span>
@@ -177,10 +177,10 @@ export default function ChatPanel({
                         {/* Executing Step */}
                         <div className="flex items-center gap-1.5">
                           <span className={`w-1.5 h-1.5 rounded-full ${
-                            currentPhase === 'Executing' ? 'bg-[#ff4500] animate-pulse' : 
-                            (currentPhase === 'Reviewing' || currentPhase === 'Done') ? 'bg-[#dc143c]' : 'bg-neutral-600'
+                            currentPhase === 'Executing' ? 'bg-[var(--jarvis-accent-hover)] animate-pulse' : 
+                            (currentPhase === 'Reviewing' || currentPhase === 'Done') ? 'bg-[var(--jarvis-accent)]' : 'bg-neutral-600'
                           }`} />
-                          <span className={currentPhase === 'Executing' ? 'text-[#ff4500] font-bold' : 
+                          <span className={currentPhase === 'Executing' ? 'text-[var(--jarvis-accent-hover)] font-bold' : 
                             (currentPhase === 'Reviewing' || currentPhase === 'Done') ? 'text-neutral-300' : 'text-neutral-600'}>EXECUTING</span>
                         </div>
                         
@@ -189,10 +189,10 @@ export default function ChatPanel({
                         {/* Reviewing Step */}
                         <div className="flex items-center gap-1.5">
                           <span className={`w-1.5 h-1.5 rounded-full ${
-                            currentPhase === 'Reviewing' ? 'bg-[#ff4500] animate-pulse' : 
-                            currentPhase === 'Done' ? 'bg-[#dc143c]' : 'bg-neutral-600'
+                            currentPhase === 'Reviewing' ? 'bg-[var(--jarvis-accent-hover)] animate-pulse' : 
+                            currentPhase === 'Done' ? 'bg-[var(--jarvis-accent)]' : 'bg-neutral-600'
                           }`} />
-                          <span className={currentPhase === 'Reviewing' ? 'text-[#ff4500] font-bold' : 
+                          <span className={currentPhase === 'Reviewing' ? 'text-[var(--jarvis-accent-hover)] font-bold' : 
                             currentPhase === 'Done' ? 'text-neutral-300' : 'text-neutral-600'}>REVIEWING</span>
                         </div>
                         
@@ -201,9 +201,9 @@ export default function ChatPanel({
                         {/* Done Step */}
                         <div className="flex items-center gap-1.5">
                           <span className={`w-1.5 h-1.5 rounded-full ${
-                            currentPhase === 'Done' ? 'bg-[#dc143c]' : 'bg-neutral-600'
+                            currentPhase === 'Done' ? 'bg-[var(--jarvis-accent)]' : 'bg-neutral-600'
                           }`} />
-                          <span className={currentPhase === 'Done' ? 'text-[#dc143c] font-bold' : 'text-neutral-600'}>DONE</span>
+                          <span className={currentPhase === 'Done' ? 'text-[var(--jarvis-accent)] font-bold' : 'text-neutral-600'}>DONE</span>
                         </div>
                       </div>
                     );
@@ -217,7 +217,7 @@ export default function ChatPanel({
         </AnimatePresence>
 
         {/* ── Controls Row (Mode & Language Selectors) ── */}
-        <div className="flex items-center justify-between px-4 py-2 bg-neutral-950/60 border-b border-[#dc143c]/5 text-xs">
+        <div className="flex items-center justify-between px-4 py-2 bg-neutral-950/60 border-b border-[var(--jarvis-accent)]/5 text-xs">
           {/* Mode Selector & Sidebar Toggle */}
           <div className="flex items-center gap-1.5">
             <button
@@ -235,7 +235,7 @@ export default function ChatPanel({
               onClick={() => setChatMode('ask')}
               className={`flex items-center gap-1 px-3 py-1 rounded-lg font-semibold transition-all duration-200 border ${
                 chatMode === 'ask'
-                  ? 'bg-[#dc143c]/15 border-[#dc143c]/30 text-[#dc143c] shadow-[0_0_10px_rgba(220, 20, 60,0.1)]'
+                  ? 'bg-[var(--jarvis-accent)]/15 border-[var(--jarvis-accent)]/30 text-[var(--jarvis-accent)] shadow-[0_0_10px_rgba(var(--jarvis-accent-rgb),0.1)]'
                   : 'bg-transparent border-transparent text-[#7a7060] hover:text-[#e0d6c2]'
               }`}
             >
@@ -246,7 +246,7 @@ export default function ChatPanel({
               onClick={() => setChatMode('agentic')}
               className={`flex items-center gap-1 px-3 py-1 rounded-lg font-semibold transition-all duration-200 border ${
                 chatMode === 'agentic'
-                  ? 'bg-[#dc143c]/15 border-[#dc143c]/30 text-[#dc143c] shadow-[0_0_10px_rgba(220, 20, 60,0.1)]'
+                  ? 'bg-[var(--jarvis-accent)]/15 border-[var(--jarvis-accent)]/30 text-[var(--jarvis-accent)] shadow-[0_0_10px_rgba(var(--jarvis-accent-rgb),0.1)]'
                   : 'bg-transparent border-transparent text-[#7a7060] hover:text-[#e0d6c2]'
               }`}
             >
@@ -270,13 +270,13 @@ export default function ChatPanel({
             >
               Export
             </button>
-            <div className="flex items-center gap-1 bg-neutral-900/60 p-0.5 rounded-lg border border-[#dc143c]/5">
+            <div className="flex items-center gap-1 bg-neutral-900/60 p-0.5 rounded-lg border border-[var(--jarvis-accent)]/5">
               <button
                 type="button"
                 onClick={() => setLanguage('english')}
                 className={`px-2 py-0.5 rounded font-semibold transition-all duration-150 ${
                   language === 'english'
-                    ? 'bg-[#dc143c]/20 text-[#dc143c]'
+                    ? 'bg-[var(--jarvis-accent)]/20 text-[var(--jarvis-accent)]'
                     : 'text-[#7a7060] hover:text-[#e0d6c2]'
                 }`}
               >
@@ -287,7 +287,7 @@ export default function ChatPanel({
                 onClick={() => setLanguage('hinglish')}
                 className={`px-2 py-0.5 rounded font-semibold transition-all duration-150 ${
                   language === 'hinglish'
-                    ? 'bg-[#dc143c]/20 text-[#dc143c]'
+                    ? 'bg-[var(--jarvis-accent)]/20 text-[var(--jarvis-accent)]'
                     : 'text-[#7a7060] hover:text-[#e0d6c2]'
                 }`}
               >
@@ -312,7 +312,7 @@ export default function ChatPanel({
                   ? 'Ask Doxa to execute a complex task...'
                   : 'Ask Doxa anything...'
             }
-            className="flex-1 bg-neutral-900 border border-[#dc143c]/10 rounded-xl px-4 py-3 text-sm text-white placeholder-[#7a7060] focus:outline-none focus:border-[#dc143c]/30 focus:shadow-[0_0_15px_rgba(220, 20, 60,0.05)] transition-all"
+            className="flex-1 bg-neutral-900 border border-[var(--jarvis-accent)]/10 rounded-xl px-4 py-3 text-sm text-white placeholder-[#7a7060] focus:outline-none focus:border-[var(--jarvis-accent)]/30 focus:shadow-[0_0_15px_rgba(var(--jarvis-accent-rgb),0.05)] transition-all"
             style={{ fontFamily: 'Rajdhani, sans-serif' }}
           />
 
@@ -321,7 +321,7 @@ export default function ChatPanel({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={agentLoading}
-            className="w-11 h-11 rounded-xl flex items-center justify-center bg-neutral-900 border border-[#dc143c]/10 text-[#7a7060] hover:text-white hover:border-[#dc143c]/30 transition-all cursor-pointer"
+            className="w-11 h-11 rounded-xl flex items-center justify-center bg-neutral-900 border border-[var(--jarvis-accent)]/10 text-[#7a7060] hover:text-white hover:border-[var(--jarvis-accent)]/30 transition-all cursor-pointer"
             title="Upload document to Knowledge Base (RAG)"
           >
             <Upload className="w-5 h-5" />
@@ -347,7 +347,7 @@ export default function ChatPanel({
             className={`w-11 h-11 rounded-xl flex items-center justify-center border transition-all ${
               isRecording 
                 ? 'bg-red-500/20 border-red-500/40 text-red-400 animate-pulse'
-                : 'bg-neutral-900 border-[#dc143c]/10 text-[#7a7060] hover:text-white hover:border-[#dc143c]/30'
+                : 'bg-neutral-900 border-[var(--jarvis-accent)]/10 text-[#7a7060] hover:text-white hover:border-[var(--jarvis-accent)]/30'
             }`}
           >
             {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
@@ -359,8 +359,8 @@ export default function ChatPanel({
             disabled={agentLoading || !agentGoal.trim()}
             className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all ${
               !agentGoal.trim() || agentLoading
-                ? 'bg-neutral-900 border border-[#dc143c]/5 text-[#7a7060] cursor-not-allowed'
-                : 'bg-[#dc143c] text-neutral-950 hover:bg-[#ff4500] hover:shadow-[0_0_15px_rgba(220, 20, 60,0.3)]'
+                ? 'bg-neutral-900 border border-[var(--jarvis-accent)]/5 text-[#7a7060] cursor-not-allowed'
+                : 'bg-[var(--jarvis-accent)] text-neutral-950 hover:bg-[var(--jarvis-accent-hover)] hover:shadow-[0_0_15px_rgba(var(--jarvis-accent-rgb),0.3)]'
             }`}
           >
             <Send className="w-5 h-5" />

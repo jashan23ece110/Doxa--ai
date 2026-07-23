@@ -7,8 +7,9 @@ import { motion } from 'framer-motion';
 
 extend({ UnrealBloomPass });
 
-function ParticleSwarm({ isActive, isThinking, isSpeaking, count }) {
+function ParticleSwarm({ isActive, isThinking, isSpeaking, count, themeName = 'ultron' }) {
   const meshRef = useRef();
+  const lineMeshRef = useRef();
   const { camera, pointer, raycaster, gl } = useThree();
   
   const dummy = useMemo(() => new THREE.Object3D(), []);
@@ -53,6 +54,44 @@ function ParticleSwarm({ isActive, isThinking, isSpeaking, count }) {
     }
     return arr;
   }, [count]);
+
+  // Occasional constellation connections (select first 120 nodes)
+  const connectionPairs = useMemo(() => {
+    const pairs = [];
+    const maxParticles = Math.min(count, 120);
+    for (let i = 0; i < maxParticles; i++) {
+      const numConns = Math.floor(Math.random() * 2) + 1; // 1 or 2 connections per node
+      for (let c = 0; c < numConns; c++) {
+        const targetIdx = Math.floor(Math.random() * maxParticles);
+        if (targetIdx !== i && !pairs.some(p => (p[0] === i && p[1] === targetIdx) || (p[0] === targetIdx && p[1] === i))) {
+          pairs.push([i, targetIdx]);
+        }
+      }
+    }
+    return pairs;
+  }, [count]);
+
+  // Vertex array for drawing lines
+  const linePositions = useMemo(() => {
+    return new Float32Array(connectionPairs.length * 2 * 3);
+  }, [connectionPairs]);
+
+  const lineGeometry = useMemo(() => {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+    return geo;
+  }, [linePositions]);
+
+  const lineMaterial = useMemo(() => {
+    const accentColor = themeName === 'aether' ? '#00d9ff' : 'var(--jarvis-accent)';
+    return new THREE.LineBasicMaterial({
+      color: new THREE.Color(accentColor),
+      transparent: true,
+      opacity: 0.1,
+      blending: THREE.AdditiveBlending,
+      linewidth: 1
+    });
+  }, [themeName]);
 
   const geometry = useMemo(() => new THREE.TetrahedronGeometry(0.24), []);
   const material = useMemo(() => new THREE.MeshBasicMaterial({ color: 0xffffff }), []);
@@ -138,65 +177,52 @@ function ParticleSwarm({ isActive, isThinking, isSpeaking, count }) {
     // Cursor interaction: project cursor in XY plane at z=0
     raycaster.setFromCamera(pointer, camera);
     const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
-    const cursorWorld = new THREE.Vector3();
-    raycaster.ray.intersectPlane(plane, cursorWorld);
-    
-    // Map cursor to local space
-    const cursorLocal = cursorWorld.clone();
-    const invMatrix = new THREE.Matrix4().copy(meshRef.current.matrixWorld).invert();
-    cursorLocal.applyMatrix4(invMatrix);
+    const cursor = new THREE.Vector3();
+    raycaster.ray.intersectPlane(plane, cursor);
 
-    const pushRadius = 30.0;
-
-    // Shockwave timeline handler
+    // Update shockwave time progress
     if (shockwave.current.active) {
-      shockwave.current.time += delta;
-      if (shockwave.current.time > 1.5) {
+      shockwave.current.time += delta * 45.0; // speed of shockwave propagation
+      if (shockwave.current.time > 95.0) {
         shockwave.current.active = false;
       }
     }
 
     for (let i = 0; i < count; i++) {
-      const f = i / count;
       const phi = phiTheta[i * 2];
       const theta = phiTheta[i * 2 + 1];
 
-      const noise1 = Math.sin(theta * 3.0 + t * 2.0);
-      const noise2 = Math.cos(phi * 5.0 - t * 1.5);
-      const noise3 = Math.sin((theta + phi) * swirl + t * 3.0);
+      // Organic noises mapping using trigonometric wave sums
+      const noise1 = Math.sin(phi * 3.5 + t) * Math.cos(theta * 2.2 + t);
+      const noise2 = Math.cos(phi * 1.5 - t) * Math.sin(theta * 4.4 + t);
+      const noise3 = Math.sin(phi * 8.0 + t * 2) * Math.cos(theta * 5.0 - t);
 
-      const flame = radius + noise1 * turbulence + noise2 * turbulence * 0.5 + noise3 * pulse;
-      const stretch = 1.0 + 0.4 * Math.abs(Math.sin(t + f * tau * 6.0));
+      // Distortions: pull coordinates from fibonacci grid
+      const dRadius = radius + noise1 * turbulence + Math.sin(time * 2.5 + phi * 10.0) * pulse;
+      const dTheta = theta + noise2 * swirl;
 
-      let x = Math.sin(phi) * Math.cos(theta + t * 0.2) * flame;
-      let y = Math.cos(phi) * flame * stretch;
-      let z = Math.sin(phi) * Math.sin(theta + t * 0.2) * flame;
+      let x = dRadius * Math.sin(phi) * Math.cos(dTheta);
+      let y = dRadius * Math.sin(phi) * Math.sin(dTheta);
+      let z = dRadius * Math.cos(phi);
 
-      const flicker = 1.0 + 0.08 * Math.sin(i * 0.15 + t * 12.0);
-      x *= flicker;
-      y *= flicker;
-      z *= flicker;
-
-      // Cursor attract/repel force displacement (Noticeable response)
-      const dx = x - cursorLocal.x;
-      const dy = y - cursorLocal.y;
-      const dz = z - cursorLocal.z;
-      const distSq = dx * dx + dy * dy + dz * dz;
-
-      if (distSq < pushRadius * pushRadius && distSq > 0.01) {
-        const dist = Math.sqrt(distSq);
-        const force = (1.0 - dist / pushRadius) * 20.0; // Strengthened displacement push
-        x += (dx / dist) * force;
-        y += (dy / dist) * force;
-        z += (dz / dist) * force;
+      // Cursor hover repulsion effect (within threshold ~22px)
+      const pPos = positions[i];
+      const distToCursor = cursor.distanceTo(pPos);
+      if (distToCursor < 22.0) {
+        const force = (1.0 - distToCursor / 22.0) * 8.0;
+        const dir = new THREE.Vector3().subVectors(pPos, cursor).normalize();
+        x += dir.x * force;
+        y += dir.y * force;
+        z += dir.z * force;
       }
 
-      // Dynamic shockwave calculation (radial burst)
+      // Dynamic shockwave ring expansion on click
       if (shockwave.current.active) {
-        const waveRadius = shockwave.current.time * 65.0; // propagation speed
-        const waveWidth = 7.0;
-        const pDist = Math.sqrt(x * x + y * y + z * z);
+        const waveRadius = shockwave.current.time;
+        const pDist = pPos.length();
         const distToWave = Math.abs(pDist - waveRadius);
+        const waveWidth = 5.5;
+
         if (distToWave < waveWidth && pDist > 0.1) {
           const strength = (1.0 - distToWave / waveWidth) * 22.0 * Math.max(0, 1 - waveRadius / 95.0);
           x += (x / pDist) * strength;
@@ -212,11 +238,20 @@ function ParticleSwarm({ isActive, isThinking, isSpeaking, count }) {
       dummy.updateMatrix();
       meshRef.current.setMatrixAt(i, dummy.matrix);
 
-      // Smooth color states morphing
+      // Smooth color states morphing based on active theme
       const heat = Math.abs(noise1 * 0.5 + noise2 * 0.5);
-      const hue = 0.95 + heat * 0.11; // crimson-red to orange-red range
-      const saturation = 0.95 - heat * 0.15;
-      const lightness = (0.28 + heat * 0.32) * intensity + Math.abs(noise3) * 0.12 * intensity;
+      let hue, saturation, lightness;
+      
+      if (themeName === 'aether') {
+        hue = 0.52 + heat * 0.12; // cyan-blue holographic
+        saturation = 0.90 - heat * 0.10;
+        lightness = (0.35 + heat * 0.35) * intensity;
+      } else {
+        // ultron crimson red
+        hue = 0.95 + heat * 0.11; // crimson-red to orange-red
+        saturation = 0.95 - heat * 0.15;
+        lightness = (0.28 + heat * 0.32) * intensity + Math.abs(noise3) * 0.12 * intensity;
+      }
 
       pColor.setHSL(hue, saturation, lightness);
       meshRef.current.setColorAt(i, pColor);
@@ -226,14 +261,61 @@ function ParticleSwarm({ isActive, isThinking, isSpeaking, count }) {
     if (meshRef.current.instanceColor) {
       meshRef.current.instanceColor.needsUpdate = true;
     }
+
+    // Update constellation connecting lines
+    if (lineMeshRef.current) {
+      const posAttr = lineMeshRef.current.geometry.attributes.position;
+      let ptr = 0;
+
+      let targetOpacity = 0.08;
+      if (isThinking) targetOpacity = 0.45;
+      else if (isActive) targetOpacity = 0.20;
+
+      lineMeshRef.current.material.opacity = THREE.MathUtils.lerp(
+        lineMeshRef.current.material.opacity,
+        targetOpacity,
+        lerpFactor
+      );
+
+      for (let i = 0; i < connectionPairs.length; i++) {
+        const [p1Idx, p2Idx] = connectionPairs[i];
+        const p1 = positions[p1Idx];
+        const p2 = positions[p2Idx];
+
+        const dist = p1.distanceTo(p2);
+        const maxDist = isThinking ? 60 : 35;
+
+        if (dist < maxDist) {
+          linePositions[ptr++] = p1.x;
+          linePositions[ptr++] = p1.y;
+          linePositions[ptr++] = p1.z;
+          
+          linePositions[ptr++] = p2.x;
+          linePositions[ptr++] = p2.y;
+          linePositions[ptr++] = p2.z;
+        } else {
+          linePositions[ptr++] = 0;
+          linePositions[ptr++] = 0;
+          linePositions[ptr++] = 0;
+          linePositions[ptr++] = 0;
+          linePositions[ptr++] = 0;
+          linePositions[ptr++] = 0;
+        }
+      }
+      posAttr.needsUpdate = true;
+      lineMeshRef.current.rotation.copy(meshRef.current.rotation);
+    }
   });
 
   return (
-    <instancedMesh ref={meshRef} args={[geometry, material, count]} />
+    <>
+      <instancedMesh ref={meshRef} args={[geometry, material, count]} />
+      <lineSegments ref={lineMeshRef} geometry={lineGeometry} material={lineMaterial} />
+    </>
   );
 }
 
-export default function CentralCore({ isActive = false, isThinking = false, isSpeaking = false }) {
+export default function CentralCore({ isActive = false, isThinking = false, isSpeaking = false, themeName = 'ultron' }) {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -256,9 +338,9 @@ export default function CentralCore({ isActive = false, isThinking = false, isSp
         gl={{ alpha: true }}
         style={{ background: 'transparent' }}
       >
-        <fog attach="fog" args={['#0a0a0a', 0.005]} />
+        <fog attach="fog" args={[themeName === 'aether' ? '#050b14' : '#0a0a0a', 0.005]} />
         <ambientLight intensity={0.4} />
-        <ParticleSwarm isActive={isActive} isThinking={isThinking} isSpeaking={isSpeaking} count={count} />
+        <ParticleSwarm isActive={isActive} isThinking={isThinking} isSpeaking={isSpeaking} count={count} themeName={themeName} />
         <Effects disableGamma>
           <unrealBloomPass threshold={0.04} strength={1.35} radius={0.55} />
         </Effects>

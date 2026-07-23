@@ -28,17 +28,18 @@ export default function Dashboard({
   sessionStart,
   activeOverlay,
   onNavigate,
+  themeName = 'ultron',
 }) {
   const isAgentActive = agentLoading || agentStatus?.status === 'running';
   const isAgentThinking = agentStatus?.status === 'running' && (agentStatus?.steps?.length || 0) < 2;
 
   return (
     <div className="h-full w-full flex flex-col relative overflow-hidden scan-lines grid-bg">
-      {/* ── ambient glow blobs ── */}
+      {/* ── ambient glow blobs (dynamic variables mapped to current theme) ── */}
       <div className="absolute inset-0 pointer-events-none z-0">
-        <div className="absolute -top-[15%] -right-[10%] w-[700px] h-[700px] rounded-full bg-[radial-gradient(circle,rgba(220, 20, 60,0.08)_0%,transparent_60%)]" />
-        <div className="absolute top-[50%] -left-[15%] w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle,rgba(184,134,11,0.06)_0%,transparent_55%)]" />
-        <div className="absolute bottom-[5%] right-[20%] w-[400px] h-[400px] rounded-full bg-[radial-gradient(circle,rgba(220, 20, 60,0.04)_0%,transparent_50%)]" />
+        <div className="absolute -top-[15%] -right-[10%] w-[700px] h-[700px] rounded-full bg-[radial-gradient(circle,rgba(var(--jarvis-accent-rgb),0.08)_0%,transparent_60%)]" />
+        <div className="absolute top-[50%] -left-[15%] w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle,rgba(var(--jarvis-accent-rgb),0.05)_0%,transparent_55%)]" />
+        <div className="absolute bottom-[5%] right-[20%] w-[400px] h-[400px] rounded-full bg-[radial-gradient(circle,rgba(var(--jarvis-accent-rgb),0.04)_0%,transparent_50%)]" />
       </div>
 
       {/* ── top bar ── */}
@@ -68,7 +69,7 @@ export default function Dashboard({
             animate="animate"
             className="flex-1 w-full max-w-[800px] xl:max-w-[1000px] flex items-center justify-center relative pointer-events-auto"
           >
-            <CentralCore isActive={isAgentActive} isThinking={isAgentThinking} isSpeaking={isSpeaking} />
+            <CentralCore isActive={isAgentActive} isThinking={isAgentThinking} isSpeaking={isSpeaking} themeName={themeName} />
           </motion.div>
         </div>
 

@@ -9,26 +9,27 @@
   --font-rajdhani: 'Rajdhani', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  --color-jarvis-bg: #0a0a0a;
-  --color-jarvis-surface: #141414;
-  --color-jarvis-panel: rgba(10, 10, 10, 0.85);
-  --color-jarvis-border: rgba(220, 20, 60, 0.15);
-  --color-jarvis-border-bright: rgba(220, 20, 60, 0.35);
-  --color-jarvis-accent: #dc143c;
-  --color-jarvis-accent-dim: rgba(220, 20, 60, 0.1);
+  --color-jarvis-bg: var(--jarvis-bg);
+  --color-jarvis-surface: var(--jarvis-surface);
+  --color-jarvis-panel: var(--jarvis-panel);
+  --color-jarvis-border: var(--jarvis-border);
+  --color-jarvis-border-bright: var(--jarvis-border-bright);
+  --color-jarvis-accent: var(--jarvis-accent);
+  --color-jarvis-accent-dim: var(--jarvis-accent-dim);
   --color-jarvis-green: #00ff88;
   --color-jarvis-red: #ff3366;
   --color-jarvis-amber: #ffaa00;
-  --color-jarvis-text: #e0d6c2;
-  --color-jarvis-text-dim: #7a7060;
+  --color-jarvis-text: var(--jarvis-text);
+  --color-jarvis-text-dim: var(--jarvis-text-dim);
 }
 
-/* ── base ── */
+/* Base styling */
 body {
-  background: var(--color-jarvis-bg);
-  color: var(--color-jarvis-text);
+  background: var(--jarvis-bg);
+  color: var(--jarvis-text);
   font-family: 'Rajdhani', sans-serif;
   overflow: hidden;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 #root {
@@ -39,15 +40,16 @@ body {
 
 /* ── HUD Panel ── */
 .hud-panel {
-  background: var(--color-jarvis-panel);
+  background: var(--jarvis-panel);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--color-jarvis-border);
+  border: 1px solid var(--jarvis-border);
   border-radius: 8px;
   box-shadow:
-    0 0 15px rgba(220, 20, 60, 0.06),
-    inset 0 1px 0 rgba(220, 20, 60, 0.05);
+    0 0 15px rgba(var(--jarvis-accent-rgb), 0.06),
+    inset 0 1px 0 rgba(var(--jarvis-accent-rgb), 0.05);
   position: relative;
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .hud-panel::before {
@@ -58,20 +60,20 @@ body {
   pointer-events: none;
   background: linear-gradient(
     180deg,
-    rgba(220, 20, 60, 0.03) 0%,
+    rgba(var(--jarvis-accent-rgb), 0.03) 0%,
     transparent 40%
   );
 }
 
 .hud-panel-bright {
-  border-color: var(--color-jarvis-border-bright);
+  border-color: var(--jarvis-border-bright);
   box-shadow:
-    0 0 20px rgba(220, 20, 60, 0.1),
-    0 0 40px rgba(220, 20, 60, 0.04),
-    inset 0 1px 0 rgba(220, 20, 60, 0.08);
+    0 0 20px rgba(var(--jarvis-accent-rgb), 0.1),
+    0 0 40px rgba(var(--jarvis-accent-rgb), 0.04),
+    inset 0 1px 0 rgba(var(--jarvis-accent-rgb), 0.08);
 }
 
-/* ── Scan-line overlay ── */
+/* Scan-line overlay */
 .scan-lines {
   position: relative;
 }
@@ -80,193 +82,158 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 1;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(220, 20, 60, 0.015) 2px,
-    rgba(220, 20, 60, 0.015) 4px
+  background: linear-gradient(
+    rgba(var(--jarvis-accent-rgb), 0.015) 50%, 
+    transparent 50%
   );
-  mix-blend-mode: overlay;
+  background-size: 100% 4px;
+  z-index: 10;
+  opacity: 0.85;
 }
 
-/* ── Grid background ── */
-.grid-bg {
-  background-image:
-    radial-gradient(circle at 1px 1px, rgba(220, 20, 60, 0.04) 1px, transparent 0);
-  background-size: 40px 40px;
-}
-
-/* ── Progress bar ── */
-.hud-progress {
-  height: 4px;
-  border-radius: 2px;
-  background: rgba(220, 20, 60, 0.08);
-  overflow: hidden;
+/* Grid overlay background */
+.hud-grid {
   position: relative;
 }
-
-.hud-progress-fill {
-  height: 100%;
-  border-radius: 2px;
-  background: linear-gradient(90deg, var(--color-jarvis-accent), #ff4500);
-  box-shadow: 0 0 8px rgba(220, 20, 60, 0.4);
-  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+.hud-grid::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: 
+    radial-gradient(circle at 1px 1px, rgba(var(--jarvis-accent-rgb), 0.04) 1px, transparent 0);
+  background-size: 24px 24px;
+  z-index: 0;
 }
 
-/* ── Telemetry log ── */
+/* HUD elements */
+.hud-progress {
+  height: 4px;
+  background: rgba(var(--jarvis-accent-rgb), 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.hud-progress-fill {
+  height: 100%;
+  background: var(--jarvis-accent);
+  box-shadow: 0 0 8px rgba(var(--jarvis-accent-rgb), 0.4);
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+}
+
+/* Telemetry lines */
 .telemetry-line {
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
   line-height: 1.6;
-  color: var(--color-jarvis-text-dim);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  margin-bottom: 4px;
+  border-left: 2px solid transparent;
+  padding-left: 6px;
 }
-
 .telemetry-line .timestamp {
-  color: rgba(220, 20, 60, 0.5);
+  color: rgba(var(--jarvis-accent-rgb), 0.5);
+  margin-right: 8px;
 }
+.telemetry-line.info { border-left-color: var(--jarvis-accent); }
+.telemetry-line.success { border-left-color: #00ff88; }
+.telemetry-line.error { border-left-color: #ff3366; }
 
-.telemetry-line .event {
-  color: var(--color-jarvis-text);
-}
-
-.telemetry-line.event-success .event {
-  color: var(--color-jarvis-green);
-}
-
-.telemetry-line.event-error .event {
-  color: var(--color-jarvis-red);
-}
-
-.telemetry-line.event-info .event {
-  color: var(--color-jarvis-accent);
-}
-
-/* ── Gauge styles ── */
-.gauge-ring {
-  fill: none;
-  stroke: rgba(220, 20, 60, 0.08);
-  stroke-width: 3;
-}
-
-.gauge-fill {
-  fill: none;
-  stroke: var(--color-jarvis-accent);
-  stroke-width: 3;
-  stroke-linecap: round;
-  filter: drop-shadow(0 0 4px rgba(220, 20, 60, 0.5));
-  transition: stroke-dashoffset 1s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* ── Keyframe animations ── */
-@keyframes scan-sweep {
-  0%   { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-@keyframes pulse-glow {
-  0%, 100% { opacity: 0.4; box-shadow: 0 0 10px rgba(220, 20, 60, 0.15); }
-  50%      { opacity: 1;   box-shadow: 0 0 25px rgba(220, 20, 60, 0.35); }
-}
-
-@keyframes data-stream {
-  0%   { transform: translateY(0); opacity: 1; }
-  100% { transform: translateY(-10px); opacity: 0; }
-}
-
-@keyframes glow-breathe {
-  0%, 100% { box-shadow: 0 0 15px rgba(220, 20, 60, 0.08); }
-  50%      { box-shadow: 0 0 30px rgba(220, 20, 60, 0.15); }
-}
-
-@keyframes border-glow-breathe {
-  0%, 100% { border-color: rgba(220, 20, 60, 0.15); }
-  50%      { border-color: rgba(220, 20, 60, 0.3); }
-}
-
-.animate-glow-breathe {
-  animation: glow-breathe 4s ease-in-out infinite;
-}
-
-.animate-border-breathe {
-  animation: border-glow-breathe 4s ease-in-out infinite;
-}
-
-.animate-scan-sweep {
-  animation: scan-sweep 8s linear infinite;
-}
-
-/* ── Voice listener indicator ── */
-.voice-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-jarvis-green);
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-.voice-dot-off {
-  background: var(--color-jarvis-text-dim);
-  animation: none;
-}
-
-/* ── Chat overlay backdrop ── */
-.chat-backdrop {
-  background: rgba(5, 5, 5, 0.8);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-/* ── Scrollbar (Jarvis theme) ── */
+/* Custom Scrollbar */
 .hud-scrollbar::-webkit-scrollbar {
   width: 4px;
+  height: 4px;
 }
 .hud-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 .hud-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(220, 20, 60, 0.15);
-  border-radius: 20px;
+  background: rgba(var(--jarvis-accent-rgb), 0.2);
+  border-radius: 2px;
 }
 .hud-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(220, 20, 60, 0.3);
+  background: rgba(var(--jarvis-accent-rgb), 0.4);
 }
 
-/* ── Existing panel-glow classes (backward compat for overlay tabs) ── */
-@layer utilities {
-  .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-  .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.1); border-radius: 20px; }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.2); }
+/* SVGs and Gauges */
+.hud-circle-bg {
+  stroke: rgba(var(--jarvis-accent-rgb), 0.08);
+}
+.hud-circle-arc {
+  stroke: var(--jarvis-accent);
+  filter: drop-shadow(0 0 4px rgba(var(--jarvis-accent-rgb), 0.5));
+  transition: stroke-dashoffset 0.6s ease, stroke 0.3s ease;
 }
 
-@keyframes btn-pulse {
-  0%, 100% { box-shadow: 0 0 12px 2px rgba(220, 20, 60, 0.25); }
-  50%      { box-shadow: 0 0 22px 4px rgba(220, 20, 60, 0.4); }
+/* Keyframes */
+@keyframes glow-breathe {
+  0%, 100% { opacity: 0.4; box-shadow: 0 0 10px rgba(var(--jarvis-accent-rgb), 0.15); }
+  50%      { opacity: 1;   box-shadow: 0 0 25px rgba(var(--jarvis-accent-rgb), 0.35); }
 }
-.btn-glow-pulse { animation: btn-pulse 2s ease-in-out infinite; }
 
+@keyframes panel-pulse {
+  0%, 100% { box-shadow: 0 0 15px rgba(var(--jarvis-accent-rgb), 0.08); }
+  50%      { box-shadow: 0 0 30px rgba(var(--jarvis-accent-rgb), 0.15); }
+}
+
+@keyframes border-glow-breathe {
+  0%, 100% { border-color: rgba(var(--jarvis-accent-rgb), 0.15); }
+  50%      { border-color: rgba(var(--jarvis-accent-rgb), 0.30); }
+}
+
+.glow-breathe {
+  animation: glow-breathe 4s infinite ease-in-out;
+}
+
+.panel-pulse {
+  animation: panel-pulse 6s infinite ease-in-out;
+}
+
+.border-breathe {
+  animation: border-glow-breathe 5s infinite ease-in-out;
+}
+
+/* Custom inputs */
 .input-glow:focus {
-  border-color: rgba(220, 20, 60, 0.5);
-  box-shadow: 0 0 0 1px rgba(220, 20, 60, 0.25), 0 0 16px 2px rgba(220, 20, 60, 0.12);
-  outline: none;
+  border-color: var(--jarvis-accent);
+  box-shadow: 0 0 12px rgba(var(--jarvis-accent-rgb), 0.15);
 }
 
-.panel-glow {
-  border-color: rgba(220, 20, 60, 0.15) !important;
-  box-shadow: 0 0 15px rgba(220, 20, 60, 0.06) !important;
+/* Speech indicator waveform styling */
+.voice-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--jarvis-accent);
+  box-shadow: 0 0 12px 2px rgba(var(--jarvis-accent-rgb), 0.25);
+  animation: pulse-glow 1.5s infinite ease-in-out;
+}
+.voice-dot-off {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #2a3444;
 }
 
-.panel-glow-hover:hover {
-  border-color: rgba(220, 20, 60, 0.3) !important;
-  box-shadow: 0 0 20px rgba(220, 20, 60, 0.15) !important;
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 12px 2px rgba(var(--jarvis-accent-rgb), 0.25); }
+  50%      { box-shadow: 0 0 22px 4px rgba(var(--jarvis-accent-rgb), 0.40); }
 }
 
-/* ── Scanning border animation ── */
+/* ChatPanel UI specifics */
+.hud-panel-normal {
+  border-color: rgba(var(--jarvis-accent-rgb), 0.15) !important;
+  box-shadow: 0 0 15px rgba(var(--jarvis-accent-rgb), 0.06) !important;
+}
+.hud-panel-thinking {
+  border-color: rgba(var(--jarvis-accent-rgb), 0.30) !important;
+  box-shadow: 0 0 20px rgba(var(--jarvis-accent-rgb), 0.15) !important;
+}
+
+/* Telemetry list height helper */
+.telemetry-height {
+  height: calc(100vh - 200px);
+}
+
+/* Custom properties scan animation */
 @property --scan-angle {
   syntax: '<angle>';
   initial-value: 0deg;
@@ -289,7 +256,7 @@ body {
   background: conic-gradient(
     from var(--scan-angle),
     transparent 0%,
-    rgba(220, 20, 60, 0.4) 10%,
+    rgba(var(--jarvis-accent-rgb), 0.4) 10%,
     transparent 20%
   );
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);

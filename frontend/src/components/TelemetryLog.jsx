@@ -92,7 +92,7 @@ const TelemetryLog = ({ agentSteps }) => {
     <div className="hud-panel" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <h3
         className="text-[10px] uppercase tracking-[0.2em] mb-2"
-        style={{ fontFamily: "'Orbitron', sans-serif", color: '#dc143c', flexShrink: 0 }}
+        style={{ fontFamily: "'Orbitron', sans-serif", color: 'var(--jarvis-accent)', flexShrink: 0 }}
       >
         Telemetry
       </h3>

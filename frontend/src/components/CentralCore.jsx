@@ -7,7 +7,16 @@ import { motion } from 'framer-motion';
 
 extend({ UnrealBloomPass });
 
-function ParticleSwarm({ isActive, isThinking, isSpeaking, count, themeName = 'ultron' }) {
+function ParticleSwarm({
+  isActive,
+  isThinking,
+  isSpeaking,
+  count,
+  themeName = 'ultron',
+  sentiment = 'neutral',
+  isDebating = false,
+  steps = [],
+}) {
   const meshRef = useRef();
   const lineMeshRef = useRef();
   const { camera, pointer, raycaster, gl } = useThree();
@@ -155,6 +164,19 @@ function ParticleSwarm({ isActive, isThinking, isSpeaking, count, themeName = 'u
       targetColorIntensity = 0.75;
     }
 
+    // Apply sentiment adjustments
+    if (sentiment === 'serious') {
+      targetSpeed *= 0.6;
+      targetPulse *= 0.7;
+      targetRadius *= 0.95;
+      targetColorIntensity *= 0.8;
+    } else if (sentiment === 'exciting') {
+      targetSpeed *= 1.4;
+      targetPulse *= 1.5;
+      targetTurbulence *= 1.2;
+      targetColorIntensity *= 1.25;
+    }
+
     // Smooth transition between parameters (easing/lerp took ~0.8s)
     const lerpFactor = 1 - Math.exp(-2.8 * delta);
     currentParams.current.radius = THREE.MathUtils.lerp(currentParams.current.radius, targetRadius, lerpFactor);
@@ -243,12 +265,18 @@ function ParticleSwarm({ isActive, isThinking, isSpeaking, count, themeName = 'u
       let hue, saturation, lightness;
       
       if (themeName === 'aether') {
-        hue = 0.52 + heat * 0.12; // cyan-blue holographic
+        let baseHue = 0.52;
+        if (sentiment === 'serious') baseHue = 0.62;
+        else if (sentiment === 'exciting') baseHue = 0.48;
+        hue = baseHue + heat * 0.12;
         saturation = 0.90 - heat * 0.10;
         lightness = (0.35 + heat * 0.35) * intensity;
       } else {
         // ultron crimson red
-        hue = 0.95 + heat * 0.11; // crimson-red to orange-red
+        let baseHue = 0.95;
+        if (sentiment === 'serious') baseHue = 0.78;
+        else if (sentiment === 'exciting') baseHue = 0.02;
+        hue = baseHue + heat * 0.11;
         saturation = 0.95 - heat * 0.15;
         lightness = (0.28 + heat * 0.32) * intensity + Math.abs(noise3) * 0.12 * intensity;
       }
@@ -315,7 +343,15 @@ function ParticleSwarm({ isActive, isThinking, isSpeaking, count, themeName = 'u
   );
 }
 
-export default function CentralCore({ isActive = false, isThinking = false, isSpeaking = false, themeName = 'ultron' }) {
+export default function CentralCore({
+  isActive = false,
+  isThinking = false,
+  isSpeaking = false,
+  themeName = 'ultron',
+  sentiment = 'neutral',
+  isDebating = false,
+  steps = [],
+}) {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -340,7 +376,16 @@ export default function CentralCore({ isActive = false, isThinking = false, isSp
       >
         <fog attach="fog" args={[themeName === 'aether' ? '#050b14' : '#0a0a0a', 0.005]} />
         <ambientLight intensity={0.4} />
-        <ParticleSwarm isActive={isActive} isThinking={isThinking} isSpeaking={isSpeaking} count={count} themeName={themeName} />
+        <ParticleSwarm
+          isActive={isActive}
+          isThinking={isThinking}
+          isSpeaking={isSpeaking}
+          count={count}
+          themeName={themeName}
+          sentiment={sentiment}
+          isDebating={isDebating}
+          steps={steps}
+        />
         <Effects disableGamma>
           <unrealBloomPass threshold={0.04} strength={1.35} radius={0.55} />
         </Effects>

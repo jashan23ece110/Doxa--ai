@@ -201,6 +201,7 @@ async def stream_agent(run_id: str):
                 "plan": plan,
                 "steps": current_steps,
                 "self_check": trace.get("self_check", None),
+                "sentiment": trace.get("sentiment", "neutral"),
                 "error": trace.get("error", None)
             }
             

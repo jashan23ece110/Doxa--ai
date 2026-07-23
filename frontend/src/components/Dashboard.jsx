@@ -29,9 +29,12 @@ export default function Dashboard({
   activeOverlay,
   onNavigate,
   themeName = 'ultron',
+  sentiment = 'neutral',
+  isDebating = false,
+  steps = [],
 }) {
-  const isAgentActive = agentLoading || agentStatus?.status === 'running';
-  const isAgentThinking = agentStatus?.status === 'running' && (agentStatus?.steps?.length || 0) < 2;
+  const isAgentActive = agentLoading || agentStatus?.status === 'running' || isDebating;
+  const isAgentThinking = (agentStatus?.status === 'running' && (agentStatus?.steps?.length || 0) < 5) || isDebating;
 
   return (
     <div className="h-full w-full flex flex-col relative overflow-hidden scan-lines grid-bg">
@@ -69,7 +72,15 @@ export default function Dashboard({
             animate="animate"
             className="flex-1 w-full max-w-[800px] xl:max-w-[1000px] flex items-center justify-center relative pointer-events-auto"
           >
-            <CentralCore isActive={isAgentActive} isThinking={isAgentThinking} isSpeaking={isSpeaking} themeName={themeName} />
+            <CentralCore
+              isActive={isAgentActive}
+              isThinking={isAgentThinking}
+              isSpeaking={isSpeaking}
+              themeName={themeName}
+              sentiment={sentiment}
+              isDebating={isDebating}
+              steps={steps}
+            />
           </motion.div>
         </div>
 

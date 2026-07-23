@@ -162,6 +162,8 @@ function App() {
   const [agentRunId, setAgentRunId] = useState(null);
   const [agentStatus, setAgentStatus] = useState(null);
   const [agentError, setAgentError] = useState(null);
+  const [sentiment, setSentiment] = useState('neutral');
+  const [isDebating, setIsDebating] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voiceFallbackText, setVoiceFallbackText] = useState(null);
   const spokenResultRef = useRef('');
@@ -324,6 +326,13 @@ function App() {
             return;
           }
           
+          if (data.sentiment) {
+            setSentiment(data.sentiment);
+          }
+          if (data.is_debating !== undefined) {
+            setIsDebating(data.is_debating);
+          }
+
           setAgentStatus(prev => {
             const updated = {
               status: data.status,
@@ -369,6 +378,8 @@ function App() {
     e.preventDefault();
     if (!agentGoal.trim()) return;
     setAgentLoading(true); setAgentError(null); setAgentRunId(null); setAgentStatus(null);
+    setSentiment('neutral');
+    setIsDebating(false);
     setVoiceFallbackText(null);
     spokenResultRef.current = '';
     
@@ -652,6 +663,9 @@ function App() {
           activeOverlay={activeOverlay}
           onNavigate={handleNavigate}
           themeName={theme}
+          sentiment={sentiment}
+          isDebating={isDebating}
+          steps={agentStatus?.steps || []}
         />
       </div>
 

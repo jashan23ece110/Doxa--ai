@@ -50,6 +50,22 @@ def get_trace(run_id: str) -> dict:
             print(f"Error getting from Firestore: {e}")
     return global_traces.get(run_id)
 
+def classify_sentiment(text: str) -> str:
+    text_lower = text.lower()
+    exciting_keywords = ["congrats", "congratulations", "excellent", "great", "awesome", "win", "excited", "happy", "yes!", "cool", "amazing", "beautiful", "wonderful", "celebrate", "perfect", "wow", "fantastic", "superb", "yay", "mubarak", "badhiya", "shandar", "zabardast"]
+    sad_serious_keywords = ["fail", "failed", "failure", "lost", "die", "death", "sad", "grave", "catastrophe", "wrong", "accident", "bad", "sorry", "condolences", "regret", "apologize", "unfortunate", "grief", "cancel", "error", "warning", "critical", "severe", "fatal", "khabar kharab", "nuksan", "maut", "dukh", "chinta"]
+    
+    # Check match counts
+    exciting_count = sum(1 for w in exciting_keywords if w in text_lower)
+    sad_count = sum(1 for w in sad_serious_keywords if w in text_lower)
+    
+    if exciting_count > sad_count:
+        return "exciting"
+    elif sad_count > exciting_count:
+        return "serious"
+    return "neutral"
+
+
 async def call_llama(messages, tools=None, model="llama-3.3-70b-versatile"):
     if not groq_client:
         raise Exception("Groq client not initialized")
@@ -262,6 +278,7 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
         "steps": [],
         "final_result": None,
         "self_check": None,
+        "sentiment": "neutral",
         "status": "running"
     }
     save_trace(run_id, trace)
@@ -311,6 +328,7 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
                     last_save = now
             
             trace["final_result"] = trace["final_result"].strip()
+            trace["sentiment"] = classify_sentiment(trace["final_result"])
             trace["steps"].append({"step": "Finalizing", "tool_used": "None", "input": "None", "output": "Completed direct response."})
             trace["status"] = "completed"
             save_trace(run_id, trace)
@@ -442,6 +460,7 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
                         final_result = "Agent completed execution but the final response was empty after filtering."
                         
                     trace["final_result"] = final_result
+                    trace["sentiment"] = classify_sentiment(final_result)
                     trace["steps"].append({"step": "Finalizing", "tool_used": "None", "input": "None", "output": "Generated final result."})
                     save_trace(run_id, trace)
                     break

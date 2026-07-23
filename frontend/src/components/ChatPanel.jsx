@@ -1,10 +1,13 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Mic, MicOff, Globe, Bot, User, Loader2, Cpu, MessageSquare, Upload } from 'lucide-react';
+import { Send, Mic, MicOff, Globe, Bot, User, Loader2, Cpu, MessageSquare, Upload, GitBranch } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
 
 export default function ChatPanel({
   chatHistory = [],
+  fullHistory = [],
+  activeMessageId = null,
+  setActiveMessageId,
   agentGoal = '',
   setAgentGoal,
   agentLoading = false,
@@ -86,6 +89,47 @@ export default function ChatPanel({
               exit={{ height: 0, opacity: 0 }}
               className="border-b border-[var(--jarvis-accent)]/10 max-h-48 overflow-y-auto hud-scrollbar p-4 flex flex-col gap-3 bg-neutral-950/40"
             >
+              {/* Time-Travel Branch Switcher Header */}
+              {(() => {
+                const leaves = fullHistory.filter(msg => msg.id && !fullHistory.some(m => m.parentId === msg.id));
+                if (leaves.length <= 1) return null;
+                return (
+                  <div className="flex flex-col gap-2 pb-3 mb-2 border-b border-[var(--jarvis-accent)]/10">
+                    <div className="flex items-center gap-2 text-[#7a7060] font-mono text-[9px] uppercase tracking-wider">
+                      <GitBranch className="w-3.5 h-3.5 text-[var(--jarvis-accent)]" />
+                      <span>Conversational Timelines</span>
+                    </div>
+                    <div className="flex gap-2 flex-wrap max-h-12 overflow-y-auto hud-scrollbar">
+                      {leaves.map((leaf, idx) => {
+                        const chain = [];
+                        let curr = leaf;
+                        while (curr) {
+                          chain.unshift(curr);
+                          curr = fullHistory.find(m => m.id === curr.parentId);
+                        }
+                        const lastUser = [...chain].reverse().find(m => m.role === 'user');
+                        const label = lastUser ? `"${lastUser.text.substring(0, 16)}..."` : `Timeline ${idx + 1}`;
+                        const isActive = activeMessageId === leaf.id || chain.some(m => m.id === activeMessageId);
+                        
+                        return (
+                          <button
+                            key={leaf.id}
+                            onClick={() => setActiveMessageId(leaf.id)}
+                            className={`px-2 py-0.5 rounded text-[9px] font-mono border transition-all duration-100 ${
+                              isActive 
+                                ? 'bg-[var(--jarvis-accent)]/15 border-[var(--jarvis-accent)]/40 text-[var(--jarvis-accent)] font-semibold shadow-[0_0_8px_rgba(var(--jarvis-accent-rgb),0.15)]' 
+                                : 'bg-neutral-900 border-neutral-800 text-[#7a7060] hover:text-[#e0d6c2] hover:border-neutral-700'
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {chatHistory.map((msg, i) => (
                 <div 
                   key={msg.id || i}
@@ -108,11 +152,25 @@ export default function ChatPanel({
                     ) : (
                       <MarkdownRenderer content={msg.text} />
                     )}
-                    {msg.mode && (
-                      <span className="text-[9px] uppercase tracking-widest text-[#7a7060] block mt-1">
-                        {msg.mode} Mode
-                      </span>
-                    )}
+                    <div className="flex items-center justify-between gap-4 mt-2 pt-1.5 border-t border-[var(--jarvis-accent)]/5 text-[9px] text-[#7a7060] min-w-[140px] font-mono">
+                      <span>{msg.mode ? `${msg.mode.toUpperCase()} MODE` : 'DIRECT'}</span>
+                      {msg.id && (
+                        <button
+                          onClick={() => {
+                            setActiveMessageId(msg.id);
+                            setTimeout(() => {
+                              const inputEl = document.querySelector('input[placeholder*="Ask"]');
+                              if (inputEl) inputEl.focus();
+                            }, 100);
+                          }}
+                          className="flex items-center gap-1 hover:text-[var(--jarvis-accent)] transition-colors cursor-pointer"
+                          title="Branch conversation from this message"
+                        >
+                          <GitBranch className="w-2.5 h-2.5" />
+                          <span>BRANCH</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

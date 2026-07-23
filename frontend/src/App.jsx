@@ -199,12 +199,46 @@ function App() {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [chatHistory, setChatHistory] = useState([]);
+  const [activeMessageId, setActiveMessageId] = useState(null);
 
   // Sync active session's history to chatHistory
   useEffect(() => {
     const active = sessions.find(s => s.id === currentSessionId);
     if (active) {
-      setChatHistory(active.history || []);
+      let history = active.history || [];
+      let modified = false;
+      
+      // Auto-assign IDs and parent IDs if they are missing (for legacy history support)
+      history = history.map((msg, idx) => {
+        let updated = { ...msg };
+        if (!updated.id) {
+          updated.id = 'legacy_' + idx + '_' + Date.now();
+          modified = true;
+        }
+        if (idx > 0 && !updated.parentId) {
+          updated.parentId = history[idx - 1].id;
+          modified = true;
+        }
+        return updated;
+      });
+
+      setChatHistory(history);
+      if (history.length > 0) {
+        setActiveMessageId(active.activeMessageId || history[history.length - 1].id);
+      } else {
+        setActiveMessageId(null);
+      }
+
+      if (modified) {
+        setSessions(prev =>
+          prev.map(s =>
+            s.id === currentSessionId ? { ...s, history } : s
+          )
+        );
+      }
+    } else {
+      setChatHistory([]);
+      setActiveMessageId(null);
     }
   }, [currentSessionId]);
 
@@ -212,10 +246,10 @@ function App() {
   useEffect(() => {
     setSessions(prev =>
       prev.map(s =>
-        s.id === currentSessionId ? { ...s, history: chatHistory } : s
+        s.id === currentSessionId ? { ...s, history: chatHistory, activeMessageId } : s
       )
     );
-  }, [chatHistory, currentSessionId]);
+  }, [chatHistory, currentSessionId, activeMessageId]);
 
   // Persist sessions and active session ID to localStorage
   useEffect(() => {
@@ -383,16 +417,35 @@ function App() {
     setVoiceFallbackText(null);
     spokenResultRef.current = '';
     
-    // Add user query to chat history
-    const userMsg = { id: Date.now(), role: 'user', text: agentGoal, mode: chatMode };
-    
-    // Prepare history payload for backend memory
-    const historyPayload = chatHistory.map(msg => ({
+    // Resolve active message chain for LLM memory context
+    const getActiveChain = () => {
+      if (!activeMessageId) return [];
+      const chain = [];
+      let current = chatHistory.find(m => m.id === activeMessageId);
+      while (current) {
+        chain.unshift(current);
+        current = chatHistory.find(m => m.id === current.parentId);
+      }
+      return chain;
+    };
+    const activeChain = getActiveChain();
+    const historyPayload = activeChain.map(msg => ({
       role: msg.role,
       text: msg.text
     }));
+
+    // Add user query to chat history
+    const userMsgId = Date.now();
+    const userMsg = { 
+      id: userMsgId, 
+      parentId: activeMessageId, 
+      role: 'user', 
+      text: agentGoal, 
+      mode: chatMode 
+    };
     
     setChatHistory(prev => [...prev, userMsg]);
+    setActiveMessageId(userMsgId);
     
     const goalToSend = agentGoal;
     setAgentGoal(''); // clear the input
@@ -427,14 +480,18 @@ function App() {
       setAgentStatus({ status: 'running', steps: [], final_result: '' });
       
       // Add placeholder assistant message that will be updated in real-time
+      const assistantMsgId = Date.now() + 10;
       setChatHistory(prev => [
         ...prev,
-        { id: Date.now() + 1, role: 'assistant', text: '', mode: chatMode, runId: data.run_id, isStreaming: true }
+        { id: assistantMsgId, parentId: userMsgId, role: 'assistant', text: '', mode: chatMode, runId: data.run_id, isStreaming: true }
       ]);
+      setActiveMessageId(assistantMsgId);
     } catch (err) { 
       setAgentError(err.message); 
       setAgentLoading(false); 
-      setChatHistory(prev => [...prev, { id: Date.now(), role: 'assistant', text: `Error starting agent: ${err.message}` }]);
+      const errorMsgId = Date.now() + 20;
+      setChatHistory(prev => [...prev, { id: errorMsgId, parentId: userMsgId, role: 'assistant', text: `Error starting agent: ${err.message}` }]);
+      setActiveMessageId(errorMsgId);
     }
   };
 
@@ -680,7 +737,19 @@ function App() {
 
       {/* ── Sleek Fixed Bottom Chat Panel ── */}
       <ChatPanel
-        chatHistory={chatHistory}
+        chatHistory={(() => {
+          if (!activeMessageId) return [];
+          const chain = [];
+          let current = chatHistory.find(m => m.id === activeMessageId);
+          while (current) {
+            chain.unshift(current);
+            current = chatHistory.find(m => m.id === current.parentId);
+          }
+          return chain;
+        })()}
+        fullHistory={chatHistory}
+        activeMessageId={activeMessageId}
+        setActiveMessageId={setActiveMessageId}
         agentGoal={agentGoal}
         setAgentGoal={setAgentGoal}
         agentLoading={agentLoading}

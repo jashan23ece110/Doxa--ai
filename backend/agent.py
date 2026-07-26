@@ -4,8 +4,13 @@ load_dotenv()
 import json
 import asyncio
 import re
+import uuid
+import time
 from typing import Dict, Any, List
-from groq import AsyncGroq
+
+import vertexai
+from vertexai.generative_models import GenerativeModel, Part, Content, Tool, FunctionDeclaration
+
 from google.cloud import firestore
 from rag import retrieve_context
 from tools.web_search import web_search
@@ -14,12 +19,18 @@ from tools.calendar_tool import list_calendar_events, create_calendar_event
 from tools.python_sandbox import execute_python_code
 from tools.timer_manager import schedule_timer
 
-# Initialize Groq Client
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+# Initialize Vertex AI
+GCP_PROJECT = os.getenv("GCP_PROJECT") or os.getenv("GOOGLE_CLOUD_PROJECT") or os.getenv("GCLOUD_PROJECT")
+GCP_LOCATION = os.getenv("GCP_LOCATION", "us-central1")
+
 try:
-    groq_client = AsyncGroq(api_key=GROQ_API_KEY)
-except Exception:
-    groq_client = None
+    if GCP_PROJECT:
+        vertexai.init(project=GCP_PROJECT, location=GCP_LOCATION)
+    else:
+        vertexai.init(location=GCP_LOCATION)
+    print(f"Vertex AI initialized with project={GCP_PROJECT or '[AUTO]'}, location={GCP_LOCATION}")
+except Exception as e:
+    print(f"Warning: Failed to initialize Vertex AI: {e}")
 
 # Global in-memory storage fallback for local dev
 global_traces: Dict[str, Dict[str, Any]] = {}
@@ -65,54 +76,6 @@ def classify_sentiment(text: str) -> str:
         return "serious"
     return "neutral"
 
-
-async def call_llama(messages, tools=None, model="llama-3.3-70b-versatile"):
-    if not groq_client:
-        raise Exception("Groq client not initialized")
-    
-    kwargs = {"model": model, "messages": messages, "temperature": 0.0}
-    if tools:
-        kwargs["tools"] = tools
-        kwargs["tool_choice"] = "auto"
-    
-    try:
-        response = await groq_client.chat.completions.create(**kwargs)
-        return response.choices[0].message
-    except Exception as e:
-        if tools:
-            print(f"Warning: Tool calling failed with model {model} ({e}). Retrying with tools and formatting correction...")
-            try:
-                retry_messages = list(messages)
-                retry_messages.append({
-                    "role": "system",
-                    "content": "SYSTEM WARNING: Your previous tool call failed because of a syntax error. Please invoke the tool natively using the API's function calling feature. Do NOT write '<function=...' tags, equal signs, or JSON in the text message content."
-                })
-                kwargs_retry = {
-                    "model": model,
-                    "messages": retry_messages,
-                    "tools": tools,
-                    "tool_choice": "auto",
-                    "temperature": 0.0
-                }
-                response = await groq_client.chat.completions.create(**kwargs_retry)
-                return response.choices[0].message
-            except Exception as e2:
-                print(f"Warning: Retry with formatting correction failed ({e2}). Falling back to direct completion without tools...")
-                try:
-                    kwargs_fallback = {"model": model, "messages": messages, "temperature": 0.0}
-                    response = await groq_client.chat.completions.create(**kwargs_fallback)
-                    msg = response.choices[0].message
-                    if msg.content:
-                        try:
-                            msg.content = "*(Note: Web search or calculation was temporarily unavailable. Returning direct response.)*\n\n" + msg.content
-                        except Exception:
-                            pass
-                    return msg
-                except Exception as retry_err:
-                    print(f"Error during fallback retry: {retry_err}")
-                    raise retry_err
-        raise e
-
 # --- Tools implementation ---
 def search_documents(query: str) -> str:
     contexts = retrieve_context(query, n_results=3)
@@ -128,7 +91,7 @@ async def summarize_text(text: str) -> str:
         {"role": "system", "content": "You are a summarizing agent. Summarize the following text concisely."},
         {"role": "user", "content": text}
     ]
-    resp = await call_llama(messages)
+    resp = await call_gemini(messages)
     return resp.content
 
 async def draft_message(context: str, purpose: str) -> str:
@@ -136,7 +99,7 @@ async def draft_message(context: str, purpose: str) -> str:
         {"role": "system", "content": "You are an assistant that drafts messages or emails based on provided context and purpose."},
         {"role": "user", "content": f"Context:\n{context}\n\nPurpose:\n{purpose}\n\nPlease draft the message."}
     ]
-    resp = await call_llama(messages)
+    resp = await call_gemini(messages)
     return resp.content
 
 # --- Tool registry ---
@@ -271,6 +234,172 @@ TOOLS_DEF = [
     }
 ]
 
+# Helper classes to mimic OpenAI/Groq response objects for function calling compatibility
+class MockFunction:
+    def __init__(self, name: str, arguments: str):
+        self.name = name
+        self.arguments = arguments
+
+class MockToolCall:
+    def __init__(self, call_id: str, name: str, arguments: str):
+        self.id = call_id
+        self.function = MockFunction(name, arguments)
+
+class MockMessage:
+    def __init__(self, content: str = None, tool_calls: list = None):
+        self.content = content
+        self.tool_calls = tool_calls
+        self.role = "assistant"
+
+def convert_schema_to_vertex(schema: dict) -> dict:
+    """Recursively converts type names to uppercase as required by Vertex AI OpenAPI schema."""
+    if not isinstance(schema, dict):
+        return schema
+    new_schema = {}
+    for k, v in schema.items():
+        if k == "type" and isinstance(v, str):
+            new_schema[k] = v.upper()
+        elif isinstance(v, dict):
+            new_schema[k] = convert_schema_to_vertex(v)
+        elif isinstance(v, list):
+            new_schema[k] = [convert_schema_to_vertex(item) if isinstance(item, dict) else item for item in v]
+        else:
+            new_schema[k] = v
+    return new_schema
+
+# Build Vertex AI Tool definitions from registry
+VERTEX_FUNC_DECLS = []
+for tool_def in TOOLS_DEF:
+    func_info = tool_def["function"]
+    vertex_params = convert_schema_to_vertex(func_info["parameters"])
+    decl = FunctionDeclaration(
+        name=func_info["name"],
+        description=func_info["description"],
+        parameters=vertex_params
+    )
+    VERTEX_FUNC_DECLS.append(decl)
+
+VERTEX_TOOLS = [Tool(function_declarations=VERTEX_FUNC_DECLS)] if VERTEX_FUNC_DECLS else None
+
+def to_gemini_contents(messages: List[dict]):
+    """Converts standard list of message dicts to Vertex AI Content structures."""
+    contents = []
+    system_parts = []
+    
+    for msg in messages:
+        role = msg.get("role")
+        content_str = msg.get("content") or ""
+        
+        if role == "system":
+            system_parts.append(content_str)
+        elif role == "user":
+            contents.append(Content(role="user", parts=[Part.from_text(content_str)]))
+        elif role == "assistant":
+            parts = []
+            tool_calls = msg.get("tool_calls")
+            if tool_calls:
+                for tc in tool_calls:
+                    if isinstance(tc, dict):
+                        func_name = tc.get("function", {}).get("name")
+                        args_val = tc.get("function", {}).get("arguments", "{}")
+                        func_args = json.loads(args_val) if isinstance(args_val, str) else args_val
+                    else:
+                        func_name = tc.function.name
+                        func_args = json.loads(tc.function.arguments) if isinstance(tc.function.arguments, str) else tc.function.arguments
+                    parts.append(Part.from_dict({"function_call": {"name": func_name, "args": func_args}}))
+            if content_str:
+                parts.append(Part.from_text(content_str))
+            if parts:
+                contents.append(Content(role="model", parts=parts))
+        elif role == "tool" or role == "function":
+            func_name = msg.get("name")
+            func_output = msg.get("content") or ""
+            resp_dict = {"result": func_output}
+            contents.append(Content(role="user", parts=[
+                Part.from_function_response(name=func_name, response=resp_dict)
+            ]))
+            
+    system_instruction = "\n\n".join(system_parts) if system_parts else None
+    return contents, system_instruction
+
+async def call_gemini(messages, tools=None, model="gemini-2.0-flash"):
+    # Map model names to available Vertex models
+    target_model_name = "gemini-2.0-flash"
+    if model and ("1.5" in model.lower() or "8b" in model.lower()):
+        target_model_name = "gemini-1.5-flash"
+        
+    contents, system_instruction = to_gemini_contents(messages)
+    
+    generation_config = {
+        "temperature": 0.0
+    }
+    
+    model_obj = GenerativeModel(
+        target_model_name,
+        system_instruction=system_instruction,
+        generation_config=generation_config
+    )
+    
+    pass_tools = VERTEX_TOOLS if tools else None
+    
+    try:
+        response = await model_obj.generate_content_async(contents, tools=pass_tools)
+        text_content = ""
+        tool_calls = []
+        
+        if response.candidates and response.candidates[0].content.parts:
+            for part in response.candidates[0].content.parts:
+                if part.text:
+                    text_content += part.text
+                if part.function_call:
+                    func_name = part.function_call.name
+                    func_args = dict(part.function_call.args)
+                    args_str = json.dumps(func_args)
+                    call_id = f"call_{uuid.uuid4().hex}"
+                    tool_calls.append(MockToolCall(call_id, func_name, args_str))
+                    
+        return MockMessage(
+            content=text_content if text_content else None,
+            tool_calls=tool_calls if tool_calls else None
+        )
+    except Exception as e:
+        print(f"Error calling Vertex AI model {target_model_name}: {e}")
+        # Retry with fallback model gemini-1.5-flash if 2.0-flash failed
+        if target_model_name == "gemini-2.0-flash":
+            print("Retrying with fallback model gemini-1.5-flash...")
+            try:
+                model_obj_fallback = GenerativeModel(
+                    "gemini-1.5-flash",
+                    system_instruction=system_instruction,
+                    generation_config=generation_config
+                )
+                response = await model_obj_fallback.generate_content_async(contents, tools=pass_tools)
+                text_content = ""
+                tool_calls = []
+                
+                if response.candidates and response.candidates[0].content.parts:
+                    for part in response.candidates[0].content.parts:
+                        if part.text:
+                            text_content += part.text
+                        if part.function_call:
+                            func_name = part.function_call.name
+                            func_args = dict(part.function_call.args)
+                            args_str = json.dumps(func_args)
+                            call_id = f"call_{uuid.uuid4().hex}"
+                            tool_calls.append(MockToolCall(call_id, func_name, args_str))
+                            
+                return MockMessage(
+                    content=text_content if text_content else None,
+                    tool_calls=tool_calls if tool_calls else None
+                )
+            except Exception as e2:
+                print(f"Fallback model also failed: {e2}")
+                raise e2
+        raise e
+
+# Compatibility alias for code compatibility in debate, planning, self-check steps
+call_llama = call_gemini
+
 async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode: str = "normal", history: List[dict] = None):
     trace = {
         "goal": goal,
@@ -309,8 +438,8 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
             ]
             
             msg_a, msg_b = await asyncio.gather(
-                call_llama(prompt_a, model="llama-3.3-70b-versatile"),
-                call_llama(prompt_b, model="llama-3.3-70b-versatile")
+                call_gemini(prompt_a, model="gemini-2.0-flash"),
+                call_gemini(prompt_b, model="gemini-2.0-flash")
             )
             
             res_a = msg_a.content or "No argument generated."
@@ -326,7 +455,7 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
                 {"role": "user", "content": f"Topic: {goal}\n\nPerspective A (Optimist):\n{res_a}\n\nPerspective B (Skeptic):\n{res_b}\n\nWrite the balanced final response:"}
             ]
             
-            msg_synth = await call_llama(prompt_synth, model="llama-3.3-70b-versatile")
+            msg_synth = await call_gemini(prompt_synth, model="gemini-2.0-flash")
             final_result = msg_synth.content or "Synthesis failed."
             
             trace["final_result"] = final_result
@@ -345,7 +474,7 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
             
         if is_simple_greeting:
             mode = "normal"
-
+ 
         if mode in ("normal", "ask"):
             trace["steps"].append({"step": "Direct Completion", "tool_used": "None", "input": goal, "output": "Retrieving context and generating response..."})
             save_trace(run_id, trace)
@@ -368,18 +497,25 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
                     messages.append({"role": h.get("role", "user"), "content": h.get("text", "")})
             messages.append({"role": "user", "content": goal})
             
-            import time
-            response_stream = await groq_client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=messages,
-                temperature=0.1,
-                stream=True
+            # Convert messages to Gemini Content format
+            contents, system_instruction = to_gemini_contents(messages)
+            
+            model_obj = GenerativeModel(
+                "gemini-2.0-flash",
+                system_instruction=system_instruction,
+                generation_config={"temperature": 0.1}
             )
+            
+            # Direct completion SSE stream using Gemini async generate_content
+            response_stream = await model_obj.generate_content_async(contents, stream=True)
             
             trace["final_result"] = ""
             last_save = 0
             async for chunk in response_stream:
-                delta_content = chunk.choices[0].delta.content or ""
+                try:
+                    delta_content = chunk.text or ""
+                except Exception:
+                    delta_content = ""
                 trace["final_result"] += delta_content
                 now = time.time()
                 if now - last_save > 0.25:
@@ -392,7 +528,7 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
             trace["status"] = "completed"
             save_trace(run_id, trace)
             return
-
+ 
         # Step 1: Planning (Agentic Mode)
         trace["steps"].append({"step": "Planning", "tool_used": "None", "input": goal, "output": "Generating plan..."})
         save_trace(run_id, trace)
@@ -405,7 +541,7 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
                 plan_messages.append({"role": h.get("role", "user"), "content": h.get("text", "")})
         plan_messages.append({"role": "user", "content": f"Goal: {goal}"})
         
-        plan_msg = await call_llama(plan_messages)
+        plan_msg = await call_gemini(plan_messages)
         try:
             content = (plan_msg.content or "").strip()
             if content.startswith("```json"):
@@ -421,7 +557,7 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
         trace["plan"] = plan
         trace["steps"][-1]["output"] = "Plan generated."
         save_trace(run_id, trace)
-
+ 
         # Step 2: Execution (Agentic Mode)
         agent_messages = [
             {
@@ -450,7 +586,7 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
             iteration_count = 0
             for _ in range(max_iterations):
                 iteration_count += 1
-                msg = await call_llama(agent_messages, tools=TOOLS_DEF, model="llama-3.3-70b-versatile")
+                msg = await call_gemini(agent_messages, tools=TOOLS_DEF, model="gemini-2.0-flash")
                 agent_messages.append(msg)
                 
                 if msg.tool_calls:
@@ -528,7 +664,7 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
                 final_result = "Agent stopped without a final result (max iterations reached)."
                 trace["final_result"] = final_result
                 save_trace(run_id, trace)
-
+ 
             # Step 3: Self-Check with retry triggers
             trace["steps"].append({"step": "Self Check", "tool_used": "None", "input": final_result, "output": "Checking..."})
             save_trace(run_id, trace)
@@ -537,7 +673,7 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
                 {"role": "system", "content": "You are an evaluator. Review the final result against the original goal. Output '[MET]' if the goal is fully and correctly achieved, or '[NOT_MET]' if some requirements are missing. Write a brief, objective analysis (1-2 sentences)."},
                 {"role": "user", "content": f"Goal: {goal}\n\nFinal Result:\n{final_result}\n\nSelf-check analysis:"}
             ]
-            check_msg = await call_llama(check_messages)
+            check_msg = await call_gemini(check_messages)
             check_content = check_msg.content or ""
             trace["self_check"] = check_content
             trace["steps"][-1]["output"] = "Self-check complete."
@@ -585,11 +721,11 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
                     {"role": "system", "content": f"You are Doxa. The previous response was raw internal planning text. Rewrite it into a direct, natural, conversational final response in {lang_str}. Avoid meta-commentary, lists, or mentioning the plan/goal. Respond directly to the user's input: '{goal}'."},
                     {"role": "user", "content": f"Raw internal response: {trace['final_result']}\n\nDirect response:"}
                 ]
-                clean_msg = await call_llama(clean_messages, model="llama-3.3-70b-versatile")
+                clean_msg = await call_gemini(clean_messages, model="gemini-2.0-flash")
                 trace["final_result"] = (clean_msg.content or "").strip()
                 trace["sentiment"] = classify_sentiment(trace["final_result"])
                 save_trace(run_id, trace)
-
+ 
         trace["status"] = "completed"
         save_trace(run_id, trace)
         

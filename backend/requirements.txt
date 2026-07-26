@@ -1,6 +1,6 @@
 fastapi
 uvicorn
-groq
+google-cloud-aiplatform
 python-dotenv
 httpx
 chromadb

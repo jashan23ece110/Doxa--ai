@@ -236,7 +236,7 @@ function ParticleSwarm({
 
   // Morphable simulation parameters
   const currentParams = useRef({
-    radius: 22,
+    radius: 32,
     turbulence: 3.5,
     pulse: 2.5,
     speed: 0.3,
@@ -252,8 +252,8 @@ function ParticleSwarm({
     meshRef.current.rotation.y = time * 0.04;
     meshRef.current.rotation.x = Math.sin(time * 0.015) * 0.08;
 
-    // Define target parameters based on active state
-    let targetRadius = 22;
+    // Define target parameters based on active state (Larger settings to avoid "chhota" look)
+    let targetRadius = 32;
     let targetTurbulence = 3.5;
     let targetPulse = 2.5;
     let targetSpeed = 0.3;
@@ -276,7 +276,7 @@ function ParticleSwarm({
     }
 
     if (isThinking) {
-      targetRadius = 42;
+      targetRadius = 46;
       targetTurbulence = 15.0;
       targetPulse = 9.5;
       targetSpeed = 1.6;
@@ -284,14 +284,14 @@ function ParticleSwarm({
       targetColorIntensity = 1.0;
     } else if (isSpeaking) {
       // Dynamic voice reactive envelope
-      targetRadius = 31.0 + speechEnvelope * 13.0 + Math.sin(time * 62.0) * 0.45 * speechEnvelope; // voice vibration ripple
+      targetRadius = 35.0 + speechEnvelope * 13.0 + Math.sin(time * 62.0) * 0.45 * speechEnvelope; // voice vibration ripple
       targetTurbulence = 9.5;
       targetPulse = 4.0 + speechEnvelope * 12.0;
       targetSpeed = 1.1;
       targetSwirl = 4.2;
       targetColorIntensity = 0.85 + speechEnvelope * 0.15;
     } else if (isActive) {
-      targetRadius = 28;
+      targetRadius = 38;
       targetTurbulence = 6.5;
       targetPulse = 3.5;
       targetSpeed = 0.75;
@@ -299,7 +299,7 @@ function ParticleSwarm({
       targetColorIntensity = 0.75;
     } else {
       // Idle state with breathing effect
-      targetRadius = 22 * breathing;
+      targetRadius = 32 * breathing;
       targetPulse = 2.5 * breathing;
       targetTurbulence = 3.5 + Math.sin(time * 1.5) * 0.8;
       targetSpeed = 0.28;
@@ -428,14 +428,14 @@ function ParticleSwarm({
       // Morph particles to text shape when auto-triggered or hover-triggered
       if (textTargetPositions.current.length > 0 && textMorphProgress.current > 0.001) {
         const textPts = textTargetPositions.current;
-        // Map particle index to a text point (cycle if more particles than points)
         const textIdx = i % textPts.length;
         const tp = textPts[textIdx];
-        // Lerp towards text position
         x = THREE.MathUtils.lerp(x, tp.x, textMorphProgress.current);
         y = THREE.MathUtils.lerp(y, tp.y, textMorphProgress.current);
         z = THREE.MathUtils.lerp(z, tp.z, textMorphProgress.current);
       }
+
+      // Cursor hover repulsion effect (within threshold ~22px)
       const pPos = positions[i];
       const distToCursor = cursor.distanceTo(pPos);
       if (distToCursor < 22.0) {

@@ -7,7 +7,6 @@ import RadarGauge from './RadarGauge';
 import ObjectivesCard from './ObjectivesCard';
 import TelemetryLog from './TelemetryLog';
 import TopBar from './TopBar';
-import HudNav from './HudNav';
 
 const fadeIn = {
   initial: { opacity: 0 },
@@ -49,10 +48,13 @@ export default function Dashboard({
       </div>
 
       {/* ── top bar ── */}
-      <TopBar user={user} toggleSidebar={toggleSidebar} sidebarOpen={sidebarOpen} />
-
-      {/* ── HUD nav (left edge) ── */}
-      <HudNav activeOverlay={activeOverlay} onNavigate={onNavigate} />
+      <TopBar 
+        user={user} 
+        toggleSidebar={toggleSidebar} 
+        sidebarOpen={sidebarOpen} 
+        onNavigate={onNavigate} 
+        activeOverlay={activeOverlay} 
+      />
 
       {/* ── main grid ── */}
       <div className="flex-1 flex min-h-0 relative z-10">

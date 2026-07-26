@@ -1090,14 +1090,32 @@ function App() {
               className="hud-panel hud-panel-bright w-full max-w-5xl max-h-[85vh] overflow-hidden flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* overlay header */}
-              <div className="flex items-center justify-between px-5 py-3 border-b border-[rgba(var(--jarvis-accent-rgb),0.15)]">
-                <h2 className="text-sm font-bold text-[var(--jarvis-accent)] uppercase tracking-[0.15em]" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-                  {activeOverlay === 'eval' && 'MODEL EVALUATION'}
-                  {activeOverlay === 'documents' && 'KNOWLEDGE BASE'}
-                  {activeOverlay === 'history' && 'EVALUATION HISTORY'}
-                  {activeOverlay === 'settings' && 'SYSTEM CONFIG'}
-                </h2>
+              {/* overlay header with consolidated tab navigation */}
+              <div className="flex items-center justify-between px-5 py-3 border-b border-[rgba(var(--jarvis-accent-rgb),0.15)] flex-wrap gap-3 select-none">
+                <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
+                  <span className="text-[10px] font-black tracking-widest text-[#7a7060] font-orbitron uppercase hidden md:inline" style={{ fontFamily: 'Orbitron, sans-serif' }}>CONTROL PANEL</span>
+                  <div className="flex gap-1 bg-[#141414] p-0.5 rounded-lg border border-[var(--jarvis-accent)]/10">
+                    {[
+                      { id: 'eval', label: 'EVAL' },
+                      { id: 'documents', label: 'DOCS' },
+                      { id: 'history', label: 'HISTORY' },
+                      { id: 'settings', label: 'CONFIG' }
+                    ].map(tab => (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveOverlay(tab.id)}
+                        className={`px-3 py-1 rounded-md text-[10px] sm:text-xs font-bold font-orbitron tracking-wider transition-all cursor-pointer ${
+                          activeOverlay === tab.id
+                            ? 'bg-[var(--jarvis-accent)] text-[#0a0a0a] shadow-[0_0_8px_rgba(var(--jarvis-accent-rgb),0.25)] font-black'
+                            : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900/40'
+                        }`}
+                        style={{ fontFamily: 'Orbitron, sans-serif' }}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <button onClick={closeOverlay} className="p-1.5 text-[#7a7060] hover:text-white transition-colors">
                   <X className="w-5 h-5" />
                 </button>

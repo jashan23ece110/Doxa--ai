@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Activity, Clock, Zap, History, Settings, Bot, Code2, AlertTriangle, LogOut, CheckCircle2, Play, Download, Loader2, FileText, Upload, Trash2, BookOpen, ChevronDown, ChevronUp, Terminal, Menu, X, Cpu, Layers, Inbox, Paintbrush } from 'lucide-react';
+import { Sparkles, Activity, Clock, Zap, History, Settings, Bot, Code2, AlertTriangle, LogOut, CheckCircle2, Play, Download, Loader2, FileText, Upload, Trash2, BookOpen, ChevronDown, ChevronUp, Terminal, Menu, X, Cpu, Layers, Inbox, Paintbrush, MessageSquare } from 'lucide-react';
 import axios from 'axios';
 
 /* ── new Jarvis components ── */
@@ -8,6 +8,7 @@ import Dashboard from './components/Dashboard';
 import ChatPanel from './components/ChatPanel';
 import VoiceListener from './components/VoiceListener';
 import VoiceTelemetry from './components/VoiceTelemetry';
+import NeuralBackground from './components/NeuralBackground';
 import { THEMES } from './theme';
 
 /* ── animation variants (kept for overlay tab views) ── */
@@ -197,7 +198,19 @@ function App() {
     return sessions[0]?.id || 'session_' + Date.now();
   });
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('doxa_sidebar_open');
+      if (saved !== null) return JSON.parse(saved);
+      return window.innerWidth >= 768; // open by default on desktop
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('doxa_sidebar_open', JSON.stringify(sidebarOpen));
+  }, [sidebarOpen]);
+
   const [chatHistory, setChatHistory] = useState([]);
   const [activeMessageId, setActiveMessageId] = useState(null);
   const [proactiveSuggestions, setProactiveSuggestions] = useState([]);
@@ -299,9 +312,18 @@ function App() {
   // Sync real-time chatHistory changes back to session list
   useEffect(() => {
     setSessions(prev =>
-      prev.map(s =>
-        s.id === currentSessionId ? { ...s, history: chatHistory, activeMessageId } : s
-      )
+      prev.map(s => {
+        if (s.id !== currentSessionId) return s;
+        let title = s.title;
+        // Auto-assign title based on the first user message if title is default
+        if ((title === 'New Conversation' || !title) && chatHistory.length > 0) {
+          const firstUserMsg = chatHistory.find(m => m && m.role === 'user');
+          if (firstUserMsg && firstUserMsg.text) {
+            title = firstUserMsg.text.substring(0, 24) + (firstUserMsg.text.length > 24 ? '...' : '');
+          }
+        }
+        return { ...s, history: chatHistory, activeMessageId, title };
+      })
     );
   }, [chatHistory, currentSessionId, activeMessageId]);
 
@@ -766,11 +788,118 @@ function App() {
     );
   }
 
+  const renderSidebarContent = () => {
+    return (
+      <div className="flex flex-col h-full gap-4 w-full select-none">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-[var(--jarvis-accent)]/10 pb-3">
+          <div className="flex items-center gap-2">
+            <Activity className="w-4 h-4 text-[var(--jarvis-accent)] animate-pulse" />
+            <h3 className="text-sm font-bold text-[var(--jarvis-accent)] uppercase tracking-wider font-orbitron" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+              Control Core
+            </h3>
+          </div>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="text-neutral-500 hover:text-white p-1 hover:bg-neutral-900 rounded-lg transition-colors cursor-pointer"
+            title="Collapse Sidebar"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Create New Chat Button */}
+        <button
+          onClick={() => {
+            const newId = 'session_' + Date.now();
+            setSessions(prev => [
+              {
+                id: newId,
+                title: 'New Conversation',
+                history: [],
+                timestamp: new Date().toISOString()
+              },
+              ...prev
+            ]);
+            setCurrentSessionId(newId);
+            if (window.innerWidth < 768) {
+              setSidebarOpen(false);
+            }
+          }}
+          className="w-full py-2.5 px-3 rounded-xl border border-[var(--jarvis-accent)]/20 hover:border-[var(--jarvis-accent)]/40 text-[var(--jarvis-accent)] bg-[var(--jarvis-accent)]/5 hover:bg-[var(--jarvis-accent)]/10 text-xs font-bold tracking-wider transition-all uppercase flex items-center justify-center gap-1.5 cursor-pointer"
+          style={{ fontFamily: 'Orbitron, sans-serif' }}
+        >
+          <span>+ New Chat</span>
+        </button>
+
+        {/* Sessions List */}
+        <div className="flex-1 overflow-y-auto hud-scrollbar flex flex-col gap-2 pr-1">
+          {sessions.map(s => {
+            const isActive = s.id === currentSessionId;
+            return (
+              <div
+                key={s.id}
+                onClick={() => {
+                  setCurrentSessionId(s.id);
+                  if (window.innerWidth < 768) {
+                    setSidebarOpen(false);
+                  }
+                }}
+                className={`group p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2.5 ${
+                  isActive
+                    ? 'bg-[var(--jarvis-accent)]/10 border-[var(--jarvis-accent)]/30 text-white shadow-md shadow-[rgba(var(--jarvis-accent-rgb),0.02)]'
+                    : 'bg-neutral-900/35 border-neutral-900/60 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/70 hover:border-neutral-800'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 truncate flex-1 min-w-0">
+                  <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-[var(--jarvis-accent)]' : 'text-neutral-500'}`} />
+                  <div className="flex flex-col text-left truncate">
+                    <span className="text-xs font-semibold truncate leading-tight">{s.title}</span>
+                    {s.history && s.history.length > 0 ? (
+                      <span className="text-[10px] text-neutral-500 truncate mt-0.5 font-sans leading-none">
+                        {s.history[0].role === 'user' ? 'You: ' : 'AI: '}
+                        {s.history[0].text}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-neutral-600 truncate mt-0.5 font-sans leading-none">Empty logs</span>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Delete Session Button */}
+                {sessions.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isActive) {
+                        const remaining = sessions.filter(x => x.id !== s.id);
+                        setSessions(remaining);
+                        setCurrentSessionId(remaining[0].id);
+                      } else {
+                        setSessions(prev => prev.filter(x => x.id !== s.id));
+                      }
+                    }}
+                    className="opacity-0 group-hover:opacity-100 text-neutral-500 hover:text-red-500 p-0.5 transition-opacity cursor-pointer shrink-0"
+                    title="Delete Conversation"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   /* ═══════════════════════════════════════════
      MAIN LAYOUT — Dashboard + Overlays
      ═══════════════════════════════════════════ */
   return (
-    <div className="h-screen w-screen bg-[var(--jarvis-bg)] overflow-hidden flex flex-col relative" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
+    <div className="h-screen w-screen bg-[var(--jarvis-bg)] overflow-hidden flex flex-row relative" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
+      <NeuralBackground />
 
       {/* ── Voice Listener (always active) ── */}
       <VoiceListener
@@ -795,71 +924,92 @@ function App() {
         onDeactivate={() => {}}
       />
 
-      {/* ── Dashboard Area (takes remaining vertical space) ── */}
-      <div className="flex-1 min-h-0 relative">
-        <Dashboard
-          user={user}
-          agentLoading={agentLoading}
-          agentStatus={agentStatus}
-          isSpeaking={isSpeaking}
-          queriesCount={history.length}
-          sessionStart={sessionStart}
-          activeOverlay={activeOverlay}
-          onNavigate={handleNavigate}
-          themeName={theme}
-          sentiment={sentiment}
-          isDebating={isDebating}
-          steps={agentStatus?.steps || []}
-        />
-      </div>
-
-      {/* ── Voice Speaking Telemetry HUD ── */}
-      <AnimatePresence>
-        {isSpeaking && (
-          <div className="px-6 pb-2 shrink-0 z-20">
-            <VoiceTelemetry isSpeaking={isSpeaking} />
-          </div>
+      {/* ── Desktop Inline Collapsible History Sidebar (side-by-side layout) ── */}
+      <AnimatePresence initial={false}>
+        {sidebarOpen && (
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 280, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="hidden md:flex flex-col border-r border-[var(--jarvis-accent)]/15 bg-neutral-950/45 backdrop-blur-lg shrink-0 h-full p-4 gap-4 z-20"
+            style={{ fontFamily: 'Rajdhani, sans-serif' }}
+          >
+            {renderSidebarContent()}
+          </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── Sleek Fixed Bottom Chat Panel ── */}
-      <ChatPanel
-        chatHistory={(() => {
-          if (!activeMessageId || !Array.isArray(chatHistory)) return [];
-          const chain = [];
-          let current = chatHistory.find(m => m && m.id === activeMessageId);
-          const visited = new Set();
-          while (current && !visited.has(current.id)) {
-            visited.add(current.id);
-            chain.unshift(current);
-            current = chatHistory.find(m => m && m.id === current.parentId);
-          }
-          return chain;
-        })()}
-        fullHistory={chatHistory}
-        activeMessageId={activeMessageId}
-        setActiveMessageId={setActiveMessageId}
-        agentGoal={agentGoal}
-        setAgentGoal={setAgentGoal}
-        agentLoading={agentLoading}
-        agentStatus={agentStatus}
-        agentError={agentError}
-        onStartAgent={handleStartAgent}
-        chatMode={chatMode}
-        setChatMode={setChatMode}
-        language={language}
-        setLanguage={handleLanguageChange}
-        toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-        onExportChat={handleExportChat}
-        onUploadDoc={handleUploadDoc}
-        proactiveSuggestions={proactiveSuggestions}
-        setProactiveSuggestions={setProactiveSuggestions}
-      />
+      {/* ── Main App Content Wrapper ── */}
+      <div className="flex-1 flex flex-col min-w-0 h-full relative">
+        {/* ── Dashboard Area (takes remaining vertical space) ── */}
+        <div className="flex-1 min-h-0 relative">
+          <Dashboard
+            user={user}
+            agentLoading={agentLoading}
+            agentStatus={agentStatus}
+            isSpeaking={isSpeaking}
+            queriesCount={history.length}
+            sessionStart={sessionStart}
+            activeOverlay={activeOverlay}
+            onNavigate={handleNavigate}
+            themeName={theme}
+            sentiment={sentiment}
+            isDebating={isDebating}
+            steps={agentStatus?.steps || []}
+            toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+            sidebarOpen={sidebarOpen}
+          />
+        </div>
 
-      {/* ── Left Collapsible Conversational History Sidebar ── */}
+        {/* ── Voice Speaking Telemetry HUD ── */}
+        <AnimatePresence>
+          {isSpeaking && (
+            <div className="px-6 pb-2 shrink-0 z-20">
+              <VoiceTelemetry isSpeaking={isSpeaking} />
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Sleek Fixed Bottom Chat Panel ── */}
+        <ChatPanel
+          chatHistory={(() => {
+            if (!activeMessageId || !Array.isArray(chatHistory)) return [];
+            const chain = [];
+            let current = chatHistory.find(m => m && m.id === activeMessageId);
+            const visited = new Set();
+            while (current && !visited.has(current.id)) {
+              visited.add(current.id);
+              chain.unshift(current);
+              current = chatHistory.find(m => m && m.id === current.parentId);
+            }
+            return chain;
+          })()}
+          fullHistory={chatHistory}
+          activeMessageId={activeMessageId}
+          setActiveMessageId={setActiveMessageId}
+          agentGoal={agentGoal}
+          setAgentGoal={setAgentGoal}
+          agentLoading={agentLoading}
+          agentStatus={agentStatus}
+          agentError={agentError}
+          onStartAgent={handleStartAgent}
+          chatMode={chatMode}
+          setChatMode={setChatMode}
+          language={language}
+          setLanguage={handleLanguageChange}
+          toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          onExportChat={handleExportChat}
+          onUploadDoc={handleUploadDoc}
+          proactiveSuggestions={proactiveSuggestions}
+          setProactiveSuggestions={setProactiveSuggestions}
+        />
+      </div>
+
+      {/* ── Mobile Sidebar Drawer Overlay ── */}
       <AnimatePresence>
         {sidebarOpen && (
-          <>
+          <div className="md:hidden">
             {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
@@ -868,7 +1018,7 @@ function App() {
               onClick={() => setSidebarOpen(false)}
               className="fixed inset-0 bg-black/60 z-40"
             />
-            {/* Sidebar Panel */}
+            {/* Sidebar drawer panel */}
             <motion.div
               initial={{ x: -280 }}
               animate={{ x: 0 }}
@@ -877,88 +1027,9 @@ function App() {
               className="fixed left-0 top-0 bottom-0 w-[280px] bg-neutral-950/95 border-r border-[var(--jarvis-accent)]/15 backdrop-blur-lg z-50 p-4 flex flex-col gap-4 shadow-2xl"
               style={{ fontFamily: 'Rajdhani, sans-serif' }}
             >
-              {/* Header */}
-              <div className="flex items-center justify-between border-b border-[var(--jarvis-accent)]/10 pb-3">
-                <h3 className="text-sm font-bold text-[var(--jarvis-accent)] uppercase tracking-wider font-orbitron" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-                  Conversations
-                </h3>
-                <button
-                  onClick={() => setSidebarOpen(false)}
-                  className="text-neutral-500 hover:text-white p-1 hover:bg-neutral-900 rounded-lg transition-colors cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Create New Chat Button */}
-              <button
-                onClick={() => {
-                  const newId = 'session_' + Date.now();
-                  setSessions(prev => [
-                    {
-                      id: newId,
-                      title: 'New Conversation',
-                      history: [],
-                      timestamp: new Date().toISOString()
-                    },
-                    ...prev
-                  ]);
-                  setCurrentSessionId(newId);
-                  setSidebarOpen(false);
-                }}
-                className="w-full py-2 px-3 rounded-xl border border-[var(--jarvis-accent)]/20 hover:border-[var(--jarvis-accent)]/40 text-[var(--jarvis-accent)] bg-[var(--jarvis-accent)]/5 hover:bg-[var(--jarvis-accent)]/10 text-xs font-bold tracking-wider transition-all uppercase flex items-center justify-center gap-1.5"
-                style={{ fontFamily: 'Orbitron, sans-serif' }}
-              >
-                <span>+ New Chat</span>
-              </button>
-
-              {/* Sessions List */}
-              <div className="flex-1 overflow-y-auto hud-scrollbar flex flex-col gap-2.5 pr-1">
-                {sessions.map(s => {
-                  const isActive = s.id === currentSessionId;
-                  return (
-                    <div
-                      key={s.id}
-                      onClick={() => {
-                        setCurrentSessionId(s.id);
-                        setSidebarOpen(false);
-                      }}
-                      className={`group p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 ${
-                        isActive
-                          ? 'bg-[var(--jarvis-accent)]/10 border-[var(--jarvis-accent)]/30 text-white shadow-md'
-                          : 'bg-neutral-900/50 border-neutral-800 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/80 hover:border-neutral-700'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 truncate">
-                        <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-[var(--jarvis-accent)]' : 'text-neutral-500'}`} />
-                        <span className="text-xs font-medium truncate">{s.title}</span>
-                      </div>
-                      
-                      {/* Delete Session Button */}
-                      {sessions.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (isActive) {
-                              const remaining = sessions.filter(x => x.id !== s.id);
-                              setSessions(remaining);
-                              setCurrentSessionId(remaining[0].id);
-                            } else {
-                              setSessions(prev => prev.filter(x => x.id !== s.id));
-                            }
-                          }}
-                          className="opacity-0 group-hover:opacity-100 text-neutral-500 hover:text-red-500 p-0.5 transition-opacity"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              {renderSidebarContent()}
             </motion.div>
-          </>
+          </div>
         )}
       </AnimatePresence>
 

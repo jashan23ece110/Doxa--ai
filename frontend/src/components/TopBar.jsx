@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, User } from 'lucide-react';
+import { Shield, User, Menu } from 'lucide-react';
 
-const TopBar = ({ user }) => {
+const TopBar = ({ user, toggleSidebar, sidebarOpen }) => {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -13,9 +13,11 @@ const TopBar = ({ user }) => {
     date.toLocaleTimeString('en-GB', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
   const formatDate = (date) =>
-    date.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+    date.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: '2-digit' });
 
-  const truncatedEmail = user && user.length > 20 ? user.slice(0, 20) + '…' : user;
+  const truncatedEmail = user && user.includes('@')
+    ? user.split('@')[0]
+    : user;
 
   return (
     <div
@@ -28,13 +30,20 @@ const TopBar = ({ user }) => {
     >
       {/* Left — Branding */}
       <div className="flex items-center gap-2">
+        <button
+          onClick={toggleSidebar}
+          className="mr-1 p-1 rounded-lg border border-[var(--jarvis-accent)]/15 text-neutral-400 hover:text-[var(--jarvis-accent)] hover:bg-[var(--jarvis-accent)]/5 hover:border-[var(--jarvis-accent)]/30 transition-all cursor-pointer z-30 flex items-center justify-center"
+          title={sidebarOpen ? "Collapse Sidebar" : "Expand Sidebar"}
+        >
+          <Menu className="w-4 h-4" />
+        </button>
         <span
           className="font-bold text-lg tracking-widest"
           style={{ fontFamily: "'Orbitron', sans-serif", color: '#ffffff' }}
         >
           DOXA
         </span>
-        <span className="text-[10px]" style={{ color: '#3a4a5c' }}>
+        <span className="text-[10px]" style={{ color: 'var(--jarvis-text-dim)' }}>
           v2.0
         </span>
       </div>

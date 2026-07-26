@@ -19,6 +19,8 @@ function ParticleSwarm({
 }) {
   const meshRef = useRef();
   const lineMeshRef = useRef();
+  const coreOuterRef = useRef();
+  const coreInnerRef = useRef();
   const { camera, pointer, raycaster, gl } = useThree();
   
   const dummy = useMemo(() => new THREE.Object3D(), []);
@@ -150,6 +152,12 @@ function ParticleSwarm({
     let targetSwirl = 1.5;
     let targetColorIntensity = 0.55;
 
+    // Easing breathing pattern for Idle state (hypnotic Slow Wave)
+    let breathing = 1.0;
+    if (!isThinking && !isSpeaking && !isActive) {
+      breathing = 1.0 + Math.sin(time * 1.5) * 0.12; // slow breathing cycle ~ 4s
+    }
+
     // Voice envelope simulation (syllable frequency ~4Hz + intonation jitter ~18Hz)
     let speechEnvelope = 0.1;
     if (isSpeaking) {
@@ -160,27 +168,33 @@ function ParticleSwarm({
     }
 
     if (isThinking) {
-      targetRadius = 45;
-      targetTurbulence = 16.5;
-      targetPulse = 11;
-      targetSpeed = 1.7;
-      targetSwirl = 7.0;
+      targetRadius = 42;
+      targetTurbulence = 15.0;
+      targetPulse = 9.5;
+      targetSpeed = 1.6;
+      targetSwirl = 6.5;
       targetColorIntensity = 1.0;
     } else if (isSpeaking) {
       // Dynamic voice reactive envelope
-      targetRadius = 32.5 + speechEnvelope * 10.0;
-      targetTurbulence = 9.0;
-      targetPulse = 4.0 + speechEnvelope * 11.0;
-      targetSpeed = 1.05;
-      targetSwirl = 4.5;
+      targetRadius = 31.0 + speechEnvelope * 13.0 + Math.sin(time * 62.0) * 0.45 * speechEnvelope; // voice vibration ripple
+      targetTurbulence = 9.5;
+      targetPulse = 4.0 + speechEnvelope * 12.0;
+      targetSpeed = 1.1;
+      targetSwirl = 4.2;
       targetColorIntensity = 0.85 + speechEnvelope * 0.15;
     } else if (isActive) {
-      targetRadius = 30;
-      targetTurbulence = 7;
-      targetPulse = 4;
-      targetSpeed = 0.8;
-      targetSwirl = 2.5;
+      targetRadius = 28;
+      targetTurbulence = 6.5;
+      targetPulse = 3.5;
+      targetSpeed = 0.75;
+      targetSwirl = 2.2;
       targetColorIntensity = 0.75;
+    } else {
+      // Idle state with breathing effect
+      targetRadius = 22 * breathing;
+      targetPulse = 2.5 * breathing;
+      targetTurbulence = 3.5 + Math.sin(time * 1.5) * 0.8;
+      targetSpeed = 0.28;
     }
 
     // Apply sentiment adjustments
@@ -399,7 +413,7 @@ function ParticleSwarm({
         const p2 = positions[p2Idx];
 
         const dist = p1.distanceTo(p2);
-        const maxDist = isThinking ? 60 : 35;
+        const maxDist = isThinking ? 75 : 35;
 
         if (dist < maxDist) {
           linePositions[ptr++] = p1.x;
@@ -448,6 +462,28 @@ function ParticleSwarm({
           el.style.pointerEvents = morphProgress.current > 0.3 ? 'auto' : 'none';
         }
       });
+      // Animate central cores
+      if (coreOuterRef.current) {
+        const coreScale = 1.0 + (isSpeaking ? speechEnvelope * 0.25 : (isThinking ? 0.15 + Math.sin(time * 8.0) * 0.05 : Math.sin(time * 1.5) * 0.05));
+        coreOuterRef.current.scale.set(coreScale, coreScale, coreScale);
+        
+        // Sync color with current active theme
+        const hexColor = themeName === 'aether' ? 0x00d9ff : 0xdc143c; // cyan or crimson
+        coreOuterRef.current.material.color.setHex(hexColor);
+        
+        // Sync opacity
+        coreOuterRef.current.material.opacity = isThinking
+          ? 0.45 + Math.sin(time * 10) * 0.1
+          : 0.28 + (isSpeaking ? speechEnvelope * 0.15 : Math.sin(time * 1.5) * 0.06);
+      }
+      if (coreInnerRef.current) {
+        const coreScale = 1.0 + (isSpeaking ? speechEnvelope * 0.12 : (isThinking ? 0.08 : Math.sin(time * 1.5) * 0.02));
+        coreInnerRef.current.scale.set(coreScale, coreScale, coreScale);
+        
+        coreInnerRef.current.material.opacity = isThinking
+          ? 0.75 + Math.sin(time * 15) * 0.08
+          : 0.65 + (isSpeaking ? speechEnvelope * 0.1 : Math.sin(time * 1.5) * 0.03);
+      }
     }
   });
 
@@ -455,6 +491,28 @@ function ParticleSwarm({
     <>
       <instancedMesh ref={meshRef} args={[geometry, material, count]} />
       <lineSegments ref={lineMeshRef} geometry={lineGeometry} material={lineMaterial} />
+      
+      {/* Dynamic central glowing cores */}
+      <mesh ref={coreOuterRef}>
+        <sphereGeometry args={[9.5, 32, 32]} />
+        <meshBasicMaterial
+          color={themeName === 'aether' ? 0x00d9ff : 0xdc143c}
+          transparent
+          opacity={0.3}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </mesh>
+      <mesh ref={coreInnerRef}>
+        <sphereGeometry args={[4.2, 32, 32]} />
+        <meshBasicMaterial
+          color={0xffffff}
+          transparent
+          opacity={0.65}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </mesh>
     </>
   );
 }

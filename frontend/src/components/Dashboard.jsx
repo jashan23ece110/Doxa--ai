@@ -32,6 +32,8 @@ export default function Dashboard({
   sentiment = 'neutral',
   isDebating = false,
   steps = [],
+  toggleSidebar,
+  sidebarOpen,
 }) {
   const isAgentActive = agentLoading || agentStatus?.status === 'running' || isDebating;
   const isAgentThinking = (agentStatus?.status === 'running' && (agentStatus?.steps?.length || 0) < 5) || isDebating;
@@ -46,7 +48,7 @@ export default function Dashboard({
       </div>
 
       {/* ── top bar ── */}
-      <TopBar user={user} />
+      <TopBar user={user} toggleSidebar={toggleSidebar} sidebarOpen={sidebarOpen} />
 
       {/* ── HUD nav (left edge) ── */}
       <HudNav activeOverlay={activeOverlay} onNavigate={onNavigate} />

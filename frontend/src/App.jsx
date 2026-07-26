@@ -957,6 +957,7 @@ function App() {
             sentiment={sentiment}
             isDebating={isDebating}
             steps={agentStatus?.steps || []}
+            morphText={agentStatus?.final_result || ''}
             toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
             sidebarOpen={sidebarOpen}
           />

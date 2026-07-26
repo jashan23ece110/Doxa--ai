@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, useEffect, useState } from 'react';
+import React, { useRef, useMemo, useEffect, useState, useCallback } from 'react';
 import { Canvas, useFrame, extend, useThree } from '@react-three/fiber';
 import { Effects } from '@react-three/drei';
 import { UnrealBloomPass } from 'three-stdlib';
@@ -6,6 +6,83 @@ import * as THREE from 'three';
 import { motion } from 'framer-motion';
 
 extend({ UnrealBloomPass });
+
+/* ──────────────────────────────────────────────
+ * TEXT → POINT CLOUD SAMPLING UTILITY
+ * Uses an offscreen canvas to render text, then
+ * samples filled pixels to produce 3D coordinates.
+ * ────────────────────────────────────────────── */
+function sampleTextToPoints(text, maxPoints = 800, canvasW = 512, canvasH = 128) {
+  if (!text || typeof document === 'undefined') return [];
+
+  const canvas = document.createElement('canvas');
+  canvas.width = canvasW;
+  canvas.height = canvasH;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+  // Clear
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, canvasW, canvasH);
+
+  // Dynamic font sizing — shrink if text is long
+  let fontSize = 48;
+  if (text.length > 12) fontSize = 36;
+  if (text.length > 20) fontSize = 28;
+  if (text.length > 30) fontSize = 22;
+
+  ctx.font = `bold ${fontSize}px "Rajdhani", "Inter", monospace`;
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, canvasW / 2, canvasH / 2);
+
+  // Read pixel data
+  const imageData = ctx.getImageData(0, 0, canvasW, canvasH);
+  const pixels = imageData.data;
+
+  // Collect all filled pixel coordinates
+  const filledPixels = [];
+  const step = 2; // subsample for performance
+  for (let y = 0; y < canvasH; y += step) {
+    for (let x = 0; x < canvasW; x += step) {
+      const idx = (y * canvasW + x) * 4;
+      if (pixels[idx] > 128) { // R channel threshold
+        filledPixels.push({ x, y });
+      }
+    }
+  }
+
+  if (filledPixels.length === 0) return [];
+
+  // Subsample to maxPoints
+  const selected = [];
+  const stride = Math.max(1, Math.floor(filledPixels.length / maxPoints));
+  for (let i = 0; i < filledPixels.length && selected.length < maxPoints; i += stride) {
+    const p = filledPixels[i];
+    // Map canvas pixel coords to 3D world space (centered, scaled to ~sphere radius)
+    const worldX = ((p.x / canvasW) - 0.5) * 60; // spread across 60 units
+    const worldY = -((p.y / canvasH) - 0.5) * 18; // vertical spread ~18 units
+    const worldZ = (Math.random() - 0.5) * 3; // slight depth scatter
+    selected.push(new THREE.Vector3(worldX, worldY, worldZ));
+  }
+
+  return selected;
+}
+
+/** Extract a short keyword/summary from answer text for morphing display */
+function extractMorphKeyword(text) {
+  if (!text) return '';
+  // Strip markdown formatting
+  const clean = text.replace(/[#*_`~>[\]()]/g, '').replace(/\n+/g, ' ').trim();
+  // If short enough, use as-is
+  if (clean.length <= 24) return clean.toUpperCase();
+  // Try to extract the first meaningful sentence
+  const firstSentence = clean.split(/[.!?]/)[0]?.trim() || '';
+  if (firstSentence.length <= 24) return firstSentence.toUpperCase();
+  // Fallback: first 3 words
+  const words = clean.split(/\s+/).slice(0, 3).join(' ');
+  return words.toUpperCase();
+}
 
 function ParticleSwarm({
   isActive,
@@ -16,6 +93,8 @@ function ParticleSwarm({
   sentiment = 'neutral',
   isDebating = false,
   steps = [],
+  morphText = '',
+  isHoveringCore = false,
 }) {
   const meshRef = useRef();
   const lineMeshRef = useRef();
@@ -29,6 +108,35 @@ function ParticleSwarm({
   
   // Shockwave tracking ref
   const shockwave = useRef({ active: false, time: 0 });
+
+  // ── Text morph state ──
+  const textMorphProgress = useRef(0);
+  const textMorphAutoTimer = useRef(0);
+  const textMorphActive = useRef(false);
+  const lastMorphText = useRef('');
+
+  // Pre-computed text target positions (updated when morphText changes)
+  const textTargetPositions = useRef([]);
+
+  // Recompute text point cloud when morphText changes
+  useEffect(() => {
+    if (!morphText) {
+      textTargetPositions.current = [];
+      return;
+    }
+    const keyword = extractMorphKeyword(morphText);
+    if (!keyword || keyword === lastMorphText.current) return;
+    lastMorphText.current = keyword;
+
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    const maxSamplePoints = isMobile ? 300 : 800;
+    const points = sampleTextToPoints(keyword, maxSamplePoints);
+    textTargetPositions.current = points;
+
+    // Auto-trigger morph for 3 seconds on new answer
+    textMorphActive.current = true;
+    textMorphAutoTimer.current = 3.0; // seconds
+  }, [morphText]);
 
   // Add direct canvas click listener to trigger shockwave
   useEffect(() => {
@@ -251,6 +359,20 @@ function ParticleSwarm({
     const targetDebate = isDebating ? 1.0 : 0.0;
     debateProgress.current = THREE.MathUtils.lerp(debateProgress.current, targetDebate, 2.5 * delta);
 
+    // ── Text Morph Progress Controller ──
+    // Auto-timer: count down and deactivate after 3s
+    if (textMorphAutoTimer.current > 0) {
+      textMorphAutoTimer.current -= delta;
+      if (textMorphAutoTimer.current <= 0) {
+        textMorphAutoTimer.current = 0;
+        textMorphActive.current = false;
+      }
+    }
+    // Hover reactivation: morph while hovering core
+    const shouldTextMorph = (textMorphActive.current || isHoveringCore) && textTargetPositions.current.length > 0;
+    const textMorphTarget = shouldTextMorph ? 0.85 : 0.0; // 0.85 for blended look (not 100% locked)
+    textMorphProgress.current = THREE.MathUtils.lerp(textMorphProgress.current, textMorphTarget, 3.0 * delta);
+
     for (let i = 0; i < count; i++) {
       const phi = phiTheta[i * 2];
       const theta = phiTheta[i * 2 + 1];
@@ -302,7 +424,18 @@ function ParticleSwarm({
         z = THREE.MathUtils.lerp(z, targetZ, debateProgress.current);
       }
 
-      // Cursor hover repulsion effect (within threshold ~22px)
+      // ── PARTICLE-TO-TEXT MORPHING ──
+      // Morph particles to text shape when auto-triggered or hover-triggered
+      if (textTargetPositions.current.length > 0 && textMorphProgress.current > 0.001) {
+        const textPts = textTargetPositions.current;
+        // Map particle index to a text point (cycle if more particles than points)
+        const textIdx = i % textPts.length;
+        const tp = textPts[textIdx];
+        // Lerp towards text position
+        x = THREE.MathUtils.lerp(x, tp.x, textMorphProgress.current);
+        y = THREE.MathUtils.lerp(y, tp.y, textMorphProgress.current);
+        z = THREE.MathUtils.lerp(z, tp.z, textMorphProgress.current);
+      }
       const pPos = positions[i];
       const distToCursor = cursor.distanceTo(pPos);
       if (distToCursor < 22.0) {
@@ -525,8 +658,10 @@ export default function CentralCore({
   sentiment = 'neutral',
   isDebating = false,
   steps = [],
+  morphText = '',
 }) {
   const [isMobile, setIsMobile] = useState(false);
+  const [isHoveringCore, setIsHoveringCore] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -542,6 +677,8 @@ export default function CentralCore({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.8, ease: 'easeOut' }}
       style={{ width: '100%', height: '100%', position: 'relative' }}
+      onMouseEnter={() => setIsHoveringCore(true)}
+      onMouseLeave={() => setIsHoveringCore(false)}
     >
       <Canvas
         camera={{ position: [0, 0, 95], fov: 60 }}
@@ -559,6 +696,8 @@ export default function CentralCore({
           sentiment={sentiment}
           isDebating={isDebating}
           steps={steps}
+          morphText={morphText}
+          isHoveringCore={isHoveringCore}
         />
         <Effects disableGamma>
           <unrealBloomPass threshold={0.04} strength={1.35} radius={0.55} />

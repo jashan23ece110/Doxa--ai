@@ -32,6 +32,7 @@ export default function Dashboard({
   sentiment = 'neutral',
   isDebating = false,
   steps = [],
+  morphText = '',
   toggleSidebar,
   sidebarOpen,
 }) {
@@ -82,6 +83,7 @@ export default function Dashboard({
               sentiment={sentiment}
               isDebating={isDebating}
               steps={steps}
+              morphText={morphText}
             />
           </motion.div>
         </div>

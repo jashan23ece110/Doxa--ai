@@ -8,8 +8,8 @@ import uuid
 import time
 from typing import Dict, Any, List
 
-import vertexai
-from vertexai.generative_models import GenerativeModel, Part, Content, Tool, FunctionDeclaration
+import google.generativeai as genai
+from google.api_core.exceptions import ResourceExhausted
 
 from google.cloud import firestore
 from rag import retrieve_context
@@ -19,18 +19,13 @@ from tools.calendar_tool import list_calendar_events, create_calendar_event
 from tools.python_sandbox import execute_python_code
 from tools.timer_manager import schedule_timer
 
-# Initialize Vertex AI
-GCP_PROJECT = os.getenv("GCP_PROJECT") or os.getenv("GOOGLE_CLOUD_PROJECT") or os.getenv("GCLOUD_PROJECT")
-GCP_LOCATION = os.getenv("GCP_LOCATION", "us-central1")
-
-try:
-    if GCP_PROJECT:
-        vertexai.init(project=GCP_PROJECT, location=GCP_LOCATION)
-    else:
-        vertexai.init(location=GCP_LOCATION)
-    print(f"Vertex AI initialized with project={GCP_PROJECT or '[AUTO]'}, location={GCP_LOCATION}")
-except Exception as e:
-    print(f"Warning: Failed to initialize Vertex AI: {e}")
+# Configure Gemini API Key
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    print("Gemini API client configured successfully.")
+else:
+    print("Warning: GEMINI_API_KEY is not set.")
 
 # Global in-memory storage fallback for local dev
 global_traces: Dict[str, Dict[str, Any]] = {}
@@ -252,7 +247,7 @@ class MockMessage:
         self.role = "assistant"
 
 def convert_schema_to_vertex(schema: dict) -> dict:
-    """Recursively converts type names to uppercase as required by Vertex AI OpenAPI schema."""
+    """Recursively converts type names to uppercase as required by Vertex AI/Gemini OpenAPI schema."""
     if not isinstance(schema, dict):
         return schema
     new_schema = {}
@@ -267,22 +262,22 @@ def convert_schema_to_vertex(schema: dict) -> dict:
             new_schema[k] = v
     return new_schema
 
-# Build Vertex AI Tool definitions from registry
-VERTEX_FUNC_DECLS = []
+# Build Tool definitions from registry
+GENAI_FUNC_DECLS = []
 for tool_def in TOOLS_DEF:
     func_info = tool_def["function"]
     vertex_params = convert_schema_to_vertex(func_info["parameters"])
-    decl = FunctionDeclaration(
+    decl = genai.types.FunctionDeclaration(
         name=func_info["name"],
         description=func_info["description"],
         parameters=vertex_params
     )
-    VERTEX_FUNC_DECLS.append(decl)
+    GENAI_FUNC_DECLS.append(decl)
 
-VERTEX_TOOLS = [Tool(function_declarations=VERTEX_FUNC_DECLS)] if VERTEX_FUNC_DECLS else None
+GENAI_TOOLS = [genai.types.Tool(function_declarations=GENAI_FUNC_DECLS)] if GENAI_FUNC_DECLS else None
 
 def to_gemini_contents(messages: List[dict]):
-    """Converts standard list of message dicts to Vertex AI Content structures."""
+    """Converts standard list of message dicts to google-generativeai Content structures."""
     contents = []
     system_parts = []
     
@@ -293,7 +288,7 @@ def to_gemini_contents(messages: List[dict]):
         if role == "system":
             system_parts.append(content_str)
         elif role == "user":
-            contents.append(Content(role="user", parts=[Part.from_text(content_str)]))
+            contents.append({"role": "user", "parts": [genai.protos.Part(text=content_str)]})
         elif role == "assistant":
             parts = []
             tool_calls = msg.get("tool_calls")
@@ -306,24 +301,24 @@ def to_gemini_contents(messages: List[dict]):
                     else:
                         func_name = tc.function.name
                         func_args = json.loads(tc.function.arguments) if isinstance(tc.function.arguments, str) else tc.function.arguments
-                    parts.append(Part.from_dict({"function_call": {"name": func_name, "args": func_args}}))
+                    parts.append(genai.protos.Part(function_call=genai.protos.FunctionCall(name=func_name, args=func_args)))
             if content_str:
-                parts.append(Part.from_text(content_str))
+                parts.append(genai.protos.Part(text=content_str))
             if parts:
-                contents.append(Content(role="model", parts=parts))
+                contents.append({"role": "model", "parts": parts})
         elif role == "tool" or role == "function":
             func_name = msg.get("name")
             func_output = msg.get("content") or ""
             resp_dict = {"result": func_output}
-            contents.append(Content(role="user", parts=[
-                Part.from_function_response(name=func_name, response=resp_dict)
-            ]))
+            contents.append({"role": "user", "parts": [
+                genai.protos.Part(function_response=genai.protos.FunctionResponse(name=func_name, response=resp_dict))
+            ]})
             
     system_instruction = "\n\n".join(system_parts) if system_parts else None
     return contents, system_instruction
 
 async def call_gemini(messages, tools=None, model="gemini-2.0-flash"):
-    # Map model names to available Vertex models
+    # Map model names to available models
     target_model_name = "gemini-2.0-flash"
     if model and ("1.5" in model.lower() or "8b" in model.lower()):
         target_model_name = "gemini-1.5-flash"
@@ -334,16 +329,40 @@ async def call_gemini(messages, tools=None, model="gemini-2.0-flash"):
         "temperature": 0.0
     }
     
-    model_obj = GenerativeModel(
-        target_model_name,
-        system_instruction=system_instruction,
-        generation_config=generation_config
-    )
+    pass_tools = GENAI_TOOLS if tools else None
     
-    pass_tools = VERTEX_TOOLS if tools else None
-    
+    async def execute_call_with_retry(model_name):
+        max_retries = 3
+        delay = 2.0
+        for attempt in range(max_retries):
+            try:
+                model_obj = genai.GenerativeModel(
+                    model_name,
+                    system_instruction=system_instruction,
+                    generation_config=generation_config
+                )
+                response = await model_obj.generate_content_async(contents, tools=pass_tools)
+                return response
+            except ResourceExhausted as e:
+                print(f"Gemini API rate limit hit (ResourceExhausted) on attempt {attempt+1}/{max_retries}. Retrying in {delay}s...")
+                if attempt == max_retries - 1:
+                    raise Exception("Gemini API rate limit exceeded (15 RPM / 1500 RPD). Please try again after a moment.") from e
+                await asyncio.sleep(delay)
+                delay *= 2
+            except Exception as e:
+                err_msg = str(e).lower()
+                is_rate_limit = any(x in err_msg for x in ["429", "resource_exhausted", "rate limit"])
+                if is_rate_limit:
+                    print(f"Gemini API rate limit hit on attempt {attempt+1}/{max_retries}. Retrying in {delay}s...")
+                    if attempt == max_retries - 1:
+                        raise Exception("Gemini API rate limit exceeded (15 RPM / 1500 RPD). Please try again after a moment.") from e
+                    await asyncio.sleep(delay)
+                    delay *= 2
+                else:
+                    raise e
+
     try:
-        response = await model_obj.generate_content_async(contents, tools=pass_tools)
+        response = await execute_call_with_retry(target_model_name)
         text_content = ""
         tool_calls = []
         
@@ -363,17 +382,12 @@ async def call_gemini(messages, tools=None, model="gemini-2.0-flash"):
             tool_calls=tool_calls if tool_calls else None
         )
     except Exception as e:
-        print(f"Error calling Vertex AI model {target_model_name}: {e}")
+        print(f"Error calling Gemini model {target_model_name}: {e}")
         # Retry with fallback model gemini-1.5-flash if 2.0-flash failed
         if target_model_name == "gemini-2.0-flash":
             print("Retrying with fallback model gemini-1.5-flash...")
             try:
-                model_obj_fallback = GenerativeModel(
-                    "gemini-1.5-flash",
-                    system_instruction=system_instruction,
-                    generation_config=generation_config
-                )
-                response = await model_obj_fallback.generate_content_async(contents, tools=pass_tools)
+                response = await execute_call_with_retry("gemini-1.5-flash")
                 text_content = ""
                 tool_calls = []
                 
@@ -397,7 +411,7 @@ async def call_gemini(messages, tools=None, model="gemini-2.0-flash"):
                 raise e2
         raise e
 
-# Compatibility alias for code compatibility in debate, planning, self-check steps
+# Compatibility alias for planning, debate, self-check steps
 call_llama = call_gemini
 
 async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode: str = "normal", history: List[dict] = None):
@@ -500,14 +514,31 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
             # Convert messages to Gemini Content format
             contents, system_instruction = to_gemini_contents(messages)
             
-            model_obj = GenerativeModel(
-                "gemini-2.0-flash",
-                system_instruction=system_instruction,
-                generation_config={"temperature": 0.1}
-            )
+            # SSE stream initialization with rate-limiting retries
+            response_stream = None
+            max_retries = 3
+            delay = 2.0
             
-            # Direct completion SSE stream using Gemini async generate_content
-            response_stream = await model_obj.generate_content_async(contents, stream=True)
+            for attempt in range(max_retries):
+                try:
+                    model_obj = genai.GenerativeModel(
+                        "gemini-2.0-flash",
+                        system_instruction=system_instruction,
+                        generation_config={"temperature": 0.1}
+                    )
+                    response_stream = await model_obj.generate_content_async(contents, stream=True)
+                    break
+                except (ResourceExhausted, Exception) as e:
+                    err_msg = str(e).lower()
+                    is_rate_limit = isinstance(e, ResourceExhausted) or any(x in err_msg for x in ["429", "resource_exhausted", "rate limit"])
+                    if is_rate_limit:
+                        print(f"Gemini streaming rate limit hit on attempt {attempt+1}. Retrying in {delay}s...")
+                        if attempt == max_retries - 1:
+                            raise Exception("Gemini API rate limit exceeded (15 RPM / 1500 RPD). Please try again after a moment.")
+                        await asyncio.sleep(delay)
+                        delay *= 2
+                    else:
+                        raise e
             
             trace["final_result"] = ""
             last_save = 0

@@ -1,20 +1,19 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-const WAKE_PHRASES = ['doxa', 'show chat', 'hey doxa', 'open chat'];
-const DISMISS_PHRASES = ['hide chat', 'close chat', 'dismiss'];
+const WAKE_PHRASES = ['hey doxa', 'ok doxa', 'doxa', 'hey dox', 'open sphere', 'show sphere', 'sphere mode'];
+const DISMISS_PHRASES = ['doxa stop', 'stop', 'exit', 'close sphere', 'exit sphere', 'go back', 'dismiss'];
 
 function matchesPhrase(transcript, phrases) {
   const lower = transcript.toLowerCase().trim();
-  return phrases.some(
-    (phrase) => lower.includes(phrase)
-  );
+  return phrases.some((phrase) => lower.includes(phrase));
 }
 
-export default function VoiceListener({ onActivate, onDeactivate }) {
+export default function VoiceListener({ onActivate, onDeactivate, onPermissionError, onQueryCaptured, isSphereMode }) {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
   const shouldListenRef = useRef(true);
   const restartTimeoutRef = useRef(null);
+  const lastTriggerRef = useRef(0);
 
   const SpeechRecognition =
     typeof window !== 'undefined'
@@ -40,23 +39,48 @@ export default function VoiceListener({ onActivate, onDeactivate }) {
           transcript += event.results[i][0].transcript;
         }
 
+        const now = Date.now();
+
+        // Check dismiss phrases first
+        if (matchesPhrase(transcript, DISMISS_PHRASES)) {
+          if (now - lastTriggerRef.current > 1500) {
+            lastTriggerRef.current = now;
+            onDeactivate?.();
+          }
+          return;
+        }
+
+        // Check wake phrases
         if (matchesPhrase(transcript, WAKE_PHRASES)) {
-          onActivate?.();
-        } else if (matchesPhrase(transcript, DISMISS_PHRASES)) {
-          onDeactivate?.();
+          if (now - lastTriggerRef.current > 1500) {
+            lastTriggerRef.current = now;
+            onActivate?.();
+          }
+          return;
+        }
+
+        // If currently in sphere mode and user speaks a query (longer than 3 chars), deliver query
+        if (isSphereMode && transcript.trim().length > 3 && event.results[event.results.length - 1]?.isFinal) {
+          const cleanQuery = transcript
+            .replace(/hey doxa|ok doxa|doxa|hey dox/gi, '')
+            .trim();
+          if (cleanQuery.length > 2) {
+            onQueryCaptured?.(cleanQuery);
+          }
         }
       };
 
       recognition.onerror = (event) => {
-        // 'no-speech' and 'aborted' are expected during continuous listening
-        if (event.error !== 'no-speech' && event.error !== 'aborted') {
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          console.warn('[VoiceListener] Microphone permission denied');
+          onPermissionError?.();
+        } else if (event.error !== 'no-speech' && event.error !== 'aborted') {
           console.warn('[VoiceListener] Recognition error:', event.error);
         }
       };
 
       recognition.onend = () => {
         setIsListening(false);
-        // Auto-restart after a short delay (browser periodically stops recognition)
         if (shouldListenRef.current) {
           restartTimeoutRef.current = setTimeout(() => {
             startListening();
@@ -70,7 +94,7 @@ export default function VoiceListener({ onActivate, onDeactivate }) {
       console.warn('[VoiceListener] Could not start recognition:', err);
       setIsListening(false);
     }
-  }, [SpeechRecognition, onActivate, onDeactivate]);
+  }, [SpeechRecognition, onActivate, onDeactivate, onPermissionError, onQueryCaptured, isSphereMode]);
 
   useEffect(() => {
     shouldListenRef.current = true;
@@ -92,13 +116,12 @@ export default function VoiceListener({ onActivate, onDeactivate }) {
     };
   }, [startListening]);
 
-  // If API is unavailable, render nothing
   if (!SpeechRecognition) return null;
 
   return (
     <div
       className={isListening ? 'voice-dot' : 'voice-dot-off'}
-      title={isListening ? 'Voice listener active' : 'Voice listener inactive'}
+      title={isListening ? 'Voice listener active (Say "Hey Doxa")' : 'Voice listener inactive'}
       style={{
         position: 'fixed',
         top: '16px',

@@ -9,6 +9,7 @@ import ChatPanel from './components/ChatPanel';
 import VoiceListener from './components/VoiceListener';
 import VoiceTelemetry from './components/VoiceTelemetry';
 import NeuralBackground from './components/NeuralBackground';
+import EmergentAnswerCard from './components/EmergentAnswerCard';
 import { THEMES } from './theme';
 
 /* ── animation variants (kept for overlay tab views) ── */
@@ -56,6 +57,8 @@ function App() {
   const [activeOverlay, setActiveOverlay] = useState(null);
   const [chatVisible, setChatVisible] = useState(false);
   const [sessionStart] = useState(() => new Date());
+  const [sphereMode, setSphereMode] = useState(false);
+  const [micPermissionDenied, setMicPermissionDenied] = useState(false);
 
   const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -517,9 +520,14 @@ function App() {
     };
   }, [agentRunId, API_BASE]);
 
-  const handleStartAgent = async (e) => {
-    e.preventDefault();
-    if (!agentGoal.trim()) return;
+  const handleStartAgent = async (eOrGoal) => {
+    let goalToSend = agentGoal;
+    if (typeof eOrGoal === 'string') {
+      goalToSend = eOrGoal;
+    } else if (eOrGoal && eOrGoal.preventDefault) {
+      eOrGoal.preventDefault();
+    }
+    if (!goalToSend.trim()) return;
     setAgentLoading(true); setAgentError(null); setAgentRunId(null); setAgentStatus(null);
     setSentiment('neutral');
     setIsDebating(false);
@@ -549,14 +557,12 @@ function App() {
       id: userMsgId, 
       parentId: activeMessageId, 
       role: 'user', 
-      text: agentGoal, 
+      text: goalToSend, 
       mode: chatMode 
     };
     
     setChatHistory(prev => [...prev, userMsg]);
     setActiveMessageId(userMsgId);
-    
-    const goalToSend = agentGoal;
     setAgentGoal(''); // clear the input
 
     try {
@@ -903,30 +909,89 @@ function App() {
 
       {/* ── Voice Listener (always active) ── */}
       <VoiceListener
+        isSphereMode={sphereMode}
         onActivate={() => {
-          // Play a subtle beep
           try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
             osc.connect(gain);
             gain.connect(ctx.destination);
-            osc.frequency.setValueAtTime(580, ctx.currentTime);
-            gain.gain.setValueAtTime(0.08, ctx.currentTime);
+            osc.frequency.setValueAtTime(640, ctx.currentTime);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
             osc.start();
-            osc.stop(ctx.currentTime + 0.08);
+            osc.stop(ctx.currentTime + 0.1);
           } catch {}
-          
-          // Focus the input
-          const inputEl = document.querySelector('input[placeholder*="Doxa"]');
-          if (inputEl) inputEl.focus();
+          setSphereMode(true);
         }}
-        onDeactivate={() => {}}
+        onDeactivate={() => {
+          setSphereMode(false);
+        }}
+        onPermissionError={() => {
+          setMicPermissionDenied(true);
+        }}
+        onQueryCaptured={(query) => {
+          if (query) {
+            setAgentGoal(query);
+            handleStartAgent(query);
+          }
+        }}
       />
+
+      {/* ── Sphere Mode Top Exit Bar & Emergent Particle Answer Card ── */}
+      {sphereMode && (
+        <>
+          <div className="fixed top-5 right-5 z-50 flex items-center gap-3">
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-neutral-950/80 border border-[var(--jarvis-accent)]/30 backdrop-blur-md text-xs text-[#e0d6c2]">
+              <span className="w-2 h-2 rounded-full bg-[var(--jarvis-accent)] animate-ping" />
+              <span className="font-mono text-[11px] uppercase tracking-widest text-[var(--jarvis-accent)] font-bold">Sphere Mode</span>
+            </div>
+            <button
+              onClick={() => setSphereMode(false)}
+              className="p-2 rounded-full bg-neutral-900/90 border border-neutral-700 text-neutral-300 hover:text-white hover:border-[var(--jarvis-accent)] transition-all cursor-pointer shadow-lg hover:scale-105 active:scale-95 flex items-center justify-center"
+              title="Exit Sphere Mode (or say 'exit')"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <EmergentAnswerCard
+            text={agentStatus?.final_result}
+            isThinking={agentLoading || agentStatus?.status === 'running'}
+            steps={agentStatus?.steps}
+            onClose={() => setAgentStatus(null)}
+            onSpeakToggle={() => {
+              if ('speechSynthesis' in window) {
+                if (window.speechSynthesis.speaking) {
+                  window.speechSynthesis.cancel();
+                  setIsSpeaking(false);
+                } else if (agentStatus?.final_result) {
+                  const uttr = new SpeechSynthesisUtterance(agentStatus.final_result);
+                  uttr.onend = () => setIsSpeaking(false);
+                  setIsSpeaking(true);
+                  window.speechSynthesis.speak(uttr);
+                }
+              }
+            }}
+            isSpeaking={isSpeaking}
+          />
+        </>
+      )}
+
+      {/* ── Microphone Permission Toast Notice ── */}
+      {micPermissionDenied && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-xl bg-neutral-900/90 border border-amber-500/40 text-amber-300 text-xs shadow-2xl backdrop-blur-md">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          <span>Enable microphone access in browser settings for voice activation ("Hey Doxa")</span>
+          <button onClick={() => setMicPermissionDenied(false)} className="p-1 hover:text-white cursor-pointer">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* ── Desktop Inline Collapsible History Sidebar (side-by-side layout) ── */}
       <AnimatePresence initial={false}>
-        {sidebarOpen && (
+        {sidebarOpen && !sphereMode && (
           <motion.div
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: 280, opacity: 1 }}
@@ -960,6 +1025,8 @@ function App() {
             morphText={agentStatus?.final_result || ''}
             toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
             sidebarOpen={sidebarOpen}
+            isSphereMode={sphereMode}
+            onToggleSphereMode={() => setSphereMode(!sphereMode)}
           />
         </div>
 
@@ -973,38 +1040,40 @@ function App() {
         </AnimatePresence>
 
         {/* ── Sleek Fixed Bottom Chat Panel ── */}
-        <ChatPanel
-          chatHistory={(() => {
-            if (!activeMessageId || !Array.isArray(chatHistory)) return [];
-            const chain = [];
-            let current = chatHistory.find(m => m && m.id === activeMessageId);
-            const visited = new Set();
-            while (current && !visited.has(current.id)) {
-              visited.add(current.id);
-              chain.unshift(current);
-              current = chatHistory.find(m => m && m.id === current.parentId);
-            }
-            return chain;
-          })()}
-          fullHistory={chatHistory}
-          activeMessageId={activeMessageId}
-          setActiveMessageId={setActiveMessageId}
-          agentGoal={agentGoal}
-          setAgentGoal={setAgentGoal}
-          agentLoading={agentLoading}
-          agentStatus={agentStatus}
-          agentError={agentError}
-          onStartAgent={handleStartAgent}
-          chatMode={chatMode}
-          setChatMode={setChatMode}
-          language={language}
-          setLanguage={handleLanguageChange}
-          toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          onExportChat={handleExportChat}
-          onUploadDoc={handleUploadDoc}
-          proactiveSuggestions={proactiveSuggestions}
-          setProactiveSuggestions={setProactiveSuggestions}
-        />
+        {!sphereMode && (
+          <ChatPanel
+            chatHistory={(() => {
+              if (!activeMessageId || !Array.isArray(chatHistory)) return [];
+              const chain = [];
+              let current = chatHistory.find(m => m && m.id === activeMessageId);
+              const visited = new Set();
+              while (current && !visited.has(current.id)) {
+                visited.add(current.id);
+                chain.unshift(current);
+                current = chatHistory.find(m => m && m.id === current.parentId);
+              }
+              return chain;
+            })()}
+            fullHistory={chatHistory}
+            activeMessageId={activeMessageId}
+            setActiveMessageId={setActiveMessageId}
+            agentGoal={agentGoal}
+            setAgentGoal={setAgentGoal}
+            agentLoading={agentLoading}
+            agentStatus={agentStatus}
+            agentError={agentError}
+            onStartAgent={handleStartAgent}
+            chatMode={chatMode}
+            setChatMode={setChatMode}
+            language={language}
+            setLanguage={handleLanguageChange}
+            toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+            onExportChat={handleExportChat}
+            onUploadDoc={handleUploadDoc}
+            proactiveSuggestions={proactiveSuggestions}
+            setProactiveSuggestions={setProactiveSuggestions}
+          />
+        )}
       </div>
 
       {/* ── Mobile Sidebar Drawer Overlay ── */}

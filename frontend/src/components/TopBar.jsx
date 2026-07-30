@@ -1,14 +1,14 @@
 import React from 'react';
-import { Shield, User, Menu, Settings as SettingsIcon } from 'lucide-react';
+import { Shield, User, Menu, Settings as SettingsIcon, Radio } from 'lucide-react';
 
-const TopBar = ({ user, toggleSidebar, sidebarOpen, onNavigate, activeOverlay }) => {
+const TopBar = ({ user, toggleSidebar, sidebarOpen, onNavigate, activeOverlay, isSphereMode, onToggleSphereMode }) => {
   const truncatedEmail = user && user.includes('@')
     ? user.split('@')[0]
     : user;
 
   return (
     <div
-      className="flex items-center justify-between px-5 w-full select-none"
+      className="flex items-center justify-between px-5 w-full select-none z-30"
       style={{
         height: 48,
         background: 'transparent',
@@ -39,8 +39,8 @@ const TopBar = ({ user, toggleSidebar, sidebarOpen, onNavigate, activeOverlay })
         </span>
       </div>
 
-      {/* Right — Status Badges & Settings Icon */}
-      <div className="flex items-center gap-3.5">
+      {/* Right — Status Badges & Controls */}
+      <div className="flex items-center gap-3">
         {/* Status indicator labels */}
         <div className="hidden sm:flex items-center gap-3">
           {/* Online */}
@@ -71,6 +71,20 @@ const TopBar = ({ user, toggleSidebar, sidebarOpen, onNavigate, activeOverlay })
           </div>
         </div>
 
+        {/* Sphere Mode toggle button */}
+        <button
+          onClick={onToggleSphereMode}
+          className={`p-1.5 rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider ${
+            isSphereMode
+              ? 'bg-[rgba(var(--jarvis-accent-rgb),0.2)] border-[var(--jarvis-accent)] text-white shadow-[0_0_12px_rgba(var(--jarvis-accent-rgb),0.35)]'
+              : 'border-neutral-800 text-neutral-400 hover:text-[var(--jarvis-accent)] hover:border-[var(--jarvis-accent)]/30 hover:bg-[var(--jarvis-accent)]/5'
+          }`}
+          title="Toggle Sphere Mode (Voice Assistant)"
+        >
+          <Radio className={`w-3.5 h-3.5 ${isSphereMode ? 'animate-pulse text-[var(--jarvis-accent)]' : ''}`} />
+          <span className="hidden md:inline font-mono text-[10px]">Sphere</span>
+        </button>
+
         {/* System Settings gear icon (consolidated modal trigger) */}
         <button
           onClick={() => {
@@ -87,9 +101,9 @@ const TopBar = ({ user, toggleSidebar, sidebarOpen, onNavigate, activeOverlay })
           }`}
           title="System Settings"
         >
-          <SettingsIcon 
-            className={`w-4 h-4 ${activeOverlay ? 'animate-spin' : ''}`} 
-            style={{ animationDuration: '8s' }} 
+          <SettingsIcon
+            className={`w-4 h-4 ${activeOverlay ? 'animate-spin' : ''}`}
+            style={{ animationDuration: '8s' }}
           />
         </button>
       </div>

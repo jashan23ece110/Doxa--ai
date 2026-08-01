@@ -8,8 +8,7 @@ import uuid
 import time
 from typing import Dict, Any, List
 
-import google.generativeai as genai
-from google.api_core.exceptions import ResourceExhausted
+from openai import AsyncOpenAI, RateLimitError, APIError
 
 from google.cloud import firestore
 from rag import retrieve_context
@@ -19,20 +18,26 @@ from tools.calendar_tool import list_calendar_events, create_calendar_event
 from tools.python_sandbox import execute_python_code
 from tools.timer_manager import schedule_timer
 
-# Configure Gemini API Key
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
-    print("Gemini API client configured successfully.")
+# Configure TokenRouter API Client
+TOKENROUTER_API_KEY = os.getenv("TOKENROUTER_API_KEY", "")
+TOKENROUTER_BASE_URL = os.getenv("TOKENROUTER_BASE_URL", "https://api.tokenrouter.com/v1")
+DEFAULT_MODEL = os.getenv("TOKENROUTER_MODEL", "google/gemini-2.0-flash-001")
+
+if TOKENROUTER_API_KEY:
+    print("TokenRouter API client configured successfully.")
 else:
-    print("Warning: GEMINI_API_KEY is not set.")
+    print("Warning: TOKENROUTER_API_KEY is not set.")
+
+client = AsyncOpenAI(
+    api_key=TOKENROUTER_API_KEY if TOKENROUTER_API_KEY else "dummy_key",
+    base_url=TOKENROUTER_BASE_URL
+)
 
 # Global in-memory storage fallback for local dev
 global_traces: Dict[str, Dict[str, Any]] = {}
 
 # Initialize Firestore client
 try:
-    # Use project environment variable or auto-detect
     db = firestore.Client()
 except Exception as e:
     print(f"Firestore not initialized (using memory fallback): {e}")
@@ -61,7 +66,6 @@ def classify_sentiment(text: str) -> str:
     exciting_keywords = ["congrats", "congratulations", "excellent", "great", "awesome", "win", "excited", "happy", "yes!", "cool", "amazing", "beautiful", "wonderful", "celebrate", "perfect", "wow", "fantastic", "superb", "yay", "mubarak", "badhiya", "shandar", "zabardast"]
     sad_serious_keywords = ["fail", "failed", "failure", "lost", "die", "death", "sad", "grave", "catastrophe", "wrong", "accident", "bad", "sorry", "condolences", "regret", "apologize", "unfortunate", "grief", "cancel", "error", "warning", "critical", "severe", "fatal", "khabar kharab", "nuksan", "maut", "dukh", "chinta"]
     
-    # Check match counts
     exciting_count = sum(1 for w in exciting_keywords if w in text_lower)
     sad_count = sum(1 for w in sad_serious_keywords if w in text_lower)
     
@@ -86,7 +90,7 @@ async def summarize_text(text: str) -> str:
         {"role": "system", "content": "You are a summarizing agent. Summarize the following text concisely."},
         {"role": "user", "content": text}
     ]
-    resp = await call_gemini(messages)
+    resp = await call_tokenrouter(messages)
     return resp.content
 
 async def draft_message(context: str, purpose: str) -> str:
@@ -94,7 +98,7 @@ async def draft_message(context: str, purpose: str) -> str:
         {"role": "system", "content": "You are an assistant that drafts messages or emails based on provided context and purpose."},
         {"role": "user", "content": f"Context:\n{context}\n\nPurpose:\n{purpose}\n\nPlease draft the message."}
     ]
-    resp = await call_gemini(messages)
+    resp = await call_tokenrouter(messages)
     return resp.content
 
 # --- Tool registry ---
@@ -229,190 +233,52 @@ TOOLS_DEF = [
     }
 ]
 
-# Helper classes to mimic OpenAI/Groq response objects for function calling compatibility
-class MockFunction:
-    def __init__(self, name: str, arguments: str):
-        self.name = name
-        self.arguments = arguments
-
-class MockToolCall:
-    def __init__(self, call_id: str, name: str, arguments: str):
-        self.id = call_id
-        self.function = MockFunction(name, arguments)
-
-class MockMessage:
-    def __init__(self, content: str = None, tool_calls: list = None):
-        self.content = content
-        self.tool_calls = tool_calls
-        self.role = "assistant"
-
-def convert_schema_to_vertex(schema: dict) -> dict:
-    """Recursively converts type names to uppercase as required by Vertex AI/Gemini OpenAPI schema."""
-    if not isinstance(schema, dict):
-        return schema
-    new_schema = {}
-    for k, v in schema.items():
-        if k == "type" and isinstance(v, str):
-            new_schema[k] = v.upper()
-        elif isinstance(v, dict):
-            new_schema[k] = convert_schema_to_vertex(v)
-        elif isinstance(v, list):
-            new_schema[k] = [convert_schema_to_vertex(item) if isinstance(item, dict) else item for item in v]
-        else:
-            new_schema[k] = v
-    return new_schema
-
-# Build Tool definitions from registry
-GENAI_FUNC_DECLS = []
-for tool_def in TOOLS_DEF:
-    func_info = tool_def["function"]
-    vertex_params = convert_schema_to_vertex(func_info["parameters"])
-    decl = genai.types.FunctionDeclaration(
-        name=func_info["name"],
-        description=func_info["description"],
-        parameters=vertex_params
-    )
-    GENAI_FUNC_DECLS.append(decl)
-
-GENAI_TOOLS = [genai.types.Tool(function_declarations=GENAI_FUNC_DECLS)] if GENAI_FUNC_DECLS else None
-
-def to_gemini_contents(messages: List[dict]):
-    """Converts standard list of message dicts to google-generativeai Content structures."""
-    contents = []
-    system_parts = []
+async def call_tokenrouter(messages: List[dict], tools: List[dict] = None, model: str = None) -> Any:
+    target_model = model or DEFAULT_MODEL
     
-    for msg in messages:
-        role = msg.get("role")
-        content_str = msg.get("content") or ""
-        
-        if role == "system":
-            system_parts.append(content_str)
-        elif role == "user":
-            contents.append({"role": "user", "parts": [genai.protos.Part(text=content_str)]})
-        elif role == "assistant":
-            parts = []
-            tool_calls = msg.get("tool_calls")
-            if tool_calls:
-                for tc in tool_calls:
-                    if isinstance(tc, dict):
-                        func_name = tc.get("function", {}).get("name")
-                        args_val = tc.get("function", {}).get("arguments", "{}")
-                        func_args = json.loads(args_val) if isinstance(args_val, str) else args_val
-                    else:
-                        func_name = tc.function.name
-                        func_args = json.loads(tc.function.arguments) if isinstance(tc.function.arguments, str) else tc.function.arguments
-                    parts.append(genai.protos.Part(function_call=genai.protos.FunctionCall(name=func_name, args=func_args)))
-            if content_str:
-                parts.append(genai.protos.Part(text=content_str))
-            if parts:
-                contents.append({"role": "model", "parts": parts})
-        elif role == "tool" or role == "function":
-            func_name = msg.get("name")
-            func_output = msg.get("content") or ""
-            resp_dict = {"result": func_output}
-            contents.append({"role": "user", "parts": [
-                genai.protos.Part(function_response=genai.protos.FunctionResponse(name=func_name, response=resp_dict))
-            ]})
-            
-    system_instruction = "\n\n".join(system_parts) if system_parts else None
-    return contents, system_instruction
+    # Map common model aliases to TokenRouter model identifiers
+    if target_model in ["gemini-2.0-flash", "gemini-2.0-flash-001"]:
+        target_model = "google/gemini-2.0-flash-001"
+    elif target_model in ["gemini-1.5-flash", "llama-3.1-8b-instant"]:
+        target_model = "google/gemini-1.5-flash"
 
-async def call_gemini(messages, tools=None, model="gemini-2.0-flash"):
-    # Map model names to available models
-    target_model_name = "gemini-2.0-flash"
-    if model and ("1.5" in model.lower() or "8b" in model.lower()):
-        target_model_name = "gemini-1.5-flash"
-        
-    contents, system_instruction = to_gemini_contents(messages)
-    
-    generation_config = {
-        "temperature": 0.0
+    kwargs = {
+        "model": target_model,
+        "messages": messages,
+        "temperature": 0.1
     }
-    
-    pass_tools = GENAI_TOOLS if tools else None
-    
-    async def execute_call_with_retry(model_name):
-        max_retries = 3
-        delay = 2.0
-        for attempt in range(max_retries):
-            try:
-                model_obj = genai.GenerativeModel(
-                    model_name,
-                    system_instruction=system_instruction,
-                    generation_config=generation_config
-                )
-                response = await model_obj.generate_content_async(contents, tools=pass_tools)
-                return response
-            except ResourceExhausted as e:
-                print(f"Gemini API rate limit hit (ResourceExhausted) on attempt {attempt+1}/{max_retries}. Retrying in {delay}s...")
+    if tools:
+        kwargs["tools"] = tools
+
+    max_retries = 3
+    delay = 2.0
+
+    for attempt in range(max_retries):
+        try:
+            response = await client.chat.completions.create(**kwargs)
+            return response.choices[0].message
+        except RateLimitError as e:
+            print(f"TokenRouter API rate limit hit (RateLimitError) on attempt {attempt+1}/{max_retries}. Retrying in {delay}s...")
+            if attempt == max_retries - 1:
+                raise Exception("TokenRouter API rate limit exceeded. Please try again after a moment.") from e
+            await asyncio.sleep(delay)
+            delay *= 2
+        except Exception as e:
+            err_msg = str(e).lower()
+            is_rate_limit = any(x in err_msg for x in ["429", "rate_limit", "ratelimit", "resource_exhausted"])
+            if is_rate_limit:
+                print(f"TokenRouter API rate limit hit on attempt {attempt+1}/{max_retries}. Retrying in {delay}s...")
                 if attempt == max_retries - 1:
-                    raise Exception("Gemini API rate limit exceeded (15 RPM / 1500 RPD). Please try again after a moment.") from e
+                    raise Exception("TokenRouter API rate limit exceeded. Please try again after a moment.") from e
                 await asyncio.sleep(delay)
                 delay *= 2
-            except Exception as e:
-                err_msg = str(e).lower()
-                is_rate_limit = any(x in err_msg for x in ["429", "resource_exhausted", "rate limit"])
-                if is_rate_limit:
-                    print(f"Gemini API rate limit hit on attempt {attempt+1}/{max_retries}. Retrying in {delay}s...")
-                    if attempt == max_retries - 1:
-                        raise Exception("Gemini API rate limit exceeded (15 RPM / 1500 RPD). Please try again after a moment.") from e
-                    await asyncio.sleep(delay)
-                    delay *= 2
-                else:
-                    raise e
+            else:
+                print(f"TokenRouter API error calling {target_model}: {e}")
+                raise e
 
-    try:
-        response = await execute_call_with_retry(target_model_name)
-        text_content = ""
-        tool_calls = []
-        
-        if response.candidates and response.candidates[0].content.parts:
-            for part in response.candidates[0].content.parts:
-                if part.text:
-                    text_content += part.text
-                if part.function_call:
-                    func_name = part.function_call.name
-                    func_args = dict(part.function_call.args)
-                    args_str = json.dumps(func_args)
-                    call_id = f"call_{uuid.uuid4().hex}"
-                    tool_calls.append(MockToolCall(call_id, func_name, args_str))
-                    
-        return MockMessage(
-            content=text_content if text_content else None,
-            tool_calls=tool_calls if tool_calls else None
-        )
-    except Exception as e:
-        print(f"Error calling Gemini model {target_model_name}: {e}")
-        # Retry with fallback model gemini-1.5-flash if 2.0-flash failed
-        if target_model_name == "gemini-2.0-flash":
-            print("Retrying with fallback model gemini-1.5-flash...")
-            try:
-                response = await execute_call_with_retry("gemini-1.5-flash")
-                text_content = ""
-                tool_calls = []
-                
-                if response.candidates and response.candidates[0].content.parts:
-                    for part in response.candidates[0].content.parts:
-                        if part.text:
-                            text_content += part.text
-                        if part.function_call:
-                            func_name = part.function_call.name
-                            func_args = dict(part.function_call.args)
-                            args_str = json.dumps(func_args)
-                            call_id = f"call_{uuid.uuid4().hex}"
-                            tool_calls.append(MockToolCall(call_id, func_name, args_str))
-                            
-                return MockMessage(
-                    content=text_content if text_content else None,
-                    tool_calls=tool_calls if tool_calls else None
-                )
-            except Exception as e2:
-                print(f"Fallback model also failed: {e2}")
-                raise e2
-        raise e
-
-# Compatibility alias for planning, debate, self-check steps
-call_llama = call_gemini
+# Compatibility aliases
+call_gemini = call_tokenrouter
+call_llama = call_tokenrouter
 
 async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode: str = "normal", history: List[dict] = None):
     trace = {
@@ -430,10 +296,8 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
     save_trace(run_id, trace)
     
     try:
-        # Set up language prompt
         lang_str = "Hinglish (a mix of Hindi and English using Latin/Roman script)" if language.lower() == "hinglish" else "English"
         
-        # Check for debate mode (subjective comparison queries)
         debatable_keywords = ["should i", "which is better", "what's better", "compare", "vs", "versus", "debate", "opinion", "pros and cons", "should we", "should they", "is it good", "advantages and disadvantages", "kya mujhe", "kaunsa accha hai"]
         is_debatable = any(kw in goal.lower() for kw in debatable_keywords)
         
@@ -452,8 +316,8 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
             ]
             
             msg_a, msg_b = await asyncio.gather(
-                call_gemini(prompt_a, model="gemini-2.0-flash"),
-                call_gemini(prompt_b, model="gemini-2.0-flash")
+                call_tokenrouter(prompt_a),
+                call_tokenrouter(prompt_b)
             )
             
             res_a = msg_a.content or "No argument generated."
@@ -469,7 +333,7 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
                 {"role": "user", "content": f"Topic: {goal}\n\nPerspective A (Optimist):\n{res_a}\n\nPerspective B (Skeptic):\n{res_b}\n\nWrite the balanced final response:"}
             ]
             
-            msg_synth = await call_gemini(prompt_synth, model="gemini-2.0-flash")
+            msg_synth = await call_tokenrouter(prompt_synth)
             final_result = msg_synth.content or "Synthesis failed."
             
             trace["final_result"] = final_result
@@ -479,7 +343,6 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
             save_trace(run_id, trace)
             return
             
-        # Auto-detect simple greetings or casual chat to bypass planning mode entirely
         chat_words = goal.strip().lower().replace("?", "").replace("!", "").replace(",", "").split()
         greetings = {"hi", "hello", "hey", "hola", "namaste", "greetings", "good morning", "good afternoon", "good evening", "howdy", "sup", "yo", "kaise ho"}
         is_simple_greeting = False
@@ -488,12 +351,11 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
             
         if is_simple_greeting:
             mode = "normal"
- 
+
         if mode in ("normal", "ask"):
             trace["steps"].append({"step": "Direct Completion", "tool_used": "None", "input": goal, "output": "Retrieving context and generating response..."})
             save_trace(run_id, trace)
             
-            # Retrieve RAG context if applicable
             contexts = retrieve_context(goal, n_results=3)
             system_content = (
                 f"You are Doxa, a helpful AI assistant. Answer the user's query directly and naturally in {lang_str}.\n"
@@ -511,30 +373,27 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
                     messages.append({"role": h.get("role", "user"), "content": h.get("text", "")})
             messages.append({"role": "user", "content": goal})
             
-            # Convert messages to Gemini Content format
-            contents, system_instruction = to_gemini_contents(messages)
-            
-            # SSE stream initialization with rate-limiting retries
+            # OpenAI streaming completions
             response_stream = None
             max_retries = 3
             delay = 2.0
             
             for attempt in range(max_retries):
                 try:
-                    model_obj = genai.GenerativeModel(
-                        "gemini-2.0-flash",
-                        system_instruction=system_instruction,
-                        generation_config={"temperature": 0.1}
+                    response_stream = await client.chat.completions.create(
+                        model=DEFAULT_MODEL,
+                        messages=messages,
+                        stream=True,
+                        temperature=0.1
                     )
-                    response_stream = await model_obj.generate_content_async(contents, stream=True)
                     break
-                except (ResourceExhausted, Exception) as e:
+                except (RateLimitError, Exception) as e:
                     err_msg = str(e).lower()
-                    is_rate_limit = isinstance(e, ResourceExhausted) or any(x in err_msg for x in ["429", "resource_exhausted", "rate limit"])
+                    is_rate_limit = isinstance(e, RateLimitError) or any(x in err_msg for x in ["429", "rate_limit", "ratelimit", "resource_exhausted"])
                     if is_rate_limit:
-                        print(f"Gemini streaming rate limit hit on attempt {attempt+1}. Retrying in {delay}s...")
+                        print(f"TokenRouter streaming rate limit hit on attempt {attempt+1}. Retrying in {delay}s...")
                         if attempt == max_retries - 1:
-                            raise Exception("Gemini API rate limit exceeded (15 RPM / 1500 RPD). Please try again after a moment.")
+                            raise Exception("TokenRouter API rate limit exceeded. Please try again after a moment.")
                         await asyncio.sleep(delay)
                         delay *= 2
                     else:
@@ -543,15 +402,13 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
             trace["final_result"] = ""
             last_save = 0
             async for chunk in response_stream:
-                try:
-                    delta_content = chunk.text or ""
-                except Exception:
-                    delta_content = ""
-                trace["final_result"] += delta_content
-                now = time.time()
-                if now - last_save > 0.25:
-                    save_trace(run_id, trace)
-                    last_save = now
+                if chunk.choices and len(chunk.choices) > 0 and chunk.choices[0].delta and chunk.choices[0].delta.content:
+                    delta_content = chunk.choices[0].delta.content
+                    trace["final_result"] += delta_content
+                    now = time.time()
+                    if now - last_save > 0.25:
+                        save_trace(run_id, trace)
+                        last_save = now
             
             trace["final_result"] = trace["final_result"].strip()
             trace["sentiment"] = classify_sentiment(trace["final_result"])
@@ -559,7 +416,7 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
             trace["status"] = "completed"
             save_trace(run_id, trace)
             return
- 
+
         # Step 1: Planning (Agentic Mode)
         trace["steps"].append({"step": "Planning", "tool_used": "None", "input": goal, "output": "Generating plan..."})
         save_trace(run_id, trace)
@@ -572,7 +429,7 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
                 plan_messages.append({"role": h.get("role", "user"), "content": h.get("text", "")})
         plan_messages.append({"role": "user", "content": f"Goal: {goal}"})
         
-        plan_msg = await call_gemini(plan_messages)
+        plan_msg = await call_tokenrouter(plan_messages)
         try:
             content = (plan_msg.content or "").strip()
             if content.startswith("```json"):
@@ -588,7 +445,7 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
         trace["plan"] = plan
         trace["steps"][-1]["output"] = "Plan generated."
         save_trace(run_id, trace)
- 
+
         # Step 2: Execution (Agentic Mode)
         agent_messages = [
             {
@@ -596,8 +453,6 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
                 "content": (
                     f"You are Doxa, an advanced agentic AI assistant executing a plan to achieve a goal.\nGoal: {goal}\nPlan:\n" + "\n".join(plan) + 
                     f"\n\nUse your available tools to retrieve facts, search the web, execute Python code, manage calendar events, or perform calculations. "
-                    "When you invoke a tool, make sure you format the call natively as: <function=tool_name>{\"parameter\": \"value\"}</function>. "
-                    "For example, to list events: <function=list_calendar_events>{}</function>. To execute python: <function=execute_python_code>{\"code\": \"print('hello')\"}</function>. "
                     "Note: Third-party integrations like WhatsApp messaging, Spotify control, and desktop automation are currently Coming Soon on the roadmap. "
                     "If the user asks for these, do not attempt to invoke any tool; simply state that these features are coming soon on the roadmap.\n\n"
                     f"When you have enough information, provide a natural and complete final response directly in {lang_str}. Cite sources/URLs when presenting search findings."
@@ -617,13 +472,28 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
             iteration_count = 0
             for _ in range(max_iterations):
                 iteration_count += 1
-                msg = await call_gemini(agent_messages, tools=TOOLS_DEF, model="gemini-2.0-flash")
-                agent_messages.append(msg)
+                msg = await call_tokenrouter(agent_messages, tools=TOOLS_DEF)
+                
+                # Append assistant message to message list
+                assistant_msg = {"role": "assistant", "content": msg.content}
+                if msg.tool_calls:
+                    assistant_msg["tool_calls"] = [
+                        {
+                            "id": tc.id,
+                            "type": "function",
+                            "function": {
+                                "name": tc.function.name,
+                                "arguments": tc.function.arguments
+                            }
+                        }
+                        for tc in msg.tool_calls
+                    ]
+                agent_messages.append(assistant_msg)
                 
                 if msg.tool_calls:
                     for tool_call in msg.tool_calls:
                         func_name = tool_call.function.name
-                        args = json.loads(tool_call.function.arguments)
+                        args = json.loads(tool_call.function.arguments) if isinstance(tool_call.function.arguments, str) else tool_call.function.arguments
                         
                         step_record = {
                             "step": f"Executing {func_name}",
@@ -695,7 +565,7 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
                 final_result = "Agent stopped without a final result (max iterations reached)."
                 trace["final_result"] = final_result
                 save_trace(run_id, trace)
- 
+
             # Step 3: Self-Check with retry triggers
             trace["steps"].append({"step": "Self Check", "tool_used": "None", "input": final_result, "output": "Checking..."})
             save_trace(run_id, trace)
@@ -704,7 +574,7 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
                 {"role": "system", "content": "You are an evaluator. Review the final result against the original goal. Output '[MET]' if the goal is fully and correctly achieved, or '[NOT_MET]' if some requirements are missing. Write a brief, objective analysis (1-2 sentences)."},
                 {"role": "user", "content": f"Goal: {goal}\n\nFinal Result:\n{final_result}\n\nSelf-check analysis:"}
             ]
-            check_msg = await call_gemini(check_messages)
+            check_msg = await call_tokenrouter(check_messages)
             check_content = check_msg.content or ""
             trace["self_check"] = check_content
             trace["steps"][-1]["output"] = "Self-check complete."
@@ -720,7 +590,6 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
                 })
                 save_trace(run_id, trace)
                 
-                # Feedback loop: append self-check critique and retry execution
                 agent_messages.append({
                     "role": "user", 
                     "content": f"Self-check critique: The goal was NOT MET. Reason: {check_content}. Please refine your execution and deliver a completed result."
@@ -752,11 +621,11 @@ async def run_agent_loop(run_id: str, goal: str, language: str = "english", mode
                     {"role": "system", "content": f"You are Doxa. The previous response was raw internal planning text. Rewrite it into a direct, natural, conversational final response in {lang_str}. Avoid meta-commentary, lists, or mentioning the plan/goal. Respond directly to the user's input: '{goal}'."},
                     {"role": "user", "content": f"Raw internal response: {trace['final_result']}\n\nDirect response:"}
                 ]
-                clean_msg = await call_gemini(clean_messages, model="gemini-2.0-flash")
+                clean_msg = await call_tokenrouter(clean_messages)
                 trace["final_result"] = (clean_msg.content or "").strip()
                 trace["sentiment"] = classify_sentiment(trace["final_result"])
                 save_trace(run_id, trace)
- 
+
         trace["status"] = "completed"
         save_trace(run_id, trace)
         

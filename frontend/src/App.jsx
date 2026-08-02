@@ -93,63 +93,7 @@ function App() {
     localStorage.setItem('doxa_theme', theme);
   }, [theme]);
 
-  // Notifications EventSource SSE Listener for background reminders complete alerts
-  useEffect(() => {
-    const sseUrl = `${API_BASE}/notifications/stream`;
-    console.log("Connecting to alerts system at:", sseUrl);
-    
-    let eventSource;
-    const connectSSE = () => {
-      eventSource = new EventSource(sseUrl);
-      
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === 'timer_completed') {
-            try {
-              const ctx = new (window.AudioContext || window.webkitAudioContext)();
-              const beep = (delay) => {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.frequency.setValueAtTime(880, ctx.currentTime + delay);
-                gain.gain.setValueAtTime(0.12, ctx.currentTime + delay);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + delay + 0.15);
-                osc.start(ctx.currentTime + delay);
-                osc.stop(ctx.currentTime + delay + 0.18);
-              };
-              beep(0);
-              beep(0.22);
-              beep(0.44);
-            } catch (soundErr) {
-              console.error("Audio Context beep alert failed:", soundErr);
-            }
-            
-            const newAlert = {
-              id: 'alert_' + Date.now(),
-              title: data.title,
-              seconds: data.seconds,
-              timestamp: new Date().toLocaleTimeString()
-            };
-            setActiveAlerts(prev => [newAlert, ...prev]);
-          }
-        } catch (parseErr) {
-          console.error("Failed to parse SSE timer alert payload:", parseErr);
-        }
-      };
-      
-      eventSource.onerror = (err) => {
-        console.error("SSE EventSource error, closing and scheduled retry:", err);
-        eventSource.close();
-      };
-    };
-    
-    connectSSE();
-    return () => {
-      if (eventSource) eventSource.close();
-    };
-  }, []);
+
 
   /* RAG state */
   const [useRag, setUseRag] = useState(false);
@@ -447,24 +391,25 @@ function App() {
   };
 
   /* ── agent ── */
-  /* ── agent EventSource SSE streaming ── */
+  /* ── agent polling loop ── */
   useEffect(() => {
-    let eventSource;
+    let intervalId;
     if (agentRunId) {
       setAgentLoading(true);
-      eventSource = new EventSource(`${API_BASE}/agent/stream/${agentRunId}`);
       
-      eventSource.onmessage = (event) => {
+      const pollStatus = async () => {
         try {
-          const data = JSON.parse(event.data);
-          
-          if (data.status === 'not_found') {
+          const res = await fetch(`${API_BASE}/agent/status/${agentRunId}`);
+          if (res.status === 404) {
             setAgentError('Run ID not found');
             setAgentLoading(false);
-            eventSource.close();
+            if (intervalId) clearInterval(intervalId);
             return;
           }
-          
+          if (!res.ok) return;
+
+          const data = await res.json();
+
           if (data.sentiment) {
             setSentiment(data.sentiment);
           }
@@ -472,51 +417,39 @@ function App() {
             setIsDebating(data.is_debating);
           }
 
-          setAgentStatus(prev => {
-            const updated = {
-              status: data.status,
-              plan: data.plan || [],
-              steps: data.steps || [],
-              self_check: data.self_check,
-              error: data.error,
-              final_result: prev?.final_result || "",
-              debate_a: data.debate_a || "",
-              debate_b: data.debate_b || ""
-            };
-            if (data.chunk) {
-              updated.final_result = (prev?.final_result || "") + data.chunk;
-            }
-            return updated;
+          setAgentStatus({
+            status: data.status,
+            plan: data.plan || [],
+            steps: data.steps || [],
+            self_check: data.self_check,
+            error: data.error,
+            final_result: data.final_result || "",
+            debate_a: data.debate_a || "",
+            debate_b: data.debate_b || ""
           });
-          
+
           if (data.status === 'completed' || data.status === 'failed') {
             setAgentLoading(false);
-            eventSource.close();
+            if (intervalId) clearInterval(intervalId);
             if (data.status === 'failed') {
               setAgentError(`Agent Execution Failed: ${data.error || 'Unknown error'}`);
             } else {
-              // Trigger suggestions generation based on completed history
               setTimeout(() => {
                 fetchSuggestions(chatHistory);
               }, 500);
             }
           }
         } catch (err) {
-          console.error("Error parsing SSE data:", err);
+          console.error("Error polling agent status:", err);
         }
       };
-      
-      eventSource.onerror = (err) => {
-        console.error("EventSource failed:", err);
-        setAgentLoading(false);
-        eventSource.close();
-      };
+
+      pollStatus();
+      intervalId = setInterval(pollStatus, 800);
     }
-    
+
     return () => {
-      if (eventSource) {
-        eventSource.close();
-      }
+      if (intervalId) clearInterval(intervalId);
     };
   }, [agentRunId, API_BASE]);
 

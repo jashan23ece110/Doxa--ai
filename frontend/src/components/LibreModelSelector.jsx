@@ -70,7 +70,7 @@ export default function LibreModelSelector({ chatMode = 'ask', setChatMode }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.96 }}
             transition={{ duration: 0.15 }}
-            className="absolute left-0 mt-1.5 w-64 p-1.5 rounded-2xl bg-neutral-950/95 backdrop-blur-2xl border border-[var(--jarvis-accent)]/25 shadow-[0_15px_35px_rgba(0,0,0,0.8)] flex flex-col gap-1 z-50"
+            className="absolute left-0 mt-1.5 w-64 max-h-[320px] overflow-y-auto hud-scrollbar p-1.5 rounded-2xl bg-neutral-950/95 backdrop-blur-2xl border border-[var(--jarvis-accent)]/25 shadow-[0_15px_35px_rgba(0,0,0,0.8)] flex flex-col gap-1 z-50"
           >
             <div className="px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-[#7a7060] border-b border-neutral-800 mb-1">
               Select Processing Engine

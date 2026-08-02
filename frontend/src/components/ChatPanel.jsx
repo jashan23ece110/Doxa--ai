@@ -80,16 +80,16 @@ export default function ChatPanel({
   return (
     <div className="w-full max-w-4xl mx-auto px-4 pb-6 pt-2 z-30 pointer-events-auto">
       <div 
-        className="backdrop-blur-md bg-neutral-950/75 border border-[var(--jarvis-accent)]/15 rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col transition-all duration-300"
+        className="backdrop-blur-xl bg-black/15 border border-[var(--jarvis-accent)]/20 rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col transition-all duration-300"
       >
-        {/* ── Chat History Drawer ── */}
+        {/* ── Chat History Drawer (Floating Upward Answer Stream) ── */}
         <AnimatePresence>
           {true && (
             <motion.div 
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="border-b border-[var(--jarvis-accent)]/10 max-h-48 overflow-y-auto hud-scrollbar p-4 flex flex-col gap-3 bg-neutral-950/40"
+              className="border-b border-[var(--jarvis-accent)]/10 max-h-[380px] overflow-y-auto hud-scrollbar p-4 flex flex-col gap-4 bg-transparent"
             >
               {chatHistory.length === 0 && !agentLoading ? (
                 <div className="flex flex-col items-center justify-center py-6 text-center text-neutral-500 font-mono text-xs select-none">
@@ -156,10 +156,10 @@ export default function ChatPanel({
                         }`}>
                           {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                         </div>
-                        <div className={`p-3 rounded-xl text-sm leading-relaxed border ${
+                        <div className={`p-4 rounded-xl text-sm leading-relaxed border transition-all duration-300 ${
                           msg.role === 'user'
-                            ? 'bg-neutral-900/80 border-[var(--jarvis-accent)]/10 text-[#e0d6c2]'
-                            : 'bg-[var(--jarvis-accent)]/5 border-[var(--jarvis-accent)]/15 text-white'
+                            ? 'bg-neutral-950/70 backdrop-blur-md border-[var(--jarvis-accent)]/15 text-[#e0d6c2] shadow-lg'
+                            : 'bg-black/45 backdrop-blur-xl border-[var(--jarvis-accent)]/25 text-white shadow-[0_10px_30px_rgba(0,0,0,0.7)]'
                         }`} style={{ fontFamily: 'Rajdhani, sans-serif' }}>
                           {msg.role === 'user' ? (
                             <p className="whitespace-pre-wrap">{msg.text}</p>

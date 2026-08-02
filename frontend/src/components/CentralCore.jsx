@@ -650,6 +650,117 @@ function ParticleSwarm({
   );
 }
 
+function JarvisArcRings({ isActive, isThinking, isSpeaking, themeName }) {
+  const ring1Ref = useRef();
+  const ring2Ref = useRef();
+  const ring3Ref = useRef();
+  const coreRef = useRef();
+
+  const { ring1Geo, ring2Geo, ring3Geo, tickGeo1, tickGeo2, coreTexture } = useMemo(() => {
+    const createArcRing = (radius, segments, gaps = []) => {
+      const points = [];
+      for (let i = 0; i <= segments; i++) {
+        const angle = (i / segments) * Math.PI * 2;
+        const deg = (angle * 180) / Math.PI;
+        const isGap = gaps.some(([start, end]) => deg >= start && deg <= end);
+        if (!isGap) {
+          points.push(new THREE.Vector3(Math.cos(angle) * radius, Math.sin(angle) * radius, 0));
+        }
+      }
+      return new THREE.BufferGeometry().setFromPoints(points);
+    };
+
+    const createTicks = (radius, count, tickLength = 2.5) => {
+      const positions = [];
+      for (let i = 0; i < count; i++) {
+        const angle = (i / count) * Math.PI * 2;
+        const x1 = Math.cos(angle) * radius;
+        const y1 = Math.sin(angle) * radius;
+        const x2 = Math.cos(angle) * (radius + tickLength);
+        const y2 = Math.sin(angle) * (radius + tickLength);
+        positions.push(x1, y1, 0, x2, y2, 0);
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      return geo;
+    };
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+    grad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
+    grad.addColorStop(0.2, 'rgba(0, 217, 255, 0.9)');
+    grad.addColorStop(0.5, 'rgba(0, 217, 255, 0.35)');
+    grad.addColorStop(0.8, 'rgba(0, 217, 255, 0.08)');
+    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 256, 256);
+    const texture = new THREE.CanvasTexture(canvas);
+
+    return {
+      ring1Geo: createArcRing(38, 128, [[30, 45], [120, 135], [210, 225], [300, 315]]),
+      ring2Geo: createArcRing(52, 128, [[0, 20], [90, 110], [180, 200], [270, 290]]),
+      ring3Geo: createArcRing(66, 128, [[60, 80], [240, 260]]),
+      tickGeo1: createTicks(38, 36, 2.0),
+      tickGeo2: createTicks(52, 48, 3.0),
+      coreTexture: texture,
+    };
+  }, []);
+
+  useFrame((state) => {
+    const speedMult = isThinking ? 2.8 : isActive ? 1.8 : 1.0;
+    if (ring1Ref.current) ring1Ref.current.rotation.z += 0.008 * speedMult;
+    if (ring2Ref.current) ring2Ref.current.rotation.z -= 0.005 * speedMult;
+    if (ring3Ref.current) ring3Ref.current.rotation.z += 0.003 * speedMult;
+    if (coreRef.current) {
+      const pulse = 1.0 + Math.sin(state.clock.getElapsedTime() * 3.5) * 0.15 + (isSpeaking ? 0.35 : 0);
+      coreRef.current.scale.set(18 * pulse, 18 * pulse, 1);
+    }
+  });
+
+  const accentColor = themeName === 'ultron' ? '#ffd60a' : '#00d9ff';
+
+  return (
+    <group>
+      <sprite ref={coreRef} scale={[18, 18, 1]}>
+        <spriteMaterial
+          attach="material"
+          map={coreTexture}
+          transparent
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </sprite>
+
+      <group ref={ring1Ref} rotation={[0.1, 0.1, 0]}>
+        <lineSegments geometry={ring1Geo}>
+          <lineBasicMaterial color={accentColor} transparent opacity={0.65} linewidth={1.5} blending={THREE.AdditiveBlending} />
+        </lineSegments>
+        <lineSegments geometry={tickGeo1}>
+          <lineBasicMaterial color={accentColor} transparent opacity={0.45} blending={THREE.AdditiveBlending} />
+        </lineSegments>
+      </group>
+
+      <group ref={ring2Ref} rotation={[-0.15, 0.2, 0]}>
+        <lineSegments geometry={ring2Geo}>
+          <lineBasicMaterial color={accentColor} transparent opacity={0.55} linewidth={1.5} blending={THREE.AdditiveBlending} />
+        </lineSegments>
+        <lineSegments geometry={tickGeo2}>
+          <lineBasicMaterial color={accentColor} transparent opacity={0.35} blending={THREE.AdditiveBlending} />
+        </lineSegments>
+      </group>
+
+      <group ref={ring3Ref} rotation={[0.2, -0.15, 0]}>
+        <lineSegments geometry={ring3Geo}>
+          <lineBasicMaterial color={accentColor} transparent opacity={0.4} linewidth={1} blending={THREE.AdditiveBlending} />
+        </lineSegments>
+      </group>
+    </group>
+  );
+}
+
 export default function CentralCore({
   isActive = false,
   isThinking = false,
@@ -698,6 +809,12 @@ export default function CentralCore({
           steps={steps}
           morphText={morphText}
           isHoveringCore={isHoveringCore}
+        />
+        <JarvisArcRings
+          isActive={isActive}
+          isThinking={isThinking}
+          isSpeaking={isSpeaking}
+          themeName={themeName}
         />
         <Effects disableGamma>
           <unrealBloomPass threshold={0.04} strength={1.35} radius={0.55} />

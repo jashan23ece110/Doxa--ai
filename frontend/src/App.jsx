@@ -11,6 +11,7 @@ import VoiceListener from './components/VoiceListener';
 import VoiceTelemetry from './components/VoiceTelemetry';
 import NeuralBackground from './components/NeuralBackground';
 import EmergentAnswerCard from './components/EmergentAnswerCard';
+import LibreSidebar from './components/LibreSidebar';
 import { THEMES } from './theme';
 
 /* ── animation variants (kept for overlay tab views) ── */
@@ -748,107 +749,37 @@ function App() {
 
   const renderSidebarContent = () => {
     return (
-      <div className="flex flex-col h-full gap-4 w-full select-none">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-[var(--jarvis-accent)]/10 pb-3">
-          <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-[var(--jarvis-accent)] animate-pulse" />
-            <h3 className="text-sm font-bold text-[var(--jarvis-accent)] uppercase tracking-wider font-orbitron" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-              Control Core
-            </h3>
-          </div>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="text-neutral-500 hover:text-white p-1 hover:bg-neutral-900 rounded-lg transition-colors cursor-pointer"
-            title="Collapse Sidebar"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Create New Chat Button */}
-        <button
-          onClick={() => {
-            const newId = 'session_' + Date.now();
-            setSessions(prev => [
-              {
-                id: newId,
-                title: 'New Conversation',
-                history: [],
-                timestamp: new Date().toISOString()
-              },
-              ...prev
-            ]);
-            setCurrentSessionId(newId);
-            if (window.innerWidth < 768) {
-              setSidebarOpen(false);
-            }
-          }}
-          className="w-full py-2.5 px-3 rounded-xl border border-[var(--jarvis-accent)]/20 hover:border-[var(--jarvis-accent)]/40 text-[var(--jarvis-accent)] bg-[var(--jarvis-accent)]/5 hover:bg-[var(--jarvis-accent)]/10 text-xs font-bold tracking-wider transition-all uppercase flex items-center justify-center gap-1.5 cursor-pointer"
-          style={{ fontFamily: 'Orbitron, sans-serif' }}
-        >
-          <span>+ New Chat</span>
-        </button>
-
-        {/* Sessions List */}
-        <div className="flex-1 overflow-y-auto hud-scrollbar flex flex-col gap-2 pr-1">
-          {sessions.map(s => {
-            const isActive = s.id === currentSessionId;
-            return (
-              <div
-                key={s.id}
-                onClick={() => {
-                  setCurrentSessionId(s.id);
-                  if (window.innerWidth < 768) {
-                    setSidebarOpen(false);
-                  }
-                }}
-                className={`group p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2.5 ${
-                  isActive
-                    ? 'bg-[var(--jarvis-accent)]/10 border-[var(--jarvis-accent)]/30 text-white shadow-md shadow-[rgba(var(--jarvis-accent-rgb),0.02)]'
-                    : 'bg-neutral-900/35 border-neutral-900/60 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/70 hover:border-neutral-800'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 truncate flex-1 min-w-0">
-                  <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-[var(--jarvis-accent)]' : 'text-neutral-500'}`} />
-                  <div className="flex flex-col text-left truncate">
-                    <span className="text-xs font-semibold truncate leading-tight">{s.title}</span>
-                    {s.history && s.history.length > 0 ? (
-                      <span className="text-[10px] text-neutral-500 truncate mt-0.5 font-sans leading-none">
-                        {s.history[0].role === 'user' ? 'You: ' : 'AI: '}
-                        {s.history[0].text}
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-neutral-600 truncate mt-0.5 font-sans leading-none">Empty logs</span>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Delete Session Button */}
-                {sessions.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (isActive) {
-                        const remaining = sessions.filter(x => x.id !== s.id);
-                        setSessions(remaining);
-                        setCurrentSessionId(remaining[0].id);
-                      } else {
-                        setSessions(prev => prev.filter(x => x.id !== s.id));
-                      }
-                    }}
-                    className="opacity-0 group-hover:opacity-100 text-neutral-500 hover:text-red-500 p-0.5 transition-opacity cursor-pointer shrink-0"
-                    title="Delete Conversation"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      <LibreSidebar
+        sessions={sessions}
+        currentSessionId={currentSessionId}
+        onSelectSession={(id) => {
+          setCurrentSessionId(id);
+          if (window.innerWidth < 768) setSidebarOpen(false);
+        }}
+        onNewSession={() => {
+          const newId = 'session_' + Date.now();
+          setSessions(prev => [
+            {
+              id: newId,
+              title: 'New Conversation',
+              history: [],
+              timestamp: new Date().toISOString()
+            },
+            ...prev
+          ]);
+          setCurrentSessionId(newId);
+          if (window.innerWidth < 768) setSidebarOpen(false);
+        }}
+        onDeleteSession={(id) => {
+          setSessions(prev => prev.filter(s => s.id !== id));
+        }}
+        onRenameSession={(id, newTitle) => {
+          setSessions(prev => prev.map(s => s.id === id ? { ...s, title: newTitle } : s));
+        }}
+        isOpen={sidebarOpen}
+        onToggleSidebar={() => setSidebarOpen(false)}
+        userEmail={user?.email || 'user@doxa.ai'}
+      />
     );
   };
 

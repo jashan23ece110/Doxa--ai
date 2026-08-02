@@ -5,6 +5,8 @@ import MarkdownRenderer from './MarkdownRenderer';
 import TaskChecklistCard from './TaskChecklistCard';
 import ReasoningViewCard from './ReasoningViewCard';
 import CitationPanel from './CitationPanel';
+import LibreModelSelector from './LibreModelSelector';
+import MessageActionToolbar from './MessageActionToolbar';
 
 export default function ChatPanel({
   chatHistory = [],
@@ -147,50 +149,53 @@ export default function ChatPanel({
 
                   {chatHistory.map((msg, i) => {
                     if (!msg) return null;
+                    const isUser = msg.role === 'user';
+                    const isLatestAssistant = !isUser && i === chatHistory.length - 1;
+
                     return (
                       <div 
                         key={msg.id || i}
-                        className={`flex gap-3 max-w-[85%] ${msg.role === 'user' ? 'self-end flex-row-reverse' : 'self-start'}`}
+                        className={`group flex gap-3 max-w-[88%] ${isUser ? 'self-end flex-row-reverse' : 'self-start'}`}
                       >
-                        <div className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 ${
-                          msg.role === 'user' 
-                            ? 'bg-neutral-900 border-[var(--jarvis-accent)]/20 text-[var(--jarvis-accent)]' 
-                            : 'bg-[var(--jarvis-accent)]/10 border-[var(--jarvis-accent)]/30 text-[var(--jarvis-accent)]'
+                        {/* Avatar */}
+                        <div className={`w-8 h-8 rounded-xl border flex items-center justify-center shrink-0 shadow-md ${
+                          isUser 
+                            ? 'bg-neutral-900 border-[var(--jarvis-accent)]/30 text-[var(--jarvis-accent)]' 
+                            : 'bg-black/80 border-[var(--jarvis-accent)]/40 text-[var(--jarvis-accent)] shadow-[0_0_12px_rgba(var(--jarvis-accent-rgb),0.2)]'
                         }`}>
-                          {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                          {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                         </div>
-                        <div className={`p-4 rounded-xl text-sm leading-relaxed border transition-all duration-300 ${
-                          msg.role === 'user'
-                            ? 'bg-neutral-950/70 backdrop-blur-md border-[var(--jarvis-accent)]/15 text-[#e0d6c2] shadow-lg'
-                            : 'bg-black/45 backdrop-blur-xl border-[var(--jarvis-accent)]/25 text-white shadow-[0_10px_30px_rgba(0,0,0,0.7)]'
+
+                        {/* Content Card */}
+                        <div className={`p-4 rounded-2xl text-sm leading-relaxed border transition-all duration-300 ${
+                          isUser
+                            ? 'bg-neutral-950/80 backdrop-blur-md border-[var(--jarvis-accent)]/20 text-[#e0d6c2] shadow-lg rounded-tr-none'
+                            : 'bg-black/60 backdrop-blur-xl border-[var(--jarvis-accent)]/25 text-white shadow-[0_10px_35px_rgba(0,0,0,0.7)] rounded-tl-none'
                         }`} style={{ fontFamily: 'Rajdhani, sans-serif' }}>
-                          {msg.role === 'user' ? (
-                            <p className="whitespace-pre-wrap">{msg.text}</p>
+                          {isUser ? (
+                            <p className="whitespace-pre-wrap font-medium">{msg.text}</p>
                           ) : (
                             <MarkdownRenderer content={msg.text} />
                           )}
-                          {msg.role === 'assistant' && (
+
+                          {/* Citation / Sources Panel for Assistant Responses */}
+                          {!isUser && (
                             <CitationPanel text={msg.text} steps={agentStatus?.steps} />
                           )}
-                          <div className="flex items-center justify-between gap-4 mt-2 pt-1.5 border-t border-[var(--jarvis-accent)]/5 text-[9px] text-[#7a7060] min-w-[140px] font-mono">
-                            <span>{msg.mode ? `${msg.mode.toUpperCase()} MODE` : 'DIRECT'}</span>
-                            {msg.id && (
-                              <button
-                                onClick={() => {
-                                  setActiveMessageId(msg.id);
-                                  setTimeout(() => {
-                                    const inputEl = document.querySelector('input[placeholder*="Ask"]');
-                                    if (inputEl) inputEl.focus();
-                                  }, 100);
-                                }}
-                                className="flex items-center gap-1 hover:text-[var(--jarvis-accent)] transition-colors cursor-pointer"
-                                title="Branch conversation from this message"
-                              >
-                                <GitBranch className="w-2.5 h-2.5" />
-                                <span>BRANCH</span>
-                              </button>
-                            )}
-                          </div>
+
+                          {/* LibreChat Message Action Toolbar */}
+                          {!isUser && (
+                            <MessageActionToolbar
+                              msgText={msg.text}
+                              onRegenerate={isLatestAssistant ? () => onStartAgent({ preventDefault: () => {} }) : null}
+                              onBranch={msg.id ? () => {
+                                setActiveMessageId(msg.id);
+                                setTimeout(() => {
+                                  if (inputRef.current) inputRef.current.focus();
+                                }, 100);
+                              } : null}
+                            />
+                          )}
                         </div>
                       </div>
                     );
@@ -361,29 +366,7 @@ export default function ChatPanel({
               Chats
             </button>
             <div className="w-px h-3.5 bg-neutral-800 mx-1" />
-            <button
-              type="button"
-              onClick={() => setChatMode('ask')}
-              className={`flex items-center gap-1 px-3 py-1 rounded-lg font-semibold transition-all duration-200 border ${
-                chatMode === 'ask'
-                  ? 'bg-[var(--jarvis-accent)]/15 border-[var(--jarvis-accent)]/30 text-[var(--jarvis-accent)] shadow-[0_0_10px_rgba(var(--jarvis-accent-rgb),0.1)]'
-                  : 'bg-transparent border-transparent text-[#7a7060] hover:text-[#e0d6c2]'
-              }`}
-            >
-              Ask Anything
-            </button>
-            <button
-              type="button"
-              onClick={() => setChatMode('agentic')}
-              className={`flex items-center gap-1 px-3 py-1 rounded-lg font-semibold transition-all duration-200 border ${
-                chatMode === 'agentic'
-                  ? 'bg-[var(--jarvis-accent)]/15 border-[var(--jarvis-accent)]/30 text-[var(--jarvis-accent)] shadow-[0_0_10px_rgba(var(--jarvis-accent-rgb),0.1)]'
-                  : 'bg-transparent border-transparent text-[#7a7060] hover:text-[#e0d6c2]'
-              }`}
-            >
-              <Cpu className="w-3.5 h-3.5" />
-              Agentic Mode
-            </button>
+            <LibreModelSelector chatMode={chatMode} setChatMode={setChatMode} />
           </div>
 
           {/* Language Selector & Export Chat */}
@@ -460,75 +443,81 @@ export default function ChatPanel({
           </div>
         )}
 
-        {/* ── Main Input Form ── */}
-        <form onSubmit={onStartAgent} className="flex items-center p-3 gap-2 bg-neutral-950/20">
-          <input
-            ref={inputRef}
-            type="text"
-            value={agentGoal}
-            onChange={(e) => setAgentGoal(e.target.value)}
-            disabled={agentLoading}
-            placeholder={
-              isRecording 
-                ? 'Listening...' 
-                : chatMode === 'agentic'
-                  ? 'Ask Doxa to execute a complex task...'
-                  : 'Ask Doxa anything...'
-            }
-            className="flex-1 bg-neutral-900 border border-[var(--jarvis-accent)]/10 rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm text-white placeholder-[#7a7060] focus:outline-none focus:border-[var(--jarvis-accent)]/30 focus:shadow-[0_0_15px_rgba(var(--jarvis-accent-rgb),0.05)] transition-all min-w-0"
-            style={{ fontFamily: 'Rajdhani, sans-serif' }}
-          />
-
-          {/* File Upload Paperclip Button */}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={agentLoading}
-            className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center shrink-0 bg-neutral-900 border border-[var(--jarvis-accent)]/10 text-[#7a7060] hover:text-white hover:border-[var(--jarvis-accent)]/30 transition-all cursor-pointer"
-            title="Upload document to Knowledge Base (RAG)"
+        {/* ── Main Input Form (LibreChat-Style Rounded Container) ── */}
+        <div className="p-3 bg-black/20">
+          <form 
+            onSubmit={onStartAgent} 
+            className="flex items-center gap-2 p-1.5 rounded-[22px] bg-neutral-900/90 border border-[var(--jarvis-accent)]/20 shadow-2xl focus-within:border-[var(--jarvis-accent)]/50 focus-within:shadow-[0_0_20px_rgba(var(--jarvis-accent-rgb),0.15)] transition-all"
           >
-            <Upload className="w-4 h-4 md:w-5 md:h-5" />
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            className="hidden"
-            accept=".txt,.pdf,.md,.csv,.json"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file && onUploadDoc) {
-                onUploadDoc(file);
+            {/* File Upload Paperclip Button */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={agentLoading}
+              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-[#7a7060] hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer ml-1"
+              title="Upload document to Knowledge Base (RAG)"
+            >
+              <Upload className="w-4 h-4" />
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              accept=".txt,.pdf,.md,.csv,.json"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file && onUploadDoc) {
+                  onUploadDoc(file);
+                }
+              }}
+            />
+
+            {/* Input Text Field */}
+            <input
+              ref={inputRef}
+              type="text"
+              value={agentGoal}
+              onChange={(e) => setAgentGoal(e.target.value)}
+              disabled={agentLoading}
+              placeholder={
+                isRecording 
+                  ? 'Listening...' 
+                  : chatMode === 'agentic'
+                    ? 'Ask Doxa to execute a complex task...'
+                    : 'Ask Doxa anything...'
               }
-            }}
-          />
+              className="flex-1 bg-transparent border-none text-xs md:text-sm text-white placeholder-[#7a7060] focus:outline-none px-1 min-w-0"
+              style={{ fontFamily: 'Rajdhani, sans-serif' }}
+            />
 
-          {/* Mic (Voice input) Button */}
-          <button
-            type="button"
-            onClick={toggleVoiceInput}
-            disabled={agentLoading}
-            className={`w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center shrink-0 border transition-all ${
-              isRecording 
-                ? 'bg-red-500/20 border-red-500/40 text-red-400 animate-pulse'
-                : 'bg-neutral-900 border-[var(--jarvis-accent)]/10 text-[#7a7060] hover:text-white hover:border-[var(--jarvis-accent)]/30'
-            }`}
-          >
-            {isRecording ? <MicOff className="w-4 h-4 md:w-5 md:h-5" /> : <Mic className="w-4 h-4 md:w-5 md:h-5" />}
-          </button>
+            {/* Mic (Voice input) Button */}
+            <button
+              type="button"
+              onClick={toggleVoiceInput}
+              disabled={agentLoading}
+              className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                isRecording 
+                  ? 'bg-red-500/20 text-red-400 animate-pulse'
+                  : 'text-[#7a7060] hover:text-white hover:bg-neutral-800'
+              }`}
+            >
+              {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            </button>
 
-          {/* Send Button */}
-          <button
-            type="submit"
-            disabled={agentLoading || !agentGoal.trim()}
-            className={`w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center shrink-0 transition-all ${
-              !agentGoal.trim() || agentLoading
-                ? 'bg-neutral-900 border border-[var(--jarvis-accent)]/5 text-[#7a7060] cursor-not-allowed'
-                : 'bg-[var(--jarvis-accent)] text-neutral-950 hover:bg-[var(--jarvis-accent-hover)] hover:shadow-[0_0_15px_rgba(var(--jarvis-accent-rgb),0.3)]'
-            }`}
-          >
-            <Send className="w-4 h-4 md:w-5 md:h-5" />
-          </button>
-        </form>
+            {/* Send Button */}
+            <button
+              type="submit"
+              disabled={agentLoading || !agentGoal.trim()}
+              className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all ${
+                !agentGoal.trim() || agentLoading
+                  ? 'bg-neutral-800 text-neutral-600 cursor-not-allowed'
+                  : 'bg-[var(--jarvis-accent)] text-black hover:brightness-110 shadow-[0_0_10px_rgba(var(--jarvis-accent-rgb),0.3)]'
+              }`}
+            >
+              {agentLoading ? <Loader2 className="w-4 h-4 animate-spin text-black" /> : <Send className="w-4 h-4" />}
+            </button>
+          </form>
+        </div>
 
         {/* ── Error Output (if any) ── */}
         {agentError && (

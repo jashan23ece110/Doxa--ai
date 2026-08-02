@@ -21,14 +21,8 @@ load_dotenv()
 
 app = FastAPI(title="AI Evaluation Pipeline")
 
-# Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Adjust in production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# CORS handled by Daytona proxy
+# app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 class EvaluateRequest(BaseModel):
     prompt: str

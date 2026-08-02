@@ -32,17 +32,12 @@ app.add_middleware(
 
 class EvaluateRequest(BaseModel):
     prompt: str
-    groq_model: str = "gemini-1.5-flash"
-    groq_model_2: str = "gemini-2.0-flash"
+    groq_model: str = "moonshotai/kimi-k3-free"
+    groq_model_2: str = "moonshotai/kimi-k3-free"
     use_rag: bool = False
 
 def map_model_name(name: str) -> str:
-    name_lower = name.lower() if name else ""
-    if "70b" in name_lower or "gemini-2.0" in name_lower:
-        return "gemini-2.0-flash"
-    elif "8b" in name_lower or "gemini-1.5" in name_lower:
-        return "gemini-1.5-flash"
-    return "gemini-2.0-flash"
+    return "moonshotai/kimi-k3-free"
 
 async def call_groq(prompt: str, model: str) -> dict:
     mapped_model = map_model_name(model)

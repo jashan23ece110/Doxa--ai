@@ -21,7 +21,7 @@ from tools.timer_manager import schedule_timer
 # Configure TokenRouter API Client
 TOKENROUTER_API_KEY = os.getenv("TOKENROUTER_API_KEY", "")
 TOKENROUTER_BASE_URL = os.getenv("TOKENROUTER_BASE_URL", "https://api.tokenrouter.com/v1")
-DEFAULT_MODEL = os.getenv("TOKENROUTER_MODEL", "google/gemini-2.0-flash-001")
+DEFAULT_MODEL = os.getenv("TOKENROUTER_MODEL", "moonshotai/kimi-k3-free")
 
 if TOKENROUTER_API_KEY:
     print("TokenRouter API client configured successfully.")
@@ -235,12 +235,8 @@ TOOLS_DEF = [
 
 async def call_tokenrouter(messages: List[dict], tools: List[dict] = None, model: str = None) -> Any:
     target_model = model or DEFAULT_MODEL
-    
-    # Map common model aliases to TokenRouter model identifiers
-    if target_model in ["gemini-2.0-flash", "gemini-2.0-flash-001"]:
-        target_model = "google/gemini-2.0-flash-001"
-    elif target_model in ["gemini-1.5-flash", "llama-3.1-8b-instant"]:
-        target_model = "google/gemini-1.5-flash"
+    if target_model in ["gemini-2.0-flash", "gemini-2.0-flash-001", "gemini-1.5-flash", "llama-3.1-8b-instant"]:
+        target_model = "moonshotai/kimi-k3-free"
 
     kwargs = {
         "model": target_model,

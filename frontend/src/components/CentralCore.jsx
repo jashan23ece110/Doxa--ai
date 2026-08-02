@@ -654,9 +654,23 @@ function JarvisArcRings({ isActive, isThinking, isSpeaking, themeName }) {
   const ring1Ref = useRef();
   const ring2Ref = useRef();
   const ring3Ref = useRef();
+  const ring4Ref = useRef();
+  const satellitesRef = useRef();
   const coreRef = useRef();
+  const haloRef = useRef();
 
-  const { ring1Geo, ring2Geo, ring3Geo, tickGeo1, tickGeo2, coreTexture } = useMemo(() => {
+  const {
+    ring1Geo,
+    ring2Geo,
+    ring3Geo,
+    ring4Geo,
+    tickMajorGeo,
+    tickMinorGeo,
+    satellitesGeo,
+    coreTexture,
+    haloTexture
+  } = useMemo(() => {
+    // 1. Helper to create segmented arc ring
     const createArcRing = (radius, segments, gaps = []) => {
       const points = [];
       for (let i = 0; i <= segments; i++) {
@@ -670,53 +684,112 @@ function JarvisArcRings({ isActive, isThinking, isSpeaking, themeName }) {
       return new THREE.BufferGeometry().setFromPoints(points);
     };
 
-    const createTicks = (radius, count, tickLength = 2.5) => {
-      const positions = [];
-      for (let i = 0; i < count; i++) {
-        const angle = (i / count) * Math.PI * 2;
+    // 2. Helper to create major & minor bezel tick marks
+    const createBezelTicks = (radius, majorCount = 12, minorCount = 36) => {
+      const majorPos = [];
+      const minorPos = [];
+
+      for (let i = 0; i < majorCount; i++) {
+        const angle = (i / majorCount) * Math.PI * 2;
         const x1 = Math.cos(angle) * radius;
         const y1 = Math.sin(angle) * radius;
-        const x2 = Math.cos(angle) * (radius + tickLength);
-        const y2 = Math.sin(angle) * (radius + tickLength);
-        positions.push(x1, y1, 0, x2, y2, 0);
+        const x2 = Math.cos(angle) * (radius + 4.5);
+        const y2 = Math.sin(angle) * (radius + 4.5);
+        majorPos.push(x1, y1, 0, x2, y2, 0);
       }
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-      return geo;
+
+      for (let i = 0; i < minorCount; i++) {
+        const angle = (i / minorCount) * Math.PI * 2;
+        if (i % (minorCount / majorCount) !== 0) {
+          const x1 = Math.cos(angle) * radius;
+          const y1 = Math.sin(angle) * radius;
+          const x2 = Math.cos(angle) * (radius + 2.5);
+          const y2 = Math.sin(angle) * (radius + 2.5);
+          minorPos.push(x1, y1, 0, x2, y2, 0);
+        }
+      }
+
+      const gMajor = new THREE.BufferGeometry();
+      gMajor.setAttribute('position', new THREE.Float32BufferAttribute(majorPos, 3));
+      const gMinor = new THREE.BufferGeometry();
+      gMinor.setAttribute('position', new THREE.Float32BufferAttribute(minorPos, 3));
+
+      return { gMajor, gMinor };
     };
 
-    const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 256;
-    const ctx = canvas.getContext('2d');
-    const grad = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
-    grad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
-    grad.addColorStop(0.2, 'rgba(0, 217, 255, 0.9)');
-    grad.addColorStop(0.5, 'rgba(0, 217, 255, 0.35)');
-    grad.addColorStop(0.8, 'rgba(0, 217, 255, 0.08)');
-    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 256, 256);
-    const texture = new THREE.CanvasTexture(canvas);
+    // 3. Orbiting micro-satellites geometry
+    const satellitePoints = [];
+    const satCount = 8;
+    for (let i = 0; i < satCount; i++) {
+      const radius = 32 + (i % 3) * 16;
+      const angle = (i / satCount) * Math.PI * 2;
+      satellitePoints.push(new THREE.Vector3(Math.cos(angle) * radius, Math.sin(angle) * radius, (Math.random() - 0.5) * 4));
+    }
+    const gSatellites = new THREE.BufferGeometry().setFromPoints(satellitePoints);
+
+    // 4. Sharp Hot White-Core Texture (Additive falloff)
+    const cCanvas = document.createElement('canvas');
+    cCanvas.width = 256;
+    cCanvas.height = 256;
+    const cCtx = cCanvas.getContext('2d');
+    const cGrad = cCtx.createRadialGradient(128, 128, 0, 128, 128, 128);
+    cGrad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
+    cGrad.addColorStop(0.15, 'rgba(255, 255, 255, 0.95)');
+    cGrad.addColorStop(0.35, 'rgba(0, 217, 255, 0.85)');
+    cGrad.addColorStop(0.65, 'rgba(0, 217, 255, 0.25)');
+    cGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    cCtx.fillStyle = cGrad;
+    cCtx.fillRect(0, 0, 256, 256);
+    const cTexture = new THREE.CanvasTexture(cCanvas);
+
+    // 5. Soft Halo Glow Texture
+    const hCanvas = document.createElement('canvas');
+    hCanvas.width = 256;
+    hCanvas.height = 256;
+    const hCtx = hCanvas.getContext('2d');
+    const hGrad = hCtx.createRadialGradient(128, 128, 0, 128, 128, 128);
+    hGrad.addColorStop(0, 'rgba(0, 217, 255, 0.45)');
+    hGrad.addColorStop(0.4, 'rgba(0, 217, 255, 0.15)');
+    hGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    hCtx.fillStyle = hGrad;
+    hCtx.fillRect(0, 0, 256, 256);
+    const hTexture = new THREE.CanvasTexture(hCanvas);
+
+    const { gMajor, gMinor } = createBezelTicks(64, 12, 36);
 
     return {
-      ring1Geo: createArcRing(38, 128, [[30, 45], [120, 135], [210, 225], [300, 315]]),
-      ring2Geo: createArcRing(52, 128, [[0, 20], [90, 110], [180, 200], [270, 290]]),
-      ring3Geo: createArcRing(66, 128, [[60, 80], [240, 260]]),
-      tickGeo1: createTicks(38, 36, 2.0),
-      tickGeo2: createTicks(52, 48, 3.0),
-      coreTexture: texture,
+      ring1Geo: createArcRing(32, 128, [[40, 60], [130, 150], [220, 240], [310, 330]]),
+      ring2Geo: createArcRing(46, 128, [[10, 35], [100, 125], [190, 215], [280, 305]]),
+      ring3Geo: createArcRing(64, 128, [[70, 95], [250, 275]]),
+      ring4Geo: createArcRing(78, 128, [[15, 30], [105, 120], [195, 210], [285, 300]]),
+      tickMajorGeo: gMajor,
+      tickMinorGeo: gMinor,
+      satellitesGeo: gSatellites,
+      coreTexture: cTexture,
+      haloTexture: hTexture
     };
   }, []);
 
   useFrame((state) => {
-    const speedMult = isThinking ? 2.8 : isActive ? 1.8 : 1.0;
-    if (ring1Ref.current) ring1Ref.current.rotation.z += 0.008 * speedMult;
-    if (ring2Ref.current) ring2Ref.current.rotation.z -= 0.005 * speedMult;
-    if (ring3Ref.current) ring3Ref.current.rotation.z += 0.003 * speedMult;
+    const time = state.clock.getElapsedTime();
+    const speedMult = isThinking ? 3.0 : isActive ? 1.8 : 1.0;
+    const breathing = Math.sin(time * 1.5) * 0.12 + 1.0;
+
+    if (ring1Ref.current) ring1Ref.current.rotation.z += 0.009 * speedMult;
+    if (ring2Ref.current) ring2Ref.current.rotation.z -= 0.006 * speedMult;
+    if (ring3Ref.current) ring3Ref.current.rotation.z += 0.004 * speedMult;
+    if (ring4Ref.current) ring4Ref.current.rotation.z -= 0.002 * speedMult;
+
+    if (satellitesRef.current) satellitesRef.current.rotation.z += 0.012 * speedMult;
+
     if (coreRef.current) {
-      const pulse = 1.0 + Math.sin(state.clock.getElapsedTime() * 3.5) * 0.15 + (isSpeaking ? 0.35 : 0);
-      coreRef.current.scale.set(18 * pulse, 18 * pulse, 1);
+      const pulse = breathing * (1.0 + (isSpeaking ? 0.35 : 0) + (isThinking ? 0.2 : 0));
+      coreRef.current.scale.set(16 * pulse, 16 * pulse, 1);
+    }
+
+    if (haloRef.current) {
+      const pulse = breathing * 1.05;
+      haloRef.current.scale.set(48 * pulse, 48 * pulse, 1);
     }
   });
 
@@ -724,37 +797,51 @@ function JarvisArcRings({ isActive, isThinking, isSpeaking, themeName }) {
 
   return (
     <group>
-      <sprite ref={coreRef} scale={[18, 18, 1]}>
-        <spriteMaterial
-          attach="material"
-          map={coreTexture}
-          transparent
-          blending={THREE.AdditiveBlending}
-          depthWrite={false}
-        />
+      {/* 1. Sharp Hot Core */}
+      <sprite ref={coreRef} scale={[16, 16, 1]}>
+        <spriteMaterial map={coreTexture} transparent blending={THREE.AdditiveBlending} depthWrite={false} />
       </sprite>
 
-      <group ref={ring1Ref} rotation={[0.1, 0.1, 0]}>
+      {/* 2. Soft Inner Glow Halo */}
+      <sprite ref={haloRef} scale={[48, 48, 1]}>
+        <spriteMaterial map={haloTexture} transparent opacity={0.35} blending={THREE.AdditiveBlending} depthWrite={false} />
+      </sprite>
+
+      {/* 3. Orbiting Micro-Satellites */}
+      <group ref={satellitesRef}>
+        <points geometry={satellitesGeo}>
+          <pointsMaterial color={accentColor} size={2.5} transparent opacity={0.85} blending={THREE.AdditiveBlending} />
+        </points>
+      </group>
+
+      {/* 4. Concentric HUD Rings with Bezel Ticks */}
+      <group ref={ring1Ref} rotation={[0.12, 0.1, 0]}>
         <lineSegments geometry={ring1Geo}>
-          <lineBasicMaterial color={accentColor} transparent opacity={0.65} linewidth={1.5} blending={THREE.AdditiveBlending} />
-        </lineSegments>
-        <lineSegments geometry={tickGeo1}>
-          <lineBasicMaterial color={accentColor} transparent opacity={0.45} blending={THREE.AdditiveBlending} />
+          <lineBasicMaterial color={accentColor} transparent opacity={0.7} linewidth={1.5} blending={THREE.AdditiveBlending} />
         </lineSegments>
       </group>
 
       <group ref={ring2Ref} rotation={[-0.15, 0.2, 0]}>
         <lineSegments geometry={ring2Geo}>
-          <lineBasicMaterial color={accentColor} transparent opacity={0.55} linewidth={1.5} blending={THREE.AdditiveBlending} />
-        </lineSegments>
-        <lineSegments geometry={tickGeo2}>
-          <lineBasicMaterial color={accentColor} transparent opacity={0.35} blending={THREE.AdditiveBlending} />
+          <lineBasicMaterial color={accentColor} transparent opacity={0.6} linewidth={1.5} blending={THREE.AdditiveBlending} />
         </lineSegments>
       </group>
 
       <group ref={ring3Ref} rotation={[0.2, -0.15, 0]}>
         <lineSegments geometry={ring3Geo}>
-          <lineBasicMaterial color={accentColor} transparent opacity={0.4} linewidth={1} blending={THREE.AdditiveBlending} />
+          <lineBasicMaterial color={accentColor} transparent opacity={0.5} linewidth={1} blending={THREE.AdditiveBlending} />
+        </lineSegments>
+        <lineSegments geometry={tickMajorGeo}>
+          <lineBasicMaterial color={accentColor} transparent opacity={0.65} blending={THREE.AdditiveBlending} />
+        </lineSegments>
+        <lineSegments geometry={tickMinorGeo}>
+          <lineBasicMaterial color={accentColor} transparent opacity={0.4} blending={THREE.AdditiveBlending} />
+        </lineSegments>
+      </group>
+
+      <group ref={ring4Ref} rotation={[-0.08, -0.1, 0]}>
+        <lineSegments geometry={ring4Geo}>
+          <lineBasicMaterial color={accentColor} transparent opacity={0.35} linewidth={1} blending={THREE.AdditiveBlending} />
         </lineSegments>
       </group>
     </group>
@@ -820,6 +907,16 @@ export default function CentralCore({
           <unrealBloomPass threshold={0.04} strength={1.35} radius={0.55} />
         </Effects>
       </Canvas>
+
+      {/* Status Indicator & Monospace HUD Readouts */}
+      <div className="absolute top-4 left-6 z-30 pointer-events-none flex flex-col gap-1 font-mono text-[10px] tracking-widest text-[var(--jarvis-accent)]/80 select-none">
+        <div className="flex items-center gap-2">
+          <span className={`w-2 h-2 rounded-full ${isThinking ? 'bg-amber-400 animate-ping shadow-[0_0_8px_#fbbf24]' : 'bg-emerald-400 shadow-[0_0_8px_#34d399]'}`} />
+          <span className="font-bold uppercase">{isThinking ? '● PROCESSING' : '● ONLINE'}</span>
+        </div>
+        <div className="text-[9px] text-[#7a7060]">CORE_FREQ // 432.8 Hz</div>
+        <div className="text-[9px] text-[#7a7060]">NEURAL_SYNC // 99.4%</div>
+      </div>
 
       {/* Thought Graph Floating Labels */}
       {!isMobile && (

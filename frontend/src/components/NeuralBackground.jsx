@@ -1,24 +1,24 @@
 import { useEffect, useRef } from 'react';
 
-const CONNECTION_DISTANCE = 110;
-const MIN_SPEED = 0.08;
-const MAX_SPEED = 0.25;
-const LINE_WIDTH = 0.45;
-const MIN_RADIUS = 0.8;
-const MAX_RADIUS = 1.8;
+const MIN_SPEED = 0.05;
+const MAX_SPEED = 0.22;
+const CONNECTION_DISTANCE = 90;
 
 function createParticles(count, width, height) {
   const particles = new Array(count);
   for (let i = 0; i < count; i++) {
     const angle = Math.random() * Math.PI * 2;
     const speed = MIN_SPEED + Math.random() * (MAX_SPEED - MIN_SPEED);
+    const depth = 0.1 + Math.random() * 0.9; // 3D depth scale [0.1, 1.0]
     particles[i] = {
       x: Math.random() * width,
       y: Math.random() * height,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
-      r: MIN_RADIUS + Math.random() * (MAX_RADIUS - MIN_RADIUS),
-      depth: 0.15 + Math.random() * 0.85 // 3D depth parallax scale
+      vx: Math.cos(angle) * speed * depth,
+      vy: Math.sin(angle) * speed * depth,
+      r: 0.5 + depth * 2.2, // size scales with depth
+      depth: depth,
+      alpha: 0.04 + depth * 0.35, // opacity scales with depth
+      hueOffset: (Math.random() - 0.5) * 30 // slight hue variance
     };
   }
   return particles;
@@ -37,14 +37,14 @@ export default function NeuralBackground() {
     let particles = [];
     let animId = 0;
     
-    // Mouse coords for parallax
+    // Smooth mouse coordinates for parallax
     let mouseX = 0;
     let mouseY = 0;
     let targetMouseX = 0;
     let targetMouseY = 0;
 
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-    const particleCount = isMobile ? 35 : 100;
+    const particleCount = isMobile ? 300 : 900;
 
     const resize = () => {
       width = window.innerWidth;
@@ -56,12 +56,10 @@ export default function NeuralBackground() {
       canvas.style.height = `${height}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      // Re-scatter particles when viewport changes
       particles = createParticles(particleCount, width, height);
     };
 
     const handleMouseMove = (e) => {
-      // Offset from center: [-0.5, 0.5]
       targetMouseX = (e.clientX / window.innerWidth) - 0.5;
       targetMouseY = (e.clientY / window.innerHeight) - 0.5;
     };
@@ -76,10 +74,12 @@ export default function NeuralBackground() {
       ctx.clearRect(0, 0, width, height);
 
       // Smooth mouse interpolation (easing)
-      mouseX += (targetMouseX - mouseX) * 0.08;
-      mouseY += (targetMouseY - mouseY) * 0.08;
+      mouseX += (targetMouseX - mouseX) * 0.05;
+      mouseY += (targetMouseY - mouseY) * 0.05;
 
-      // Update positions & wrap
+      const accentRgb = getComputedStyle(document.documentElement).getPropertyValue('--jarvis-accent-rgb').trim() || '0, 217, 255';
+
+      // Update positions & wrap edges
       for (let i = 0; i < particleCount; i++) {
         const p = particles[i];
         p.x += p.vx;
@@ -91,32 +91,27 @@ export default function NeuralBackground() {
         else if (p.y > height + 20) p.y -= height + 40;
       }
 
-      const accentRgb = getComputedStyle(document.documentElement).getPropertyValue('--jarvis-accent-rgb').trim() || '220, 20, 60';
-
-      // Draw connections with parallax offsets
-      ctx.strokeStyle = `rgba(${accentRgb}, 0.025)`;
-      ctx.lineWidth = LINE_WIDTH;
+      // Draw faint connections for closer foreground particles
+      ctx.strokeStyle = `rgba(${accentRgb}, 0.02)`;
+      ctx.lineWidth = 0.4;
       ctx.beginPath();
-      for (let i = 0; i < particleCount; i++) {
+      const step = isMobile ? 3 : 2;
+      for (let i = 0; i < particleCount; i += step) {
         const a = particles[i];
-        const ax = a.x + mouseX * 45 * a.depth;
-        const ay = a.y + mouseY * 45 * a.depth;
+        if (a.depth < 0.5) continue; // only connect foreground particles
+        const ax = a.x + mouseX * 25 * a.depth;
+        const ay = a.y + mouseY * 25 * a.depth;
 
-        for (let j = i + 1; j < particleCount; j++) {
+        for (let j = i + step; j < particleCount; j += step) {
           const b = particles[j];
-          const bx = b.x + mouseX * 45 * b.depth;
-          const by = b.y + mouseY * 45 * b.depth;
+          if (b.depth < 0.5) continue;
+          const bx = b.x + mouseX * 25 * b.depth;
+          const by = b.y + mouseY * 25 * b.depth;
 
           const dx = ax - bx;
-          const by_ay = ay - by;
-          if (
-            dx < CONNECTION_DISTANCE &&
-            dx > -CONNECTION_DISTANCE &&
-            by_ay < CONNECTION_DISTANCE &&
-            by_ay > -CONNECTION_DISTANCE
-          ) {
-            const distSq = dx * dx + by_ay * by_ay;
-            if (distSq < CONNECTION_DISTANCE * CONNECTION_DISTANCE) {
+          const dy = ay - by;
+          if (dx < CONNECTION_DISTANCE && dx > -CONNECTION_DISTANCE && dy < CONNECTION_DISTANCE && dy > -CONNECTION_DISTANCE) {
+            if (dx * dx + dy * dy < CONNECTION_DISTANCE * CONNECTION_DISTANCE) {
               ctx.moveTo(ax, ay);
               ctx.lineTo(bx, by);
             }
@@ -125,17 +120,17 @@ export default function NeuralBackground() {
       }
       ctx.stroke();
 
-      // Draw particles with parallax offsets
-      ctx.fillStyle = `rgba(${accentRgb}, 0.05)`;
-      ctx.beginPath();
+      // Draw ambient particle field with depth opacity & sizing
       for (let i = 0; i < particleCount; i++) {
         const p = particles[i];
-        const px = p.x + mouseX * 45 * p.depth;
-        const py = p.y + mouseY * 45 * p.depth;
-        ctx.moveTo(px + p.r, py);
+        const px = p.x + mouseX * 25 * p.depth;
+        const py = p.y + mouseY * 25 * p.depth;
+
+        ctx.fillStyle = `rgba(${accentRgb}, ${p.alpha})`;
+        ctx.beginPath();
         ctx.arc(px, py, p.r, 0, Math.PI * 2);
+        ctx.fill();
       }
-      ctx.fill();
 
       animId = requestAnimationFrame(tick);
     };
@@ -156,7 +151,7 @@ export default function NeuralBackground() {
         position: 'fixed',
         inset: 0,
         zIndex: 0,
-        opacity: 0.7,
+        opacity: 0.85,
         pointerEvents: 'none',
       }}
       aria-hidden="true"

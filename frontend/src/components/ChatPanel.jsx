@@ -2,6 +2,9 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Mic, MicOff, Globe, Bot, User, Loader2, Cpu, MessageSquare, Upload, GitBranch, Sparkles } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
+import TaskChecklistCard from './TaskChecklistCard';
+import ReasoningViewCard from './ReasoningViewCard';
+import CitationPanel from './CitationPanel';
 
 export default function ChatPanel({
   chatHistory = [],
@@ -166,6 +169,9 @@ export default function ChatPanel({
                           ) : (
                             <MarkdownRenderer content={msg.text} />
                           )}
+                          {msg.role === 'assistant' && (
+                            <CitationPanel text={msg.text} steps={agentStatus?.steps} />
+                          )}
                           <div className="flex items-center justify-between gap-4 mt-2 pt-1.5 border-t border-[var(--jarvis-accent)]/5 text-[9px] text-[#7a7060] min-w-[140px] font-mono">
                             <span>{msg.mode ? `${msg.mode.toUpperCase()} MODE` : 'DIRECT'}</span>
                             {msg.id && (
@@ -189,6 +195,23 @@ export default function ChatPanel({
                       </div>
                     );
                   })}
+
+                  {/* Sticky Plan Execution Checklist */}
+                  {agentStatus?.plan && agentStatus.plan.length > 0 && (
+                    <TaskChecklistCard 
+                      plan={agentStatus.plan} 
+                      steps={agentStatus.steps} 
+                      isCompleted={agentStatus.status === 'completed'} 
+                    />
+                  )}
+
+                  {/* Collapsible Reasoning & Tool Call View */}
+                  {agentStatus?.steps && agentStatus.steps.length > 0 && (
+                    <ReasoningViewCard 
+                      steps={agentStatus.steps} 
+                      selfCheck={agentStatus.self_check} 
+                    />
+                  )}
 
                   {/* Parallel Debate Panel */}
                   {(agentStatus?.debate_a || agentStatus?.debate_b || (agentLoading && agentStatus?.steps?.some(s => s.step.toLowerCase().includes('debate')))) && (

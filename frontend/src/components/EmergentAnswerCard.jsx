@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, Volume2, VolumeX, Bot, ShieldCheck } from 'lucide-react';
+import CitationPanel from './CitationPanel';
 
 export default function EmergentAnswerCard({ text, isThinking, steps, onClose, onSpeakToggle, isSpeaking }) {
   const [autoCollapseTimer, setAutoCollapseTimer] = useState(null);
@@ -124,12 +125,15 @@ export default function EmergentAnswerCard({ text, isThinking, steps, onClose, o
           {/* Content display */}
           <div className="z-10 max-h-[50vh] overflow-y-auto hud-scrollbar pr-1">
             {text ? (
-              <p
-                className="text-sm sm:text-base leading-relaxed text-[#e0d6c2] font-medium whitespace-pre-wrap selection:bg-[var(--jarvis-accent)] selection:text-black"
-                style={{ fontFamily: 'Rajdhani, sans-serif', letterSpacing: '0.02em' }}
-              >
-                {text}
-              </p>
+              <>
+                <p
+                  className="text-sm sm:text-base leading-relaxed text-[#e0d6c2] font-medium whitespace-pre-wrap selection:bg-[var(--jarvis-accent)] selection:text-black"
+                  style={{ fontFamily: 'Rajdhani, sans-serif', letterSpacing: '0.02em' }}
+                >
+                  {text}
+                </p>
+                <CitationPanel text={text} steps={steps} />
+              </>
             ) : isThinking ? (
               <div className="flex items-center gap-3 py-3 text-neutral-400 text-xs font-mono">
                 <Bot className="w-4 h-4 text-[var(--jarvis-accent)] animate-bounce" />

@@ -61,6 +61,7 @@ function App() {
   const [micPermissionDenied, setMicPermissionDenied] = useState(false);
 
   const API_BASE = import.meta.env.VITE_API_URL;
+  axios.defaults.headers.common['X-Daytona-Skip-Preview-Warning'] = 'true';
 
   /* eval state */
   const [prompt, setPrompt] = useState('');
@@ -195,7 +196,10 @@ function App() {
 
       const res = await fetch(`${API_BASE}/agent/proactive_suggestions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Daytona-Skip-Preview-Warning': 'true'
+        },
         body: JSON.stringify({
           history: activeChain.map(m => ({ role: m.role, text: m.text })),
           language: language
@@ -367,7 +371,14 @@ function App() {
     if (!prompt.trim()) return;
     setLoading(true); setError(null); setResults(null); setRetrievedContext(null); setShowContext(false);
     try {
-      const res = await fetch(`${API_BASE}/evaluate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, use_rag: useRag }) });
+      const res = await fetch(`${API_BASE}/evaluate`, { 
+        method: 'POST', 
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Daytona-Skip-Preview-Warning': 'true'
+        }, 
+        body: JSON.stringify({ prompt, use_rag: useRag }) 
+      });
       if (!res.ok) throw new Error('Evaluation failed');
       const data = await res.json();
       setResults({ ...data, _useRag: data.use_rag });
@@ -399,7 +410,11 @@ function App() {
       
       const pollStatus = async () => {
         try {
-          const res = await fetch(`${API_BASE}/agent/status/${agentRunId}`);
+          const res = await fetch(`${API_BASE}/agent/status/${agentRunId}`, {
+            headers: {
+              'X-Daytona-Skip-Preview-Warning': 'true'
+            }
+          });
           if (res.status === 404) {
             setAgentError('Run ID not found');
             setAgentLoading(false);
@@ -501,7 +516,10 @@ function App() {
     try {
       const res = await fetch(`${API_BASE}/agent/start`, { 
           method: 'POST', 
-          headers: { 'Content-Type': 'application/json' }, 
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Daytona-Skip-Preview-Warning': 'true'
+          }, 
           body: JSON.stringify({ 
             goal: goalToSend,
             language: language,

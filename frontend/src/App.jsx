@@ -12,6 +12,7 @@ import VoiceTelemetry from './components/VoiceTelemetry';
 import NeuralBackground from './components/NeuralBackground';
 import EmergentAnswerCard from './components/EmergentAnswerCard';
 import LibreSidebar from './components/LibreSidebar';
+import LandingPage from './landing/LandingPage';
 import { THEMES } from './theme';
 
 /* ── animation variants (kept for overlay tab views) ── */
@@ -54,6 +55,14 @@ function App() {
   /* ── state ── */
   const [user, setUser] = useState(() => localStorage.getItem('ai_eval_user'));
   const [authMode, setAuthMode] = useState('login');
+
+  /* Landing Page vs Working Chat App Route State */
+  const [viewMode, setViewMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return (window.location.hash === '#app' || window.location.pathname === '/app') ? 'app' : 'landing';
+    }
+    return 'landing';
+  });
 
   /* overlay state (null = dashboard visible, string = overlay type) */
   const [activeOverlay, setActiveOverlay] = useState(null);
@@ -784,8 +793,29 @@ function App() {
   };
 
   /* ═══════════════════════════════════════════
-     MAIN LAYOUT — Dashboard + Overlays
+     MAIN LAYOUT — Landing Page vs Chat Dashboard
      ═══════════════════════════════════════════ */
+  if (viewMode === 'landing') {
+    return (
+      <AnimatePresence mode="wait">
+        <motion.div
+          key="landing-view"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, scale: 0.96, filter: 'blur(10px)' }}
+          transition={{ duration: 0.35 }}
+        >
+          <LandingPage
+            onLaunchApp={() => {
+              setViewMode('app');
+              if (typeof window !== 'undefined') window.location.hash = 'app';
+            }}
+          />
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
+
   return (
     <div className="h-screen w-screen bg-[var(--jarvis-bg)] overflow-hidden flex flex-row relative" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
       <NeuralBackground />

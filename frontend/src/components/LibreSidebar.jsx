@@ -5,12 +5,15 @@ import {
   Search, 
   MessageSquare, 
   Trash2, 
-  Edit3, 
+  Edit2, 
   Check, 
   X, 
   Bot, 
   LogOut, 
-  Shield 
+  Shield,
+  PanelLeftClose,
+  User,
+  ShieldCheck
 } from 'lucide-react';
 import doxaLogo from '../assets/logo.png';
 

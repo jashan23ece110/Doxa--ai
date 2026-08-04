@@ -221,7 +221,7 @@ function ParticleSwarm({
   }, [linePositions]);
 
   const lineMaterial = useMemo(() => {
-    const accentColor = themeName === 'aether' ? '#00d9ff' : 'var(--jarvis-accent)';
+    const accentColor = themeName === 'aether' ? '#00d9ff' : '#ffd60a';
     return new THREE.LineBasicMaterial({
       color: new THREE.Color(accentColor),
       transparent: true,
@@ -601,7 +601,7 @@ function ParticleSwarm({
         coreOuterRef.current.scale.set(coreScale, coreScale, coreScale);
         
         // Sync color with current active theme
-        const hexColor = themeName === 'aether' ? 0x00d9ff : 0xdc143c; // cyan or crimson
+        const hexColor = themeName === 'aether' ? 0x00d9ff : 0xffd60a; // cyan or gold
         coreOuterRef.current.material.color.setHex(hexColor);
         
         // Sync opacity
@@ -629,7 +629,7 @@ function ParticleSwarm({
       <mesh ref={coreOuterRef}>
         <sphereGeometry args={[9.5, 32, 32]} />
         <meshBasicMaterial
-          color={themeName === 'aether' ? 0x00d9ff : 0xdc143c}
+          color={themeName === 'aether' ? 0x00d9ff : 0xffd60a}
           transparent
           opacity={0.3}
           blending={THREE.AdditiveBlending}

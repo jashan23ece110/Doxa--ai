@@ -112,6 +112,7 @@ export default function HeroStarfield() {
       uniform vec2  uClickOrigin;
       uniform float uPointSize;
       uniform float uPixelRatio;
+      uniform float uDeform;
 
       varying vec3 vColor;
 
@@ -161,6 +162,10 @@ export default function HeroStarfield() {
         float ringDelay = (2.0 - aRingIndex) * 0.12;
         float f = smoothstep(ringDelay, ringDelay + 0.7, uFormation);
         vec3 localPos = mix(position + aScatter, breathPos, f);
+
+        // Deform effect (organic breakaway/scatter offset)
+        vec3 deformOffset = aScatter * 0.55;
+        localPos = mix(localPos, breathPos + deformOffset, uDeform * f);
 
         // 3 ── World transform (includes group rotation via modelMatrix)
         vec4 worldPos = modelMatrix * vec4(localPos, 1.0);
@@ -233,6 +238,7 @@ export default function HeroStarfield() {
     const shared = {
       uTime:           { value: 0 },
       uFormation:      { value: 0 },
+      uDeform:         { value: 0 },
       uPointer:        { value: new THREE.Vector2(99999, 99999) },
       uPointerActive:  { value: 0 },
       uDragging:       { value: 0 },
@@ -308,6 +314,10 @@ export default function HeroStarfield() {
     // Idle auto-rotation blend
     let lastInteractionTime = 0;
     let autoRotBlend = 0;
+
+    // Deform / reform cycle state
+    let cycleTimer = 0;
+    let uDeformVal = 0.0;
 
     // Camera parallax
     let camTargetX = 0, camTargetY = 0;
@@ -481,17 +491,58 @@ export default function HeroStarfield() {
     // ══════════════════════════════════════════════════════════════════════
     //  ANIMATION LOOP — only uniform updates, no per-particle JS work
     // ══════════════════════════════════════════════════════════════════════
-
+    // ── Animation loop ──
     let animId;
+    let lastTime = 0;
 
     const animate = () => {
       animId = requestAnimationFrame(animate);
       const time = clock.getElapsedTime();
+      const delta = Math.min(0.1, time - lastTime); // clamp delta to avoid huge jumps on tab background
+      lastTime = time;
 
       // ── Formation convergence ──
       if (shared.uFormation.value < 1) {
         shared.uFormation.value = Math.min(1, shared.uFormation.value + 0.006);
       }
+
+      // ── Deform / reform cycle logic ──
+      if (shared.uFormation.value > 0.95) {
+        if (isDragging) {
+          // Pause cycle and smoothly reform logo (lerp to 0.0) during active drag rotation
+          uDeformVal += (0.0 - uDeformVal) * 0.08;
+          cycleTimer = 0; // reset cycle so it starts fresh after drag release
+        } else {
+          // Advance cycle timer
+          cycleTimer += delta;
+
+          // Phases: Formed (3.0s) -> Deforming (1.0s) -> Held (0.6s) -> Reforming (1.0s)
+          // Total length: 5.6s
+          const phaseDuration = 5.6;
+          const localTime = cycleTimer % phaseDuration;
+
+          if (localTime < 3.0) {
+            // Formed state
+            uDeformVal = 0.0;
+          } else if (localTime < 4.0) {
+            // Deforming transition (0.0 -> 1.0)
+            const t = (localTime - 3.0) / 1.0;
+            // cubic ease-in-out
+            uDeformVal = t * t * (3.0 - 2.0 * t);
+          } else if (localTime < 4.6) {
+            // Held deformed state
+            uDeformVal = 1.0;
+          } else {
+            // Reforming transition (1.0 -> 0.0)
+            const t = (localTime - 4.6) / 1.0;
+            // cubic ease-in-out
+            uDeformVal = 1.0 - (t * t * (3.0 - 2.0 * t));
+          }
+        }
+      } else {
+        uDeformVal = 0.0;
+      }
+      shared.uDeform.value = uDeformVal;
 
       // ── Rotation: momentum + auto-rotation ──
       const timeSinceInteraction = time - lastInteractionTime;

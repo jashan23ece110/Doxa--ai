@@ -23,8 +23,8 @@ export default function LandingPage({ onLaunchApp }) {
       {/* Capability Numbers & Stats Strip */}
       <CapabilityStrip />
 
-      {/* 12 Feature Showcase Blocks */}
-      <FeatureShowcase />
+      {/* 11 Full Feature Showcase Blocks */}
+      <FeatureShowcase onLaunchApp={onLaunchApp} />
 
       {/* How It Works Flow */}
       <HowItWorks />

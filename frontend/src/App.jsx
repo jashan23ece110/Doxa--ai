@@ -106,7 +106,28 @@ function App() {
     localStorage.setItem('doxa_theme', theme);
   }, [theme]);
 
-
+  useEffect(() => {
+    const root = document.getElementById('root');
+    if (viewMode === 'landing') {
+      document.body.style.overflow = 'auto';
+      document.body.style.overflowY = 'auto';
+      document.body.style.height = 'auto';
+      if (root) {
+        root.style.overflow = 'auto';
+        root.style.overflowY = 'auto';
+        root.style.height = 'auto';
+      }
+    } else {
+      document.body.style.overflow = 'hidden';
+      document.body.style.overflowY = 'hidden';
+      document.body.style.height = '100vh';
+      if (root) {
+        root.style.overflow = 'hidden';
+        root.style.overflowY = 'hidden';
+        root.style.height = '100vh';
+      }
+    }
+  }, [viewMode]);
 
   /* RAG state */
   const [useRag, setUseRag] = useState(false);

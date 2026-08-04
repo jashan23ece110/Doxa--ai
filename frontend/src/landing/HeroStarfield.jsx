@@ -36,6 +36,7 @@ export default function HeroStarfield() {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(width, height);
     renderer.setClearColor(0x000000, 0);
+    renderer.domElement.style.cursor = 'default';
     container.appendChild(renderer.domElement);
 
     // ── Logo ring geometry (exact Doxa mark — 3 offset circles) ──
@@ -746,10 +747,14 @@ export default function HeroStarfield() {
           autoRotBlend = Math.max(0, autoRotBlend - 0.01);
         }
       }
-      // Gentle idle tumble
-      if (!isResetting) {
-        group.rotation.y += autoRotBlend * 0.0018;
-        group.rotation.x += autoRotBlend * 0.0004;
+      // Gentle idle sway (rock back and forth gently, no continuous 360 spin)
+      if (!isDragging && !isResetting) {
+        const swayY = Math.sin(time * 0.25) * 0.1; // +/- 6 degrees
+        const swayX = Math.cos(time * 0.2) * 0.05;  // +/- 3 degrees
+        if (autoRotBlend > 0.001) {
+          group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, swayY, autoRotBlend * 0.03);
+          group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, swayX, autoRotBlend * 0.03);
+        }
       }
 
       // ── Camera parallax (reduced during drag) ──

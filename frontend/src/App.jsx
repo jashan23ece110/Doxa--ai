@@ -13,6 +13,7 @@ import NeuralBackground from './components/NeuralBackground';
 import EmergentAnswerCard from './components/EmergentAnswerCard';
 import LibreSidebar from './components/LibreSidebar';
 import LandingPage from './landing/LandingPage';
+import doxaLogoAsset from './assets/logo.png';
 import { THEMES } from './theme';
 
 /* ── animation variants (kept for overlay tab views) ── */
@@ -792,9 +793,43 @@ function App() {
     );
   };
 
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  const handleLaunchApp = () => {
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setViewMode('app');
+      if (typeof window !== 'undefined') window.location.hash = 'app';
+      setIsTransitioning(false);
+    }, 550);
+  };
+
   /* ═══════════════════════════════════════════
      MAIN LAYOUT — Landing Page vs Chat Dashboard
      ═══════════════════════════════════════════ */
+  if (isTransitioning) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center gap-4 select-none">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: [0.9, 1.1, 1], opacity: 1 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className="relative w-20 h-20 flex items-center justify-center"
+        >
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-violet-600 to-cyan-500 blur-xl opacity-60 animate-pulse" />
+          <img
+            src={doxaLogoAsset}
+            alt="Doxa Logo"
+            className="w-16 h-16 object-contain relative z-10 filter invert brightness-200"
+          />
+        </motion.div>
+        <span className="text-xs font-mono tracking-widest text-violet-400 font-bold uppercase animate-pulse" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+          INITIALIZING DOXA AGENT CORE...
+        </span>
+      </div>
+    );
+  }
+
   if (viewMode === 'landing') {
     return (
       <AnimatePresence mode="wait">
@@ -805,12 +840,7 @@ function App() {
           exit={{ opacity: 0, scale: 0.96, filter: 'blur(10px)' }}
           transition={{ duration: 0.35 }}
         >
-          <LandingPage
-            onLaunchApp={() => {
-              setViewMode('app');
-              if (typeof window !== 'undefined') window.location.hash = 'app';
-            }}
-          />
+          <LandingPage onLaunchApp={handleLaunchApp} />
         </motion.div>
       </AnimatePresence>
     );

@@ -1,13 +1,18 @@
 import React from 'react';
-import { Bot, Globe, ExternalLink, Code2 } from 'lucide-react';
+import { Globe, ExternalLink } from 'lucide-react';
+import doxaLogo from '../assets/logo.png';
 
 export default function Footer({ onLaunchApp }) {
   return (
     <footer className="py-12 px-4 sm:px-6 lg:px-8 bg-black border-t border-white/10 text-neutral-400 font-mono text-xs z-10 relative">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-400">
-            <Bot className="w-4 h-4" />
+          <div className="w-8 h-8 rounded-lg bg-violet-600/20 border border-violet-500/30 flex items-center justify-center p-1.5 overflow-hidden">
+            <img
+              src={doxaLogo}
+              alt="Doxa Logo"
+              className="w-full h-full object-contain filter invert brightness-200"
+            />
           </div>
           <span className="font-bold text-white tracking-widest uppercase font-orbitron text-sm" style={{ fontFamily: 'Orbitron, sans-serif' }}>
             DOXA AI

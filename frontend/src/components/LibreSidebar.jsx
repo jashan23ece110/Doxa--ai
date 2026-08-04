@@ -5,16 +5,14 @@ import {
   Search, 
   MessageSquare, 
   Trash2, 
-  Edit2, 
+  Edit3, 
   Check, 
   X, 
-  PanelLeftClose, 
-  PanelLeftOpen, 
-  Sparkles, 
   Bot, 
-  User, 
-  ShieldCheck 
+  LogOut, 
+  Shield 
 } from 'lucide-react';
+import doxaLogo from '../assets/logo.png';
 
 function groupSessionsByDate(sessions = []) {
   const now = new Date();
@@ -96,8 +94,12 @@ export default function LibreSidebar({
             {/* Sidebar Header & New Chat Button */}
             <div className="flex items-center justify-between gap-2 pt-1 pb-1 border-b border-[var(--jarvis-accent)]/10">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-[var(--jarvis-accent)]/15 border border-[var(--jarvis-accent)]/30 flex items-center justify-center text-[var(--jarvis-accent)]">
-                  <Bot className="w-4 h-4" />
+                <div className="w-7 h-7 rounded-lg bg-[var(--jarvis-accent)]/15 border border-[var(--jarvis-accent)]/30 flex items-center justify-center p-1 overflow-hidden">
+                  <img
+                    src={doxaLogo}
+                    alt="Doxa Logo"
+                    className="w-full h-full object-contain filter invert brightness-200"
+                  />
                 </div>
                 <span className="font-bold text-white tracking-widest uppercase font-orbitron text-sm">
                   DOXA AI

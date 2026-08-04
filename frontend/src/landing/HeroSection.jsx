@@ -1,10 +1,19 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight, ChevronDown, Zap, ShieldCheck, Database, Globe } from 'lucide-react';
+import doxaLogo from '../assets/logo.png';
 
 export default function HeroSection({ onLaunchApp }) {
   return (
     <section className="relative min-h-screen flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 pt-24 pb-16 z-10 text-center">
+      {/* Background Subtle Logo Watermark Accent */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] sm:w-[650px] sm:h-[650px] pointer-events-none z-0 opacity-[0.06] select-none flex items-center justify-center">
+        <img
+          src={doxaLogo}
+          alt=""
+          className="w-full h-full object-contain filter invert brightness-200"
+        />
+      </div>
       {/* Top Capability Pill */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}

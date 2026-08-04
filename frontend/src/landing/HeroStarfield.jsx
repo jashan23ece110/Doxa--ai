@@ -1,6 +1,14 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
+/**
+ * HeroStarfield — particles form the Doxa nested-rings logo mark.
+ *
+ * The logo is 3 concentric rings (radii ~18, 32, 48 in world units)
+ * plus a bright core dot cluster at center.
+ * Particles drift/breathe gently around the formation and react to
+ * mouse (desktop) and touch (mobile) via repulsion.
+ */
 export default function HeroStarfield() {
   const containerRef = useRef(null);
 
@@ -11,176 +19,265 @@ export default function HeroStarfield() {
     let width = window.innerWidth;
     let height = window.innerHeight;
 
-    // Scene, Camera, Renderer
+    // ── Scene setup ──
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(55, width / height, 0.1, 1000);
-    camera.position.z = 110;
+    camera.position.z = 120;
 
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: false });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(width, height);
     container.appendChild(renderer.domElement);
 
+    // ── Performance-adaptive particle counts ──
     const isMobile = width < 768;
-    const count = isMobile ? 1200 : 3200;
+    const LOGO_COUNT = isMobile ? 600 : 1600;     // particles on logo rings
+    const AMBIENT_COUNT = isMobile ? 300 : 800;    // scattered ambient particles
+    const CORE_COUNT = isMobile ? 40 : 100;        // bright center cluster
+    const count = LOGO_COUNT + AMBIENT_COUNT + CORE_COUNT;
 
-    // Attribute buffers
-    const positions = new Float32Array(count * 3);
-    const initialPositions = new Float32Array(count * 3);
-    const colors = new Float32Array(count * 3);
-    const scales = new Float32Array(count);
-    const speeds = new Float32Array(count);
-    const angles = new Float32Array(count);
-    const radii = new Float32Array(count);
-    const layerTypes = new Float32Array(count); // 0 = orbital ring, 1 = logarithmic spiral, 2 = ambient halo
+    // ── Logo ring geometry ──
+    // 3 concentric rings at these radii in world units
+    const RING_RADII = [18, 32, 48];
+    const RING_THICKNESS = 1.2; // how much jitter off the ring path
 
-    // Doxa Color Palette: Violet (#8b5cf6), Indigo (#6366f1), Cyan (#06b6d4), Neon Magenta (#d946ef), Soft White (#f8fafc)
-    const palette = [
-      new THREE.Color('#8b5cf6'),
-      new THREE.Color('#6366f1'),
-      new THREE.Color('#06b6d4'),
-      new THREE.Color('#38bdf8'),
-      new THREE.Color('#d946ef'),
-      new THREE.Color('#a855f7'),
+    // ── Doxa color palette ──
+    const violet = new THREE.Color('#8b5cf6');
+    const indigo = new THREE.Color('#6366f1');
+    const cyan   = new THREE.Color('#06b6d4');
+    const skyBlue = new THREE.Color('#38bdf8');
+    const magenta = new THREE.Color('#a855f7');
+    const coreWhite = new THREE.Color('#e0e7ff');
+
+    // ── Buffers ──
+    const positions   = new Float32Array(count * 3);
+    const homePositions = new Float32Array(count * 3); // where particles want to be
+    const colors      = new Float32Array(count * 3);
+    const sizes       = new Float32Array(count);
+    const phaseOffsets = new Float32Array(count); // per-particle animation phase
+
+    // Ring color mapping: inner ring = violet, middle = indigo, outer = cyan
+    const ringColors = [
+      [violet, magenta],    // inner ring
+      [indigo, violet],     // middle ring
+      [cyan, skyBlue],      // outer ring
     ];
 
-    for (let i = 0; i < count; i++) {
-      const i3 = i * 3;
-      const layer = i % 3; // 0, 1, or 2
-      layerTypes[i] = layer;
+    let idx = 0;
 
-      let x = 0, y = 0, z = 0;
-      let r = 0, angle = 0;
+    // ── 1. Logo ring particles ──
+    const particlesPerRing = Math.floor(LOGO_COUNT / RING_RADII.length);
+    for (let ring = 0; ring < RING_RADII.length; ring++) {
+      const r = RING_RADII[ring];
+      const colorPair = ringColors[ring];
+      for (let p = 0; p < particlesPerRing; p++) {
+        const angle = (p / particlesPerRing) * Math.PI * 2 + (Math.random() - 0.5) * 0.04;
+        const jitterR = r + (Math.random() - 0.5) * RING_THICKNESS;
+        const x = Math.cos(angle) * jitterR;
+        const y = Math.sin(angle) * jitterR;
+        const z = (Math.random() - 0.5) * 4; // slight depth
 
-      if (layer === 0) {
-        // Concentric Orbital Ring / Nested Arc Formation
-        r = 25 + Math.random() * 85;
-        angle = Math.random() * Math.PI * 2;
-        x = Math.cos(angle) * r;
-        y = Math.sin(angle) * r * 0.65; // Elliptical arc
-        z = (Math.random() - 0.5) * 60;
-      } else if (layer === 1) {
-        // Logarithmic Energy Wave Arc
-        angle = Math.random() * Math.PI * 3;
-        r = 15 + Math.pow(angle, 1.4) * 8;
-        x = Math.cos(angle) * r - 20;
-        y = Math.sin(angle) * r * 0.8;
-        z = (Math.random() - 0.5) * 100;
-      } else {
-        // Deep 3D Ambient Energy Field
-        r = 30 + Math.random() * 160;
-        angle = Math.random() * Math.PI * 2;
-        x = (Math.random() - 0.5) * 280;
-        y = (Math.random() - 0.5) * 200;
-        z = (Math.random() - 0.5) * 220;
+        const i3 = idx * 3;
+        homePositions[i3]     = x;
+        homePositions[i3 + 1] = y;
+        homePositions[i3 + 2] = z;
+        positions[i3]     = x + (Math.random() - 0.5) * 200; // start scattered
+        positions[i3 + 1] = y + (Math.random() - 0.5) * 200;
+        positions[i3 + 2] = z + (Math.random() - 0.5) * 100;
+
+        const color = colorPair[Math.random() > 0.5 ? 0 : 1].clone();
+        // Slight brightness variation
+        color.multiplyScalar(0.7 + Math.random() * 0.5);
+        colors[i3]     = color.r;
+        colors[i3 + 1] = color.g;
+        colors[i3 + 2] = color.b;
+
+        sizes[idx] = ring === 0 ? 3.0 + Math.random() * 1.5
+                   : ring === 1 ? 2.5 + Math.random() * 1.2
+                   : 2.0 + Math.random() * 1.0;
+        phaseOffsets[idx] = Math.random() * Math.PI * 2;
+        idx++;
       }
+    }
 
-      positions[i3] = x;
+    // ── 2. Ambient scattered particles ──
+    const ambientColors = [violet, indigo, cyan, skyBlue, magenta];
+    for (let p = 0; p < AMBIENT_COUNT; p++) {
+      const x = (Math.random() - 0.5) * 280;
+      const y = (Math.random() - 0.5) * 200;
+      const z = (Math.random() - 0.5) * 160;
+
+      const i3 = idx * 3;
+      homePositions[i3]     = x;
+      homePositions[i3 + 1] = y;
+      homePositions[i3 + 2] = z;
+      positions[i3]     = x;
       positions[i3 + 1] = y;
       positions[i3 + 2] = z;
 
-      initialPositions[i3] = x;
-      initialPositions[i3 + 1] = y;
-      initialPositions[i3 + 2] = z;
-
-      radii[i] = r;
-      angles[i] = angle;
-      speeds[i] = 0.003 + Math.random() * 0.008;
-
-      // Color mapping
-      const color = palette[Math.floor(Math.random() * palette.length)];
-      colors[i3] = color.r;
+      const color = ambientColors[Math.floor(Math.random() * ambientColors.length)].clone();
+      color.multiplyScalar(0.3 + Math.random() * 0.4);
+      colors[i3]     = color.r;
       colors[i3 + 1] = color.g;
       colors[i3 + 2] = color.b;
 
-      // Particle scale (layered depth)
-      scales[i] = layer === 0 ? (Math.random() * 2.5 + 1.2) : (Math.random() * 1.8 + 0.8);
+      sizes[idx] = 1.0 + Math.random() * 1.5;
+      phaseOffsets[idx] = Math.random() * Math.PI * 2;
+      idx++;
     }
 
+    // ── 3. Bright core cluster ──
+    for (let p = 0; p < CORE_COUNT; p++) {
+      const angle = Math.random() * Math.PI * 2;
+      const r = Math.random() * 6;
+      const x = Math.cos(angle) * r;
+      const y = Math.sin(angle) * r;
+      const z = (Math.random() - 0.5) * 3;
+
+      const i3 = idx * 3;
+      homePositions[i3]     = x;
+      homePositions[i3 + 1] = y;
+      homePositions[i3 + 2] = z;
+      positions[i3]     = x + (Math.random() - 0.5) * 150;
+      positions[i3 + 1] = y + (Math.random() - 0.5) * 150;
+      positions[i3 + 2] = z + (Math.random() - 0.5) * 80;
+
+      const color = coreWhite.clone().lerp(violet, Math.random() * 0.3);
+      colors[i3]     = color.r;
+      colors[i3 + 1] = color.g;
+      colors[i3 + 2] = color.b;
+
+      sizes[idx] = 3.5 + Math.random() * 2.5;
+      phaseOffsets[idx] = Math.random() * Math.PI * 2;
+      idx++;
+    }
+
+    // ── Geometry ──
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    geometry.setAttribute('scale', new THREE.BufferAttribute(scales, 1));
 
-    // Glow Canvas Texture
-    const particleCanvas = document.createElement('canvas');
-    particleCanvas.width = 64;
-    particleCanvas.height = 64;
-    const ctx = particleCanvas.getContext('2d');
+    // ── Glow texture ──
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
     const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-    grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
-    grad.addColorStop(0.25, 'rgba(255, 255, 255, 0.85)');
-    grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.3)');
-    grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    grad.addColorStop(0, 'rgba(255,255,255,1)');
+    grad.addColorStop(0.2, 'rgba(255,255,255,0.85)');
+    grad.addColorStop(0.5, 'rgba(255,255,255,0.3)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 64, 64);
-    const texture = new THREE.CanvasTexture(particleCanvas);
+    const texture = new THREE.CanvasTexture(canvas);
 
     const material = new THREE.PointsMaterial({
-      size: 4.2,
+      size: isMobile ? 3.0 : 3.8,
       vertexColors: true,
       map: texture,
       transparent: true,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
-      opacity: 0.9
+      opacity: 0.92,
     });
 
-    const particleSystem = new THREE.Points(geometry, material);
-    scene.add(particleSystem);
+    const points = new THREE.Points(geometry, material);
+    scene.add(points);
 
-    // Decorative Geometric Orbital Arc Rings
-    const ringGeo1 = new THREE.TorusGeometry(55, 0.3, 16, 120);
-    const ringMat1 = new THREE.MeshBasicMaterial({
-      color: new THREE.Color('#8b5cf6'),
-      transparent: true,
-      opacity: 0.22,
-      wireframe: true
-    });
-    const ring1 = new THREE.Mesh(ringGeo1, ringMat1);
-    ring1.rotation.x = Math.PI / 2.8;
-    scene.add(ring1);
-
-    const ringGeo2 = new THREE.TorusGeometry(85, 0.2, 16, 140);
-    const ringMat2 = new THREE.MeshBasicMaterial({
-      color: new THREE.Color('#06b6d4'),
-      transparent: true,
-      opacity: 0.15,
-      wireframe: true
-    });
-    const ring2 = new THREE.Mesh(ringGeo2, ringMat2);
-    ring2.rotation.y = Math.PI / 3.5;
-    scene.add(ring2);
-
-    // Interaction State
-    let targetMouseX = 0;
-    let targetMouseY = 0;
-    let mouseX = 0;
-    let mouseY = 0;
+    // ── Interaction state ──
+    // Pointer position in normalized world-ish coordinates for repulsion calc
+    let pointerWorldX = 9999; // off-screen initially
+    let pointerWorldY = 9999;
+    let pointerActive = false;
     let scrollY = 0;
 
-    const handleMouseMove = (e) => {
-      targetMouseX = (e.clientX / window.innerWidth - 0.5) * 2;
-      targetMouseY = -(e.clientY / window.innerHeight - 0.5) * 2;
+    // Smooth camera parallax targets
+    let camTargetX = 0;
+    let camTargetY = 0;
+    let camX = 0;
+    let camY = 0;
+
+    const REPEL_RADIUS = isMobile ? 28 : 35;   // world units
+    const REPEL_STRENGTH = isMobile ? 18 : 22;  // max push distance
+
+    // Convert screen coords to approximate world coords at z=0
+    const screenToWorld = (clientX, clientY) => {
+      const ndcX = (clientX / width) * 2 - 1;
+      const ndcY = -(clientY / height) * 2 + 1;
+      // At camera.position.z=120, fov=55, approximate world coords:
+      const halfH = Math.tan(THREE.MathUtils.degToRad(55 / 2)) * 120;
+      const halfW = halfH * (width / height);
+      return {
+        x: ndcX * halfW,
+        y: ndcY * halfH,
+      };
     };
 
-    const handleScroll = () => {
-      scrollY = window.scrollY;
+    // ── Mouse events (desktop) ──
+    const onMouseMove = (e) => {
+      const w = screenToWorld(e.clientX, e.clientY);
+      pointerWorldX = w.x;
+      pointerWorldY = w.y;
+      pointerActive = true;
+      camTargetX = (e.clientX / width - 0.5) * 2;
+      camTargetY = -(e.clientY / height - 0.5) * 2;
+    };
+    const onMouseLeave = () => {
+      pointerActive = false;
+      pointerWorldX = 9999;
+      pointerWorldY = 9999;
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('scroll', handleScroll);
+    // ── Touch events (mobile) ──
+    const onTouchMove = (e) => {
+      if (e.touches.length > 0) {
+        const t = e.touches[0];
+        const w = screenToWorld(t.clientX, t.clientY);
+        pointerWorldX = w.x;
+        pointerWorldY = w.y;
+        pointerActive = true;
+        camTargetX = (t.clientX / width - 0.5) * 2;
+        camTargetY = -(t.clientY / height - 0.5) * 2;
+      }
+    };
+    const onTouchStart = (e) => {
+      onTouchMove(e); // activate on first touch
+    };
+    const onTouchEnd = () => {
+      pointerActive = false;
+      pointerWorldX = 9999;
+      pointerWorldY = 9999;
+    };
 
-    const handleResize = () => {
+    const onScroll = () => { scrollY = window.scrollY; };
+
+    // Attach to the renderer's canvas so pointer-events work
+    const domEl = renderer.domElement;
+    domEl.style.pointerEvents = 'auto';
+    domEl.style.touchAction = 'pan-y'; // allow page scroll but capture touch-move
+
+    domEl.addEventListener('mousemove', onMouseMove);
+    domEl.addEventListener('mouseleave', onMouseLeave);
+    domEl.addEventListener('touchstart', onTouchStart, { passive: true });
+    domEl.addEventListener('touchmove', onTouchMove, { passive: true });
+    domEl.addEventListener('touchend', onTouchEnd);
+    window.addEventListener('scroll', onScroll);
+
+    // ── Resize ──
+    const onResize = () => {
       width = window.innerWidth;
       height = window.innerHeight;
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height);
     };
-    window.addEventListener('resize', handleResize);
+    window.addEventListener('resize', onResize);
 
-    // Animation Loop
+    // ── Formation lerp progress (0 = scattered, 1 = formed) ──
+    let formationProgress = 0;
+    const FORMATION_SPEED = 0.012; // how fast particles converge on mount
+
+    // ── Animation loop ──
     const clock = new THREE.Clock();
     let animId;
 
@@ -188,82 +285,78 @@ export default function HeroStarfield() {
       animId = requestAnimationFrame(animate);
       const time = clock.getElapsedTime();
 
-      // Smooth mouse lerp
-      mouseX += (targetMouseX - mouseX) * 0.06;
-      mouseY += (targetMouseY - mouseY) * 0.06;
+      // Converge toward formation over time
+      if (formationProgress < 1) {
+        formationProgress = Math.min(1, formationProgress + FORMATION_SPEED);
+      }
+      const ease = formationProgress * formationProgress * (3 - 2 * formationProgress); // smoothstep
 
-      // Camera parallax
-      camera.position.x = mouseX * 15;
-      camera.position.y = mouseY * 15 + scrollY * -0.04;
+      // Smooth camera parallax
+      camX += (camTargetX - camX) * 0.04;
+      camY += (camTargetY - camY) * 0.04;
+      camera.position.x = camX * 10;
+      camera.position.y = camY * 8 - scrollY * 0.03;
       camera.lookAt(0, 0, 0);
 
-      // Ring rotations
-      ring1.rotation.z = time * 0.05;
-      ring1.rotation.y = mouseX * 0.3;
-      ring2.rotation.x = time * 0.03 + mouseY * 0.2;
-
-      // Particle Flow Field & Mouse Repulsion
       const pos = geometry.attributes.position.array;
 
       for (let i = 0; i < count; i++) {
         const i3 = i * 3;
-        const layer = layerTypes[i];
-        const spd = speeds[i];
+        const phase = phaseOffsets[i];
 
-        angles[i] += spd;
-        const ang = angles[i];
+        // Target position = home + gentle breathing noise
+        const breathX = Math.sin(time * 0.6 + phase) * 1.2
+                      + Math.sin(time * 0.3 + phase * 2.7) * 0.6;
+        const breathY = Math.cos(time * 0.5 + phase * 1.3) * 1.2
+                      + Math.cos(time * 0.25 + phase * 3.1) * 0.6;
+        const breathZ = Math.sin(time * 0.4 + phase * 0.9) * 0.8;
 
-        if (layer === 0) {
-          // Orbital Ellipse Flow
-          const r = radii[i] + Math.sin(time * 1.2 + i) * 3;
-          const currX = Math.cos(ang) * r;
-          const currY = Math.sin(ang) * r * 0.65;
-          const currZ = initialPositions[i3 + 2] + Math.sin(time * 0.8 + ang) * 5;
+        let targetX = homePositions[i3]     + breathX;
+        let targetY = homePositions[i3 + 1] + breathY;
+        let targetZ = homePositions[i3 + 2] + breathZ;
 
-          // Mouse Repulsion deflection
-          const dx = currX - (mouseX * 50);
-          const dy = currY - (mouseY * 50);
+        // ── Pointer repulsion ──
+        if (pointerActive) {
+          const dx = targetX - pointerWorldX;
+          const dy = targetY - pointerWorldY;
           const dist = Math.sqrt(dx * dx + dy * dy);
-
-          let pushX = 0, pushY = 0;
-          if (dist < 45) {
-            const force = (45 - dist) / 45;
-            pushX = (dx / dist) * force * 15;
-            pushY = (dy / dist) * force * 15;
+          if (dist < REPEL_RADIUS && dist > 0.1) {
+            const force = 1 - dist / REPEL_RADIUS;
+            // Cubic falloff for smoother feel
+            const strength = force * force * force * REPEL_STRENGTH;
+            targetX += (dx / dist) * strength;
+            targetY += (dy / dist) * strength;
           }
-
-          pos[i3] = currX + pushX;
-          pos[i3 + 1] = currY + pushY;
-          pos[i3 + 2] = currZ;
-        } else if (layer === 1) {
-          // Logarithmic Energy Spiral Wave
-          const r = radii[i] + Math.cos(time * 1.5 + ang) * 6;
-          const currX = Math.cos(ang) * r - 20;
-          const currY = Math.sin(ang) * r * 0.8;
-          const currZ = initialPositions[i3 + 2] + Math.cos(time + i) * 8;
-
-          pos[i3] = currX;
-          pos[i3 + 1] = currY;
-          pos[i3 + 2] = currZ;
-        } else {
-          // Ambient Particle Oscillation & Scroll Drift
-          pos[i3 + 1] = initialPositions[i3 + 1] + Math.sin(time * 1.2 + i) * 4;
-          pos[i3] = initialPositions[i3] + Math.cos(time * 0.8 + i) * 4;
         }
+
+        // Lerp current position toward target
+        // Logo/core particles lerp faster when forming, ambient always at home
+        const isLogo = i < LOGO_COUNT + CORE_COUNT;
+        const lerpSpeed = isLogo ? 0.03 + ease * 0.05 : 0.02;
+
+        // During formation, blend between scattered start and target
+        const formTarget = ease;
+        pos[i3]     += (targetX - pos[i3])     * lerpSpeed * (isLogo ? formTarget + 0.5 : 1);
+        pos[i3 + 1] += (targetY - pos[i3 + 1]) * lerpSpeed * (isLogo ? formTarget + 0.5 : 1);
+        pos[i3 + 2] += (targetZ - pos[i3 + 2]) * lerpSpeed * (isLogo ? formTarget + 0.5 : 1);
       }
 
       geometry.attributes.position.needsUpdate = true;
-
       renderer.render(scene, camera);
     };
 
     animate();
 
+    // ── Cleanup ──
     return () => {
       cancelAnimationFrame(animId);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleResize);
+      domEl.removeEventListener('mousemove', onMouseMove);
+      domEl.removeEventListener('mouseleave', onMouseLeave);
+      domEl.removeEventListener('touchstart', onTouchStart);
+      domEl.removeEventListener('touchmove', onTouchMove);
+      domEl.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
       }
@@ -277,7 +370,7 @@ export default function HeroStarfield() {
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-95"
+      className="fixed inset-0 z-0 overflow-hidden opacity-95"
       aria-hidden="true"
     />
   );

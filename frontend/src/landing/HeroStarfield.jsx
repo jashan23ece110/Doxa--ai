@@ -56,6 +56,9 @@ export default function HeroStarfield() {
     const phaseData     = new Float32Array(count);
     const ringIdxData   = new Float32Array(count);
     const brightnessData = new Float32Array(count);
+    const angleData      = new Float32Array(count);
+    const radiusData     = new Float32Array(count);
+    const centerData     = new Float32Array(count * 2);
 
     let idx = 0;
     for (let ri = 0; ri < 3; ri++) {
@@ -69,6 +72,7 @@ export default function HeroStarfield() {
         const z = (Math.random() - 0.5) * 3;
 
         const i3 = idx * 3;
+        const i2 = idx * 2;
         homeData[i3]     = x;
         homeData[i3 + 1] = y;
         homeData[i3 + 2] = z;
@@ -78,6 +82,11 @@ export default function HeroStarfield() {
         phaseData[idx]       = Math.random() * Math.PI * 2;
         ringIdxData[idx]     = ri;
         brightnessData[idx]  = 0.55 + Math.random() * 0.55;
+        
+        angleData[idx]       = angle;
+        radiusData[idx]      = r;
+        centerData[i2]       = ring.cx;
+        centerData[i2 + 1]   = ring.cy;
         idx++;
       }
     }
@@ -89,6 +98,9 @@ export default function HeroStarfield() {
     geometry.setAttribute('aPhase',      new THREE.BufferAttribute(phaseData, 1));
     geometry.setAttribute('aRingIndex',  new THREE.BufferAttribute(ringIdxData, 1));
     geometry.setAttribute('aBrightness', new THREE.BufferAttribute(brightnessData, 1));
+    geometry.setAttribute('aAngle',      new THREE.BufferAttribute(angleData, 1));
+    geometry.setAttribute('aRadius',     new THREE.BufferAttribute(radiusData, 1));
+    geometry.setAttribute('aCenter',     new THREE.BufferAttribute(centerData, 2));
 
     // ══════════════════════════════════════════════════════════════════════
     //  GLSL SHADERS — all per-particle logic runs on GPU
@@ -99,6 +111,9 @@ export default function HeroStarfield() {
       attribute float aPhase;
       attribute float aRingIndex;
       attribute float aBrightness;
+      attribute float aAngle;
+      attribute float aRadius;
+      attribute vec2 aCenter;
 
       uniform float uTime;
       uniform float uFormation;
@@ -113,6 +128,7 @@ export default function HeroStarfield() {
       uniform float uPointSize;
       uniform float uPixelRatio;
       uniform float uDeform;
+      uniform float uFlowOffset;
 
       varying vec3 vColor;
 
@@ -149,13 +165,17 @@ export default function HeroStarfield() {
       }
 
       void main() {
+        // Compute base ring position dynamically using the flowing angle
+        float currentAngle = aAngle + uFlowOffset;
+        vec3 baseRingPos = vec3(aCenter.x + cos(currentAngle) * aRadius, aCenter.y + sin(currentAngle) * aRadius, position.z);
+
         // 1 ── Breathing animation
         float bx = sin(uTime * 0.5 + aPhase) * 0.8
                   + sin(uTime * 0.23 + aPhase * 2.3) * 0.32;
         float by = cos(uTime * 0.4 + aPhase * 1.7) * 0.8
                   + cos(uTime * 0.19 + aPhase * 3.1) * 0.32;
         float bz = sin(uTime * 0.35 + aPhase * 0.8) * 0.4;
-        vec3 breathPos = position + vec3(bx, by, bz);
+        vec3 breathPos = baseRingPos + vec3(bx, by, bz);
 
         // 2 ── Formation convergence (scattered → formed)
         //      Stagger: inner ring forms first, outer last
@@ -239,6 +259,7 @@ export default function HeroStarfield() {
       uTime:           { value: 0 },
       uFormation:      { value: 0 },
       uDeform:         { value: 0 },
+      uFlowOffset:     { value: 0 },
       uPointer:        { value: new THREE.Vector2(99999, 99999) },
       uPointerActive:  { value: 0 },
       uDragging:       { value: 0 },
@@ -318,6 +339,10 @@ export default function HeroStarfield() {
     // Deform / reform cycle state
     let cycleTimer = 0;
     let uDeformVal = 0.0;
+
+    // Flow path offset variables
+    let flowSpeed = 0.05;
+    let flowOffset = 0.0;
 
     // Camera parallax
     let camTargetX = 0, camTargetY = 0;
@@ -506,42 +531,59 @@ export default function HeroStarfield() {
         shared.uFormation.value = Math.min(1, shared.uFormation.value + 0.006);
       }
 
-      // ── Deform / reform cycle logic ──
+      // ── Deform / reform / reverse / reset cycle logic ──
+      const phaseDuration = 8.6;
+      const localTime = cycleTimer % phaseDuration;
+      const isResetting = (shared.uFormation.value > 0.95 && !isDragging && localTime >= 7.1);
+
       if (shared.uFormation.value > 0.95) {
         if (isDragging) {
           // Pause cycle and smoothly reform logo (lerp to 0.0) during active drag rotation
           uDeformVal += (0.0 - uDeformVal) * 0.08;
+          flowSpeed += (0.05 - flowSpeed) * 0.08;
           cycleTimer = 0; // reset cycle so it starts fresh after drag release
         } else {
           // Advance cycle timer
           cycleTimer += delta;
 
-          // Phases: Formed (3.0s) -> Deforming (1.0s) -> Held (0.6s) -> Reforming (1.0s)
-          // Total length: 5.6s
-          const phaseDuration = 5.6;
-          const localTime = cycleTimer % phaseDuration;
-
           if (localTime < 3.0) {
             // Formed state
             uDeformVal = 0.0;
+            flowSpeed = 0.05;
           } else if (localTime < 4.0) {
             // Deforming transition (0.0 -> 1.0)
             const t = (localTime - 3.0) / 1.0;
-            // cubic ease-in-out
             uDeformVal = t * t * (3.0 - 2.0 * t);
+            flowSpeed = 0.05;
           } else if (localTime < 4.6) {
             // Held deformed state
             uDeformVal = 1.0;
-          } else {
+            flowSpeed = 0.05;
+          } else if (localTime < 5.6) {
             // Reforming transition (1.0 -> 0.0)
             const t = (localTime - 4.6) / 1.0;
-            // cubic ease-in-out
             uDeformVal = 1.0 - (t * t * (3.0 - 2.0 * t));
+            flowSpeed = 0.05;
+          } else if (localTime < 7.1) {
+            // Reverse-Motion Mode (1.5 seconds)
+            uDeformVal = 0.0;
+            const t = (localTime - 5.6) / 1.5;
+            // Dip flow speed down to negative (reverse) and back
+            flowSpeed = THREE.MathUtils.lerp(0.05, -0.65, Math.sin(t * Math.PI));
+          } else {
+            // Default Reset Mode (1.5 seconds)
+            uDeformVal = 0.0;
+            flowSpeed = 0.05;
           }
         }
       } else {
         uDeformVal = 0.0;
+        flowSpeed = 0.05;
       }
+
+      // Smoothly increment flow offset based on integrated flowSpeed
+      flowOffset += flowSpeed * delta;
+      shared.uFlowOffset.value = flowOffset;
       shared.uDeform.value = uDeformVal;
 
       // ── Rotation: momentum + auto-rotation ──
@@ -549,6 +591,13 @@ export default function HeroStarfield() {
 
       if (isDragging) {
         autoRotBlend = Math.max(0, autoRotBlend - 0.03);
+      } else if (isResetting) {
+        autoRotBlend = 0.0;
+        momentumX = 0;
+        momentumY = 0;
+        // Smoothly straighten/reset rotation to original position/orientation
+        group.rotation.x += (0.0 - group.rotation.x) * 0.06;
+        group.rotation.y += (0.0 - group.rotation.y) * 0.06;
       } else {
         // Decay momentum
         momentumX *= 0.965;
@@ -567,8 +616,10 @@ export default function HeroStarfield() {
         }
       }
       // Gentle idle tumble
-      group.rotation.y += autoRotBlend * 0.0018;
-      group.rotation.x += autoRotBlend * 0.0004;
+      if (!isResetting) {
+        group.rotation.y += autoRotBlend * 0.0018;
+        group.rotation.x += autoRotBlend * 0.0004;
+      }
 
       // ── Camera parallax (reduced during drag) ──
       if (!isDragging) {

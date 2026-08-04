@@ -776,6 +776,14 @@ export default function HeroStarfield() {
       shared.uDragging.value      = isDragging ? 1 : 0;
       shared.uColorPhase.value    = (time * 0.667) % 5; // ~1.5s per palette
 
+      // Fade out canvas opacity dynamically based on scroll position (fully transparent past hero height)
+      const fadeOpacity = Math.max(0, Math.min(1, 1 - scrollY / (height * 0.85)));
+      if (containerRef.current) {
+        containerRef.current.style.opacity = fadeOpacity;
+        // Turn off pointer events completely when faded out
+        containerRef.current.style.pointerEvents = fadeOpacity > 0.05 ? 'auto' : 'none';
+      }
+
       renderer.render(scene, camera);
     };
 

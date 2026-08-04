@@ -20,17 +20,23 @@ export default function LandingPage({ onLaunchApp }) {
       {/* Hero Section */}
       <HeroSection onLaunchApp={onLaunchApp} />
 
-      {/* Capability Numbers & Stats Strip */}
-      <CapabilityStrip />
+      {/* Transition Seam: Black to White/Off-white */}
+      <div className="relative w-full h-40 bg-gradient-to-b from-black to-[#fafafa] z-10 pointer-events-none" />
 
-      {/* 11 Full Feature Showcase Blocks */}
-      <FeatureShowcase onLaunchApp={onLaunchApp} />
+      {/* White background content wrap */}
+      <div className="bg-[#fafafa] text-neutral-900 z-10 relative selection:bg-violet-100 selection:text-violet-900">
+        {/* Capability Numbers & Stats Strip */}
+        <CapabilityStrip />
 
-      {/* How It Works Flow */}
-      <HowItWorks />
+        {/* 11 Full Feature Showcase Blocks */}
+        <FeatureShowcase onLaunchApp={onLaunchApp} />
 
-      {/* Closing CTA */}
-      <FinalCTA onLaunchApp={onLaunchApp} />
+        {/* How It Works Flow */}
+        <HowItWorks />
+
+        {/* Closing CTA */}
+        <FinalCTA onLaunchApp={onLaunchApp} />
+      </div>
 
       {/* Footer */}
       <Footer onLaunchApp={onLaunchApp} />

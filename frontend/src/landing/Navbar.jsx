@@ -61,7 +61,7 @@ export default function Navbar({ onLaunchApp }) {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
-          ? 'bg-black/60 backdrop-blur-2xl border-b border-white/[0.06] shadow-lg py-3.5'
+          ? 'bg-black/85 backdrop-blur-2xl border-b border-white/[0.08] shadow-lg py-3.5'
           : 'bg-transparent py-5'
       }`}
     >

@@ -1,0 +1,458 @@
+{
+  "communities": {
+    "0": [
+      "backend_main",
+      "backend_main_agentrequest",
+      "backend_main_call_groq",
+      "backend_main_create_timer",
+      "backend_main_evaluate_prompt",
+      "backend_main_evaluaterequest",
+      "backend_main_get_agent_status",
+      "backend_main_get_documents",
+      "backend_main_get_proactive_suggestions",
+      "backend_main_google_connect",
+      "backend_main_health_check",
+      "backend_main_map_model_name",
+      "backend_main_notifications_stream",
+      "backend_main_oauth2callback",
+      "backend_main_rationale_115",
+      "backend_main_rationale_128",
+      "backend_main_rationale_157",
+      "backend_main_rationale_164",
+      "backend_main_rationale_172",
+      "backend_main_rationale_220",
+      "backend_main_rationale_250",
+      "backend_main_rationale_284",
+      "backend_main_rationale_325",
+      "backend_main_rationale_72",
+      "backend_main_start_agent",
+      "backend_main_stream_agent",
+      "backend_main_suggestionrequest",
+      "backend_main_timerrequest",
+      "backend_main_upload_document",
+      "backend_rag_build_rag_prompt",
+      "backend_rag_rationale_278",
+      "backend_tools_timer_manager",
+      "backend_tools_timer_manager_rationale_13",
+      "backend_tools_timer_manager_schedule_timer",
+      "backgroundtasks",
+      "basemodel",
+      "get",
+      "post",
+      "uploadfile"
+    ],
+    "1": [
+      "any",
+      "backend_agent",
+      "backend_agent_call_tokenrouter",
+      "backend_agent_classify_sentiment",
+      "backend_agent_draft_message",
+      "backend_agent_get_trace",
+      "backend_agent_run_agent_loop",
+      "backend_agent_save_trace",
+      "backend_agent_search_documents",
+      "backend_agent_summarize_text",
+      "backend_rag_rationale_232",
+      "backend_rag_retrieve_context",
+      "backend_test_agent",
+      "backend_test_agent_main",
+      "backend_test_agent_test_calculator",
+      "backend_test_agent_test_search",
+      "backend_test_new_capabilities",
+      "backend_test_new_capabilities_main",
+      "backend_test_new_capabilities_test_calendar",
+      "backend_test_new_capabilities_test_python_sandbox",
+      "backend_test_new_capabilities_test_timer",
+      "backend_tools_calculator",
+      "backend_tools_calculator_calculate",
+      "backend_tools_calculator_rationale_4",
+      "backend_tools_calculator_re_find_words",
+      "backend_tools_calendar_tool",
+      "backend_tools_calendar_tool_create_calendar_event",
+      "backend_tools_calendar_tool_get_calendar_service",
+      "backend_tools_calendar_tool_list_calendar_events",
+      "backend_tools_calendar_tool_rationale_112",
+      "backend_tools_calendar_tool_rationale_31",
+      "backend_tools_calendar_tool_rationale_67",
+      "backend_tools_web_search",
+      "backend_tools_web_search_get_tavily_client",
+      "backend_tools_web_search_rationale_19",
+      "backend_tools_web_search_web_search",
+      "test_agent",
+      "test_agent_main"
+    ],
+    "2": [
+      "frontend_src_app",
+      "frontend_src_app_app",
+      "frontend_src_app_cardhover",
+      "frontend_src_app_hoverscale",
+      "frontend_src_app_pagevariants",
+      "frontend_src_app_skeletonloader",
+      "frontend_src_app_staggercontainer",
+      "frontend_src_app_staggeritem",
+      "frontend_src_app_tapscale",
+      "frontend_src_components_chatpanel",
+      "frontend_src_components_chatpanel_chatpanel",
+      "frontend_src_components_emergentanswercard",
+      "frontend_src_components_emergentanswercard_emergentanswercard",
+      "frontend_src_components_markdownrenderer",
+      "frontend_src_components_markdownrenderer_markdownrenderer",
+      "frontend_src_components_markdownrenderer_parseinline",
+      "frontend_src_components_neuralbackground",
+      "frontend_src_components_neuralbackground_createparticles",
+      "frontend_src_components_neuralbackground_neuralbackground",
+      "frontend_src_components_voicelistener",
+      "frontend_src_components_voicelistener_dismiss_phrases",
+      "frontend_src_components_voicelistener_matchesphrase",
+      "frontend_src_components_voicelistener_voicelistener",
+      "frontend_src_components_voicelistener_wake_phrases",
+      "frontend_src_components_voicetelemetry",
+      "frontend_src_components_voicetelemetry_voicetelemetry",
+      "frontend_src_main",
+      "frontend_src_theme",
+      "frontend_src_theme_themes",
+      "ref_react"
+    ],
+    "3": [
+      "axios",
+      "framer_motion",
+      "frontend_package",
+      "frontend_package_dependencies",
+      "frontend_package_dependencies_axios",
+      "frontend_package_dependencies_framer_motion",
+      "frontend_package_dependencies_lucide_react",
+      "frontend_package_dependencies_react",
+      "frontend_package_dependencies_react_dom",
+      "frontend_package_dependencies_react_three_drei",
+      "frontend_package_dependencies_react_three_fiber",
+      "frontend_package_dependencies_three",
+      "frontend_package_name",
+      "frontend_package_private",
+      "frontend_package_scripts",
+      "frontend_package_scripts_build",
+      "frontend_package_scripts_dev",
+      "frontend_package_scripts_lint",
+      "frontend_package_scripts_preview",
+      "frontend_package_type",
+      "frontend_package_version",
+      "lucide_react",
+      "react",
+      "react_dom",
+      "react_three_drei",
+      "react_three_fiber",
+      "three"
+    ],
+    "4": [
+      "backend_main_rationale_134",
+      "backend_main_remove_document",
+      "backend_rag",
+      "backend_rag_add_document",
+      "backend_rag_chunk_text",
+      "backend_rag_delete_chunks_by_doc_id",
+      "backend_rag_delete_document",
+      "backend_rag_extract_text_from_file",
+      "backend_rag_generate_doc_id",
+      "backend_rag_get_chroma_collection",
+      "backend_rag_get_embedding_model",
+      "backend_rag_list_documents",
+      "backend_rag_rationale_1",
+      "backend_rag_rationale_124",
+      "backend_rag_rationale_179",
+      "backend_rag_rationale_206",
+      "backend_rag_rationale_220",
+      "backend_rag_rationale_30",
+      "backend_rag_rationale_43",
+      "backend_rag_rationale_56",
+      "backend_rag_rationale_61",
+      "backend_rag_rationale_86",
+      "backend_seed_documents",
+      "backend_seed_documents_main",
+      "delete",
+      "sentencetransformer"
+    ],
+    "5": [
+      "frontend_src_components_centralcore",
+      "frontend_src_components_centralcore_centralcore",
+      "frontend_src_components_centralcore_extractmorphkeyword",
+      "frontend_src_components_centralcore_particleswarm",
+      "frontend_src_components_centralcore_sampletexttopoints",
+      "frontend_src_components_dashboard",
+      "frontend_src_components_dashboard_dashboard",
+      "frontend_src_components_dashboard_fadein",
+      "frontend_src_components_dashboard_slideup",
+      "frontend_src_components_objectivescard",
+      "frontend_src_components_objectivescard_metricitem",
+      "frontend_src_components_objectivescard_objectivescard",
+      "frontend_src_components_radargauge",
+      "frontend_src_components_radargauge_health_dots",
+      "frontend_src_components_radargauge_radargauge",
+      "frontend_src_components_statspanel",
+      "frontend_src_components_statspanel_animatednumber",
+      "frontend_src_components_statspanel_metrics",
+      "frontend_src_components_statspanel_statspanel",
+      "frontend_src_components_telemetrylog",
+      "frontend_src_components_telemetrylog_formattimestamp",
+      "frontend_src_components_telemetrylog_initial_entries",
+      "frontend_src_components_telemetrylog_simulated_events",
+      "frontend_src_components_telemetrylog_telemetrylog",
+      "frontend_src_components_topbar",
+      "frontend_src_components_topbar_topbar"
+    ],
+    "6": [
+      "autoprefixer",
+      "frontend_package_devdependencies",
+      "frontend_package_devdependencies_autoprefixer",
+      "frontend_package_devdependencies_oxlint",
+      "frontend_package_devdependencies_postcss",
+      "frontend_package_devdependencies_tailwindcss",
+      "frontend_package_devdependencies_tailwindcss_postcss",
+      "frontend_package_devdependencies_types_react",
+      "frontend_package_devdependencies_types_react_dom",
+      "frontend_package_devdependencies_vite",
+      "frontend_package_devdependencies_vitejs_plugin_react",
+      "oxlint",
+      "postcss",
+      "tailwindcss",
+      "tailwindcss_postcss",
+      "types_react",
+      "types_react_dom",
+      "vite",
+      "vitejs_plugin_react"
+    ],
+    "7": [
+      "backend_railway",
+      "backend_railway_build",
+      "backend_railway_build_builder",
+      "backend_railway_deploy",
+      "backend_railway_deploy_healthcheckpath",
+      "backend_railway_deploy_restartpolicymaxretries",
+      "backend_railway_deploy_restartpolicytype",
+      "backend_railway_deploy_startcommand",
+      "backend_railway_schema"
+    ],
+    "8": [
+      "frontend_oxlintrc",
+      "frontend_oxlintrc_plugins",
+      "frontend_oxlintrc_rules",
+      "frontend_oxlintrc_rules_react_only_export_components",
+      "frontend_oxlintrc_rules_react_rules_of_hooks",
+      "frontend_oxlintrc_schema",
+      "ref_oxc",
+      "ref_warn"
+    ],
+    "9": [
+      "backend_tools_python_sandbox",
+      "backend_tools_python_sandbox_execute_python_code",
+      "backend_tools_python_sandbox_rationale_112",
+      "backend_tools_python_sandbox_rationale_9",
+      "backend_tools_python_sandbox_run_in_sandbox",
+      "queue"
+    ],
+    "10": [
+      "backend_requirements",
+      "chromadb",
+      "fastapi",
+      "openai"
+    ],
+    "11": [
+      "backend_cloudbuild",
+      "doxa_backend_container",
+      "google_cloud_run"
+    ],
+    "12": [
+      "frontend_index",
+      "frontend_public_favicon",
+      "frontend_readme"
+    ],
+    "13": [
+      "backend_sample_docs_company_policy",
+      "backend_sample_docs_resume_guide"
+    ],
+    "14": [
+      "backend_tools_init"
+    ],
+    "15": [
+      "frontend_postcss_config"
+    ],
+    "16": [
+      "frontend_replace_glows"
+    ],
+    "17": [
+      "frontend_src_assets_hero"
+    ],
+    "18": [
+      "frontend_tailwind_config"
+    ],
+    "19": [
+      "frontend_vite_config"
+    ]
+  },
+  "cohesion": {
+    "0": 0.08232118758434548,
+    "1": 0.11379800853485064,
+    "2": 0.10804597701149425,
+    "3": 0.07407407407407407,
+    "4": 0.11076923076923077,
+    "5": 0.1076923076923077,
+    "6": 0.10526315789473684,
+    "7": 0.2222222222222222,
+    "8": 0.25,
+    "9": 0.4666666666666667,
+    "10": 0.5,
+    "11": 0.6666666666666666,
+    "12": 0.6666666666666666,
+    "13": 1.0,
+    "14": 1.0,
+    "15": 1.0,
+    "16": 1.0,
+    "17": 1.0,
+    "18": 1.0,
+    "19": 1.0
+  },
+  "gods": [
+    {
+      "id": "backend_agent_run_agent_loop",
+      "label": "run_agent_loop()",
+      "degree": 25
+    },
+    {
+      "id": "ref_react",
+      "label": "react",
+      "degree": 16
+    },
+    {
+      "id": "backend_rag_add_document",
+      "label": "add_document()",
+      "degree": 12
+    },
+    {
+      "id": "backend_agent_get_trace",
+      "label": "get_trace()",
+      "degree": 10
+    },
+    {
+      "id": "backend_rag_retrieve_context",
+      "label": "retrieve_context()",
+      "degree": 9
+    },
+    {
+      "id": "backend_main_evaluate_prompt",
+      "label": "evaluate_prompt()",
+      "degree": 7
+    },
+    {
+      "id": "backend_main_start_agent",
+      "label": "start_agent()",
+      "degree": 6
+    },
+    {
+      "id": "backend_rag_get_chroma_collection",
+      "label": "get_chroma_collection()",
+      "degree": 6
+    },
+    {
+      "id": "backend_rag_delete_document",
+      "label": "delete_document()",
+      "degree": 6
+    },
+    {
+      "id": "backend_tools_python_sandbox_execute_python_code",
+      "label": "execute_python_code()",
+      "degree": 6
+    }
+  ],
+  "surprises": [
+    {
+      "source": "main()",
+      "target": "run_agent_loop()",
+      "source_files": [
+        "test_agent.py",
+        "backend/agent.py"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; peripheral node `main()` unexpectedly reaches hub `run_agent_loop()`"
+    },
+    {
+      "source": "start_agent()",
+      "target": "run_agent_loop()",
+      "source_files": [
+        "backend/main.py",
+        "backend/agent.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "indirect_call",
+      "why": "inferred connection - not explicitly stated in source; bridges separate communities"
+    },
+    {
+      "source": "Acme Corp Employee Handbook",
+      "target": "Professional Resume Writing Guide",
+      "source_files": [
+        "backend/sample_docs/company_policy.txt",
+        "backend/sample_docs/resume_guide.txt"
+      ],
+      "confidence": "INFERRED",
+      "relation": "semantically_similar_to",
+      "why": "inferred connection - not explicitly stated in source; semantically similar concepts with no structural link"
+    },
+    {
+      "source": "Frontend Entry Point",
+      "target": "Doxa Logo",
+      "source_files": [
+        "frontend/index.html",
+        "frontend/public/favicon.svg"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "why": "crosses file types (doc ↔ image)"
+    },
+    {
+      "source": "get_agent_status()",
+      "target": "get_trace()",
+      "source_files": [
+        "backend/main.py",
+        "backend/agent.py"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "bridges separate communities"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `run_agent_loop()` connect `Agent Logic and RAG` to `Agent API Endpoints`, `execute_python_code`?",
+      "why": "High betweenness centrality (0.046) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `react` connect `UI Components and Animations` to `.oxlintrc.json`, `Dashboard.jsx`?",
+      "why": "High betweenness centrality (0.032) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `devDependencies` connect `devDependencies` to `Frontend Dependencies`?",
+      "why": "High betweenness centrality (0.021) - this node is a cross-community bridge."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `$schema`, `builder`, `startCommand` to the rest of the system?",
+      "why": "53 weakly-connected nodes found - possible documentation gaps or missing edges."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Agent API Endpoints` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.08232118758434548 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Agent Logic and RAG` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.11379800853485064 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `UI Components and Animations` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.10804597701149425 - nodes in this community are weakly interconnected."
+    }
+  ]
+}

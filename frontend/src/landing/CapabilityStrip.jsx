@@ -11,7 +11,7 @@ const STATS = [
 
 export default function CapabilityStrip() {
   return (
-    <section className="py-16 bg-black/60 border-y border-white/10 z-10 relative">
+    <section className="py-16 bg-transparent z-10 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {STATS.map((s, idx) => {
@@ -23,18 +23,18 @@ export default function CapabilityStrip() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className="flex flex-col gap-2 p-4 rounded-2xl bg-neutral-950/60 border border-violet-500/15 backdrop-blur-md"
+                className="flex flex-col gap-2 p-5 rounded-2xl bg-white border border-neutral-200/80 shadow-md shadow-neutral-100/50 hover:border-violet-500/20 transition-all duration-300 hover:-translate-y-1"
               >
-                <div className="flex items-center gap-2 text-violet-400">
-                  <Icon className="w-4 h-4" />
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-400">
+                <div className="flex items-center gap-2 text-violet-600">
+                  <Icon className="w-4 h-4 text-violet-500" />
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-500">
                     {s.label}
                   </span>
                 </div>
-                <span className="text-2xl sm:text-3xl font-extrabold text-white font-orbitron" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                <span className="text-2xl sm:text-3xl font-extrabold text-neutral-900 font-orbitron" style={{ fontFamily: 'Orbitron, sans-serif' }}>
                   {s.val}
                 </span>
-                <span className="text-xs text-neutral-400 font-sans">
+                <span className="text-xs text-neutral-600 font-sans">
                   {s.desc}
                 </span>
               </motion.div>

@@ -806,62 +806,197 @@ function App() {
     );
   }
 
-  /* ═══════════════════════════════════════════
-     LOGIN SCREEN
-     ═══════════════════════════════════════════ */
   if (!user) {
     return (
-      <div className="min-h-screen bg-[var(--jarvis-bg)] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 selection:bg-[rgba(var(--jarvis-accent-rgb),0.2)]" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="flex justify-center mb-6">
-            <div className="p-3 bg-[#141414] rounded-xl border panel-glow"><Sparkles className="w-8 h-8 text-[var(--jarvis-accent)]" /></div>
-          </div>
-          <h2 className="text-center text-2xl font-bold text-white" style={{ fontFamily: 'Orbitron, sans-serif' }}>DOXA</h2>
-          <p className="mt-2 text-center text-sm text-[#7a7060]">
-            {authMode === 'login' && 'Sign in to your account'}
-            {authMode === 'signup' && 'Create an account to get started'}
-            {authMode === 'phone' && 'Enter your phone number'}
-            {authMode === 'otp' && 'Enter the verification code'}
-          </p>
-        </motion.div>
+      <div className="min-h-screen w-full bg-[#eef2f6] flex items-center justify-center p-4 selection:bg-indigo-100 relative overflow-hidden select-none" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
+        
+        {/* Style block for liquid animation morphing */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          @keyframes morph-main {
+            0% { border-radius: 42% 58% 62% 38% / 55% 59% 41% 45%; }
+            50% { border-radius: 48% 52% 56% 44% / 50% 54% 46% 50%; }
+            100% { border-radius: 42% 58% 62% 38% / 55% 59% 41% 45%; }
+          }
+          @keyframes morph-sub1 {
+            0% { border-radius: 53% 47% 43% 57% / 46% 56% 44% 54%; }
+            50% { border-radius: 48% 52% 50% 50% / 52% 48% 52% 48%; }
+            100% { border-radius: 53% 47% 43% 57% / 46% 56% 44% 54%; }
+          }
+          @keyframes morph-sub2 {
+            0% { border-radius: 47% 53% 57% 43% / 52% 42% 58% 48%; }
+            50% { border-radius: 51% 49% 48% 52% / 47% 53% 47% 53%; }
+            100% { border-radius: 47% 53% 57% 43% / 52% 42% 58% 48%; }
+          }
+          .animate-liquid-main {
+            animation: morph-main 12s ease-in-out infinite;
+          }
+          .animate-liquid-sub1 {
+            animation: morph-sub1 9s ease-in-out infinite;
+          }
+          .animate-liquid-sub2 {
+            animation: morph-sub2 10s ease-in-out infinite;
+          }
+        `}} />
 
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06, duration: 0.2 }} className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="hud-panel py-8 px-4 sm:rounded-xl sm:px-10">
-            <form className="space-y-6" onSubmit={handleAuth}>
+        {/* Ambient blurred colored backdrops (matching reference) */}
+        <div className="absolute top-[10%] left-[20%] w-[320px] h-[320px] rounded-full bg-cyan-200/40 blur-[80px] pointer-events-none" />
+        <div className="absolute bottom-[10%] right-[20%] w-[420px] h-[420px] rounded-full bg-violet-200/40 blur-[100px] pointer-events-none" />
+
+        {/* Outer relative container for absolute positioning of satellites */}
+        <div className="relative flex flex-col md:flex-row items-center justify-center max-w-lg md:max-w-2xl w-full z-10 gap-8 md:gap-14">
+          
+          {/* ── Main Liquid Glass Sign-In Blob ── */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92, y: 15 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.55, ease: 'easeOut' }}
+            className="w-[360px] h-[360px] sm:w-[410px] sm:h-[410px] bg-white/70 backdrop-blur-xl border border-white/40 flex flex-col items-center justify-center p-8 sm:p-10 animate-liquid-main shadow-[25px_35px_20px_rgba(99,102,241,0.06),25px_30px_30px_rgba(99,102,241,0.06)]"
+            style={{
+              boxShadow: 'inset 10px 10px 10px rgba(139,92,246,0.03), 25px 35px 20px rgba(99,102,241,0.06), 25px 30px 30px rgba(99,102,241,0.06), inset -10px -10px 15px rgba(255,255,255,0.85)'
+            }}
+          >
+            {/* Header branding */}
+            <div className="flex flex-col items-center mb-5">
+              <h2 className="text-[26px] font-extrabold text-neutral-800 tracking-tight leading-none font-sans">
+                Doxa
+              </h2>
+              <span className="text-[11px] text-neutral-500 font-mono uppercase tracking-wider mt-1.5 font-bold">
+                {authMode === 'login' && 'Sign in to account'}
+                {authMode === 'signup' && 'Create an account'}
+                {authMode === 'phone' && 'Enter mobile number'}
+                {authMode === 'otp' && 'Verify security code'}
+              </span>
+            </div>
+
+            {/* Auth Form */}
+            <form className="w-full flex flex-col items-center gap-4" onSubmit={handleAuth}>
               {(authMode === 'login' || authMode === 'signup') && (
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-[#e0d6c2]">Email address</label>
-                  <input id="email" name="email" type="email" required className="mt-1 block w-full px-3 py-2.5 border panel-glow rounded-lg bg-[#141414] text-white placeholder-[#7a7060] input-glow sm:text-sm" style={{ fontFamily: 'JetBrains Mono, monospace' }} />
+                <div className="w-full flex flex-col gap-3.5">
+                  <div className="w-full flex flex-col gap-1">
+                    <label htmlFor="email" className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider pl-1.5">Email Address</label>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      required
+                      placeholder="name@company.com"
+                      className="w-full bg-[#f3f5f8] text-neutral-800 placeholder-neutral-400/70 border border-neutral-200/10 text-xs px-4 py-3 rounded-2xl focus:outline-none focus:bg-[#edf0f5] transition-all"
+                      style={{
+                        fontFamily: 'JetBrains Mono, monospace',
+                        boxShadow: 'inset 3px 3px 6px rgba(160,170,190,0.18), inset -3px -3px 6px rgba(255,255,255,0.85)'
+                      }}
+                    />
+                  </div>
+                  
+                  {/* Decorative Password Input (for visual alignment with Reference) */}
+                  <div className="w-full flex flex-col gap-1">
+                    <label htmlFor="pass-decor" className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider pl-1.5">Password</label>
+                    <input
+                      id="pass-decor"
+                      name="password"
+                      type="password"
+                      placeholder="••••••••"
+                      className="w-full bg-[#f3f5f8] text-neutral-800 placeholder-neutral-400/60 border border-neutral-200/10 text-xs px-4 py-3 rounded-2xl focus:outline-none focus:bg-[#edf0f5] transition-all"
+                      style={{
+                        fontFamily: 'JetBrains Mono, monospace',
+                        boxShadow: 'inset 3px 3px 6px rgba(160,170,190,0.18), inset -3px -3px 6px rgba(255,255,255,0.85)'
+                      }}
+                    />
+                  </div>
                 </div>
               )}
+
               {authMode === 'phone' && (
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-[#e0d6c2]">Phone number</label>
-                  <input id="phone" name="phone" type="tel" required className="mt-1 block w-full px-3 py-2.5 border panel-glow rounded-lg bg-[#141414] text-white placeholder-[#7a7060] input-glow sm:text-sm" style={{ fontFamily: 'JetBrains Mono, monospace' }} />
+                <div className="w-full flex flex-col gap-1">
+                  <label htmlFor="phone" className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider pl-1.5">Phone Number</label>
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    required
+                    placeholder="+1 (555) 000-0000"
+                    className="w-full bg-[#f3f5f8] text-neutral-800 placeholder-neutral-400/70 border border-neutral-200/10 text-xs px-4 py-3 rounded-2xl focus:outline-none focus:bg-[#edf0f5] transition-all text-center"
+                    style={{
+                      fontFamily: 'JetBrains Mono, monospace',
+                      boxShadow: 'inset 3px 3px 6px rgba(160,170,190,0.18), inset -3px -3px 6px rgba(255,255,255,0.85)'
+                    }}
+                  />
                 </div>
               )}
+
               {authMode === 'otp' && (
-                <div>
-                  <label htmlFor="otp" className="block text-sm font-medium text-[#e0d6c2]">Verification Code</label>
-                  <input id="otp" name="otp" type="text" required placeholder="123456" className="mt-1 block w-full px-3 py-2.5 border panel-glow rounded-lg bg-[#141414] text-white placeholder-[#7a7060] input-glow sm:text-sm text-center tracking-widest text-lg" style={{ fontFamily: 'JetBrains Mono, monospace' }} />
+                <div className="w-full flex flex-col gap-1">
+                  <label htmlFor="otp" className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider pl-1.5">Verification Code</label>
+                  <input
+                    id="otp"
+                    name="otp"
+                    type="text"
+                    required
+                    placeholder="123456"
+                    className="w-full bg-[#f3f5f8] text-neutral-800 placeholder-neutral-400/60 border border-neutral-200/10 text-sm px-4 py-3 rounded-2xl focus:outline-none focus:bg-[#edf0f5] transition-all text-center tracking-widest font-bold"
+                    style={{
+                      fontFamily: 'JetBrains Mono, monospace',
+                      boxShadow: 'inset 3px 3px 6px rgba(160,170,190,0.18), inset -3px -3px 6px rgba(255,255,255,0.85)'
+                    }}
+                  />
                 </div>
               )}
-              <motion.button type="submit" whileHover={hoverScale} whileTap={tapScale} className="w-full py-2.5 px-4 rounded-lg text-sm font-bold text-[#0a0a0a] bg-[var(--jarvis-accent)] hover:bg-[var(--jarvis-accent-hover)] hover:shadow-[0_0_25px_rgba(var(--jarvis-accent-rgb),0.4)] transition-all duration-100" style={{ fontFamily: 'Orbitron, sans-serif', letterSpacing: '0.1em' }}>
-                {authMode === 'login' ? 'SIGN IN' : authMode === 'signup' ? 'CREATE ACCOUNT' : authMode === 'phone' ? 'SEND CODE' : 'VERIFY'}
+
+              {/* Action Submit Button: Large Premium pill-shaped gradient */}
+              <motion.button
+                type="submit"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-[200px] mt-2 py-3.5 px-6 rounded-full text-[11px] font-bold text-white bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 hover:brightness-110 shadow-[0_8px_20px_rgba(99,102,241,0.3)] transition-all uppercase tracking-widest cursor-pointer"
+                style={{ fontFamily: 'Orbitron, sans-serif' }}
+              >
+                {authMode === 'login' ? 'LOGIN' : authMode === 'signup' ? 'REGISTER' : authMode === 'phone' ? 'SEND CODE' : 'VERIFY'}
               </motion.button>
             </form>
+          </motion.div>
 
-            <div className="mt-6">
-              <div className="relative"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[rgba(var(--jarvis-accent-rgb),0.1)]" /></div><div className="relative flex justify-center text-sm"><span className="px-2 bg-[var(--jarvis-surface)] text-[#7a7060]">Or continue with</span></div></div>
-              <div className="mt-6 grid grid-cols-2 gap-3">
-                <button type="button" onClick={() => setAuthMode('phone')} className="w-full py-2 px-4 border panel-glow rounded-lg bg-[#141414] text-sm font-medium text-[#e0d6c2] hover:bg-[#1e1e1e] transition-colors">Phone</button>
-                <button type="button" onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} className="w-full py-2 px-4 border panel-glow rounded-lg bg-[#141414] text-sm font-medium text-[#e0d6c2] hover:bg-[#1e1e1e] transition-colors">
-                  {authMode === 'login' ? 'Sign up' : 'Sign in'}
-                </button>
-              </div>
-            </div>
+          {/* ── Secondary Floating Satellite Glass Blobs (Stacked/Floating) ── */}
+          <div className="flex flex-row md:flex-col gap-5 shrink-0 select-none">
+            
+            {/* Blob 1: Sign Up / Sign In toggle (Cyan Glass Theme) */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.55, delay: 0.15 }}
+              onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
+              className="w-[105px] h-[105px] sm:w-[120px] sm:h-[120px] bg-cyan-50/45 backdrop-blur-md border border-cyan-200/40 text-cyan-800 flex flex-col items-center justify-center p-3 text-center cursor-pointer md:absolute md:-right-16 md:top-14 z-20 animate-liquid-sub1 shadow-[0_12px_24px_rgba(6,182,212,0.1)] hover:shadow-[0_12px_24px_rgba(6,182,212,0.22)]"
+              whileHover={{ scale: 1.06, y: -2 }}
+              whileTap={{ scale: 0.94 }}
+              style={{
+                boxShadow: 'inset 5px 5px 8px rgba(255, 255, 255, 0.95), inset -5px -5px 8px rgba(6, 182, 212, 0.04), 0 12px 24px rgba(6, 182, 212, 0.1)'
+              }}
+            >
+              <span className="text-[11px] font-extrabold font-sans uppercase tracking-wider leading-tight">
+                {authMode === 'signup' ? 'Sign In' : 'Sign Up'}
+              </span>
+            </motion.div>
+
+            {/* Blob 2: Phone / Email toggler (Violet Glass Theme) */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.55, delay: 0.25 }}
+              onClick={() => setAuthMode(authMode === 'phone' ? 'login' : 'phone')}
+              className="w-[110px] h-[110px] sm:w-[125px] sm:h-[125px] bg-violet-50/45 backdrop-blur-md border border-violet-200/40 text-violet-800 flex flex-col items-center justify-center p-3 text-center cursor-pointer md:absolute md:-right-20 md:bottom-12 z-20 animate-liquid-sub2 shadow-[0_12px_24px_rgba(139,92,246,0.1)] hover:shadow-[0_12px_24px_rgba(139,92,246,0.22)]"
+              whileHover={{ scale: 1.06, y: -2 }}
+              whileTap={{ scale: 0.94 }}
+              style={{
+                boxShadow: 'inset 5px 5px 8px rgba(255, 255, 255, 0.95), inset -5px -5px 8px rgba(139, 92, 246, 0.04), 0 12px 24px rgba(139, 92, 246, 0.1)'
+              }}
+            >
+              <span className="text-[11px] font-extrabold font-sans uppercase tracking-wider leading-tight">
+                {authMode === 'phone' ? 'Email auth' : 'Phone login'}
+              </span>
+            </motion.div>
+
           </div>
-        </motion.div>
+
+        </div>
       </div>
     );
   }

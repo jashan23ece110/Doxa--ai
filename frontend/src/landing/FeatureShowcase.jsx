@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useInView } from 'framer-motion';
 import { 
   Cpu, 
   Database, 
@@ -131,23 +131,6 @@ const FEATURES = [
     type: 'hinglish'
   }
 ];
-
-// Lightweight, performant intersection observer hook
-function useElementInView(ref) {
-  const [isInView, setIsInView] = useState(false);
-
-  useEffect(() => {
-    if (!ref.current) return;
-    const observer = new IntersectionObserver(([entry]) => {
-      setIsInView(entry.isIntersecting);
-    }, { threshold: 0.05 });
-    
-    observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [ref]);
-
-  return isInView;
-}
 
 function RenderFeatureVisual({ type, isInView }) {
   const [streamText, setStreamText] = useState('Doxa is synthesizing autonomous reasoning tokens...');
@@ -439,7 +422,7 @@ function RenderFeatureVisual({ type, isInView }) {
 
 function FeatureShowcaseRow({ feature, isEven, onLaunchApp }) {
   const rowRef = useRef(null);
-  const isInView = useElementInView(rowRef);
+  const isInView = useInView(rowRef, { once: false, margin: "-100px 0px" });
 
   const Icon = feature.icon;
 

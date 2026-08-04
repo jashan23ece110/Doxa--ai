@@ -2,18 +2,19 @@ import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
 /**
- * HeroStarfield — dense, glowing particles forming the exact Doxa nested-rings
- * logo mark on a pure black background.
+ * HeroStarfield — 360k GPU-rendered particles forming the Doxa nested-rings logo.
  *
- * Logo geometry (from the actual asset):
- *   • Outer ring  — large circle, centered at (0, +4)
- *   • Middle ring — medium circle, centered at (-3, -4)
- *   • Inner ring  — small circle, centered at (-5, -10)
- * All overlapping to create the cascading-orbit mark.
+ * All per-particle computation lives in custom vertex/fragment shaders.
+ * The JS animation loop only updates ~15 uniforms per frame — zero per-particle work.
  *
- * No ambient/scatter particles. Pure black bg + logo rings only.
- * Dense, fine-grained, soft glow — Gemini-level visual quality.
- * Mouse + touch reactivity with proper z-index / pointer-events fix.
+ * Features:
+ *   • 360k particles desktop (30k mobile), ring-only, pure black bg
+ *   • Click-and-drag rotation with momentum + idle auto-rotation
+ *   • Global color cycling through 5 palettes (~1.5s each)
+ *   • Localized hover color inversion (complement of current cycle color)
+ *   • Click/tap ripple color pulse
+ *   • Mouse + touch repulsion (coexists with drag — reduced during drag)
+ *   • Bloom halo via second render pass with larger/softer point size
  */
 export default function HeroStarfield() {
   const containerRef = useRef(null);
@@ -24,6 +25,7 @@ export default function HeroStarfield() {
 
     let width = window.innerWidth;
     let height = window.innerHeight;
+    const isMobile = width < 768;
 
     // ── Scene ──
     const scene = new THREE.Scene();
@@ -33,300 +35,509 @@ export default function HeroStarfield() {
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: false });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(width, height);
-    renderer.setClearColor(0x000000, 0); // transparent — page bg is already black
+    renderer.setClearColor(0x000000, 0);
     container.appendChild(renderer.domElement);
 
-    const isMobile = width < 768;
-
-    // ── Exact Doxa logo ring definitions ──
-    // Measured from the logo.png asset — three circles, each offset
-    // Coordinates in a normalized space; we'll scale to world units.
-    // The logo mark spans roughly -60 to +60 world units in the viewport.
-    const SCALE = 2.0; // world-unit multiplier
-
+    // ── Logo ring geometry (exact Doxa mark — 3 offset circles) ──
+    const S = 2.0;
     const rings = [
-      { cx:  0 * SCALE, cy:  4 * SCALE, r: 28 * SCALE, stroke: 2.8 * SCALE }, // outer
-      { cx: -3 * SCALE, cy: -5 * SCALE, r: 19 * SCALE, stroke: 2.6 * SCALE }, // middle
-      { cx: -5 * SCALE, cy: -12 * SCALE, r: 12 * SCALE, stroke: 2.4 * SCALE }, // inner
+      { cx:  0 * S, cy:  4 * S, r: 28 * S, stroke: 2.8 * S },   // outer
+      { cx: -3 * S, cy: -5 * S, r: 19 * S, stroke: 2.6 * S },   // middle
+      { cx: -5 * S, cy: -12 * S, r: 12 * S, stroke: 2.4 * S },  // inner
     ];
 
-    // Ring colors: outer = cyan, middle = indigo, inner = violet (gradient across rings)
-    const ringColorSets = [
-      // outer ring: cyan → sky blue
-      [new THREE.Color('#06b6d4'), new THREE.Color('#22d3ee'), new THREE.Color('#38bdf8')],
-      // middle ring: indigo → violet
-      [new THREE.Color('#6366f1'), new THREE.Color('#818cf8'), new THREE.Color('#8b5cf6')],
-      // inner ring: violet → magenta
-      [new THREE.Color('#8b5cf6'), new THREE.Color('#a855f7'), new THREE.Color('#c084fc')],
-    ];
+    // ── Particle counts ──
+    const PPR = isMobile ? 10000 : 120000;
+    const count = PPR * 3; // 360k desktop, 30k mobile
 
-    // ── Particle generation ──
-    // Dense: many particles per ring, distributed along the stroke width
-    const PARTICLES_PER_RING = isMobile ? 1800 : 5000;
-    const count = PARTICLES_PER_RING * rings.length;
-
-    const positions    = new Float32Array(count * 3);
-    const homePositions = new Float32Array(count * 3);
-    const colors       = new Float32Array(count * 3);
-    const phases       = new Float32Array(count); // per-particle noise phase
-    const depthLayers  = new Float32Array(count); // z-depth randomization
+    // ── Generate attribute data (set once, never modified in JS) ──
+    const homeData      = new Float32Array(count * 3);
+    const scatterData   = new Float32Array(count * 3);
+    const phaseData     = new Float32Array(count);
+    const ringIdxData   = new Float32Array(count);
+    const brightnessData = new Float32Array(count);
 
     let idx = 0;
-
-    for (let ri = 0; ri < rings.length; ri++) {
+    for (let ri = 0; ri < 3; ri++) {
       const ring = rings[ri];
-      const colorSet = ringColorSets[ri];
-
-      for (let p = 0; p < PARTICLES_PER_RING; p++) {
-        const angle = (p / PARTICLES_PER_RING) * Math.PI * 2 + (Math.random() - 0.5) * 0.015;
-
-        // Distribute across the stroke width with gaussian-ish falloff
-        // (more particles near center of stroke, fewer at edges → natural density)
-        const strokeOffset = (Math.random() + Math.random() + Math.random()) / 3; // central tendency
-        const r = ring.r + (strokeOffset - 0.5) * ring.stroke;
-
+      for (let p = 0; p < PPR; p++) {
+        const angle = (p / PPR) * Math.PI * 2 + (Math.random() - 0.5) * 0.02;
+        const t = (Math.random() + Math.random() + Math.random()) / 3; // gaussian-ish
+        const r = ring.r + (t - 0.5) * ring.stroke;
         const x = ring.cx + Math.cos(angle) * r;
         const y = ring.cy + Math.sin(angle) * r;
         const z = (Math.random() - 0.5) * 3;
 
         const i3 = idx * 3;
-        homePositions[i3]     = x;
-        homePositions[i3 + 1] = y;
-        homePositions[i3 + 2] = z;
-
-        // Start scattered, will converge
-        positions[i3]     = x + (Math.random() - 0.5) * 250;
-        positions[i3 + 1] = y + (Math.random() - 0.5) * 250;
-        positions[i3 + 2] = z + (Math.random() - 0.5) * 80;
-
-        // Color: pick from the ring's color set with slight variation
-        const baseColor = colorSet[Math.floor(Math.random() * colorSet.length)].clone();
-        // Add subtle brightness variation for organic feel
-        const brightness = 0.65 + Math.random() * 0.5;
-        baseColor.multiplyScalar(brightness);
-        colors[i3]     = baseColor.r;
-        colors[i3 + 1] = baseColor.g;
-        colors[i3 + 2] = baseColor.b;
-
-        phases[idx] = Math.random() * Math.PI * 2;
-        depthLayers[idx] = z;
-
+        homeData[i3]     = x;
+        homeData[i3 + 1] = y;
+        homeData[i3 + 2] = z;
+        scatterData[i3]     = (Math.random() - 0.5) * 280;
+        scatterData[i3 + 1] = (Math.random() - 0.5) * 280;
+        scatterData[i3 + 2] = (Math.random() - 0.5) * 100;
+        phaseData[idx]       = Math.random() * Math.PI * 2;
+        ringIdxData[idx]     = ri;
+        brightnessData[idx]  = 0.55 + Math.random() * 0.55;
         idx++;
       }
     }
 
     // ── Geometry ──
     const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute('position',    new THREE.BufferAttribute(homeData, 3));
+    geometry.setAttribute('aScatter',    new THREE.BufferAttribute(scatterData, 3));
+    geometry.setAttribute('aPhase',      new THREE.BufferAttribute(phaseData, 1));
+    geometry.setAttribute('aRingIndex',  new THREE.BufferAttribute(ringIdxData, 1));
+    geometry.setAttribute('aBrightness', new THREE.BufferAttribute(brightnessData, 1));
 
-    // ── Soft glow texture (higher res for smoother look) ──
-    const texSize = 128;
-    const glowCanvas = document.createElement('canvas');
-    glowCanvas.width = texSize;
-    glowCanvas.height = texSize;
-    const gctx = glowCanvas.getContext('2d');
-    const half = texSize / 2;
-    const grad = gctx.createRadialGradient(half, half, 0, half, half, half);
-    grad.addColorStop(0, 'rgba(255,255,255,1)');
-    grad.addColorStop(0.12, 'rgba(255,255,255,0.9)');
-    grad.addColorStop(0.3, 'rgba(255,255,255,0.45)');
-    grad.addColorStop(0.55, 'rgba(255,255,255,0.12)');
-    grad.addColorStop(1, 'rgba(255,255,255,0)');
-    gctx.fillStyle = grad;
-    gctx.fillRect(0, 0, texSize, texSize);
-    const texture = new THREE.CanvasTexture(glowCanvas);
+    // ══════════════════════════════════════════════════════════════════════
+    //  GLSL SHADERS — all per-particle logic runs on GPU
+    // ══════════════════════════════════════════════════════════════════════
 
-    const material = new THREE.PointsMaterial({
-      size: isMobile ? 2.2 : 2.8,
-      vertexColors: true,
-      map: texture,
+    const vertexShader = /* glsl */ `
+      attribute vec3 aScatter;
+      attribute float aPhase;
+      attribute float aRingIndex;
+      attribute float aBrightness;
+
+      uniform float uTime;
+      uniform float uFormation;
+      uniform vec2  uPointer;
+      uniform float uPointerActive;
+      uniform float uDragging;
+      uniform float uRepelRadius;
+      uniform float uRepelStrength;
+      uniform float uColorPhase;
+      uniform float uClickPulseTime;
+      uniform vec2  uClickOrigin;
+      uniform float uPointSize;
+      uniform float uPixelRatio;
+
+      varying vec3 vColor;
+
+      // ── 5 palette modes × 3 rings ──
+      vec3 palette(float m, float r) {
+        // Palette 0 — Cyan
+        if (m < 0.5) {
+          return r < 0.5 ? vec3(0.024, 0.714, 0.831) :
+                 r < 1.5 ? vec3(0.133, 0.827, 0.933) :
+                           vec3(0.404, 0.910, 0.976);
+        }
+        // Palette 1 — Violet
+        if (m < 1.5) {
+          return r < 0.5 ? vec3(0.545, 0.361, 0.965) :
+                 r < 1.5 ? vec3(0.659, 0.333, 0.969) :
+                           vec3(0.753, 0.518, 0.988);
+        }
+        // Palette 2 — Indigo
+        if (m < 2.5) {
+          return r < 0.5 ? vec3(0.388, 0.400, 0.945) :
+                 r < 1.5 ? vec3(0.506, 0.549, 0.973) :
+                           vec3(0.647, 0.706, 0.988);
+        }
+        // Palette 3 — Sky Blue
+        if (m < 3.5) {
+          return r < 0.5 ? vec3(0.220, 0.741, 0.973) :
+                 r < 1.5 ? vec3(0.490, 0.827, 0.988) :
+                           vec3(0.729, 0.902, 0.992);
+        }
+        // Palette 4 — Magenta
+        return r < 0.5 ? vec3(0.851, 0.275, 0.937) :
+               r < 1.5 ? vec3(0.910, 0.475, 0.976) :
+                         vec3(0.941, 0.671, 0.988);
+      }
+
+      void main() {
+        // 1 ── Breathing animation
+        float bx = sin(uTime * 0.5 + aPhase) * 0.8
+                  + sin(uTime * 0.23 + aPhase * 2.3) * 0.32;
+        float by = cos(uTime * 0.4 + aPhase * 1.7) * 0.8
+                  + cos(uTime * 0.19 + aPhase * 3.1) * 0.32;
+        float bz = sin(uTime * 0.35 + aPhase * 0.8) * 0.4;
+        vec3 breathPos = position + vec3(bx, by, bz);
+
+        // 2 ── Formation convergence (scattered → formed)
+        //      Stagger: inner ring forms first, outer last
+        float ringDelay = (2.0 - aRingIndex) * 0.12;
+        float f = smoothstep(ringDelay, ringDelay + 0.7, uFormation);
+        vec3 localPos = mix(position + aScatter, breathPos, f);
+
+        // 3 ── World transform (includes group rotation via modelMatrix)
+        vec4 worldPos = modelMatrix * vec4(localPos, 1.0);
+
+        // 4 ── Pointer repulsion (reduced during drag)
+        float repelMix = uPointerActive * max(1.0 - uDragging * 0.9, 0.0);
+        if (repelMix > 0.01) {
+          vec2 diff = worldPos.xy - uPointer;
+          float dist = length(diff);
+          if (dist < uRepelRadius && dist > 0.01) {
+            float force = 1.0 - dist / uRepelRadius;
+            float strength = force * force * force * uRepelStrength * repelMix;
+            worldPos.xy += (diff / dist) * strength;
+          }
+        }
+
+        // 5 ── Project
+        vec4 viewPos = viewMatrix * worldPos;
+        gl_Position = projectionMatrix * viewPos;
+        float cameraDist = max(-viewPos.z, 10.0);
+        gl_PointSize = uPointSize * uPixelRatio * (100.0 / cameraDist);
+
+        // 6 ── Color cycling (lerp between adjacent palette modes)
+        float cp = mod(uColorPhase, 5.0);
+        float modeA = floor(cp);
+        float modeB = mod(modeA + 1.0, 5.0);
+        float blendT = fract(cp);
+        vec3 baseColor = mix(palette(modeA, aRingIndex),
+                             palette(modeB, aRingIndex), blendT);
+
+        // 7 ── Localized hover color inversion
+        float hoverDist   = length(worldPos.xy - uPointer);
+        float hoverRadius = uRepelRadius * 1.3;
+        float hoverFactor = smoothstep(hoverRadius, hoverRadius * 0.15, hoverDist)
+                          * uPointerActive
+                          * max(1.0 - uDragging * 0.8, 0.0);
+        vec3 invertedColor = vec3(1.0) - baseColor;
+        vec3 finalColor = mix(baseColor, invertedColor, hoverFactor);
+
+        // 8 ── Click ripple pulse
+        float clickAge = uTime - uClickPulseTime;
+        if (clickAge > 0.0 && clickAge < 2.0) {
+          float clickDist = length(worldPos.xy - uClickOrigin);
+          float ripplePos = clickAge * 70.0;
+          float ripple = 1.0 - smoothstep(0.0, 18.0, abs(clickDist - ripplePos));
+          float fade   = 1.0 - smoothstep(0.0, 2.0, clickAge);
+          finalColor = mix(finalColor, vec3(1.0), ripple * fade * 0.65);
+        }
+
+        // 9 ── Per-particle brightness variation
+        vColor = finalColor * aBrightness;
+      }
+    `;
+
+    const fragmentShader = /* glsl */ `
+      varying vec3 vColor;
+      uniform float uGlowExp;
+      uniform float uAlphaScale;
+
+      void main() {
+        vec2 c = 2.0 * gl_PointCoord - 1.0;
+        float r2 = dot(c, c);
+        if (r2 > 1.0) discard;
+        float glow = exp(-r2 * uGlowExp);
+        gl_FragColor = vec4(vColor * glow, glow * uAlphaScale);
+      }
+    `;
+
+    // ── Shared uniforms (both materials reference the same objects) ──
+    const shared = {
+      uTime:           { value: 0 },
+      uFormation:      { value: 0 },
+      uPointer:        { value: new THREE.Vector2(99999, 99999) },
+      uPointerActive:  { value: 0 },
+      uDragging:       { value: 0 },
+      uRepelRadius:    { value: isMobile ? 22 : 30 },
+      uRepelStrength:  { value: isMobile ? 16 : 24 },
+      uColorPhase:     { value: 0 },
+      uClickPulseTime: { value: -100 },
+      uClickOrigin:    { value: new THREE.Vector2(0, 0) },
+      uPixelRatio:     { value: renderer.getPixelRatio() },
+    };
+
+    // Main pass — sharp, full brightness
+    const mainMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        ...shared,
+        uPointSize:  { value: isMobile ? 1.5 : 1.8 },
+        uGlowExp:    { value: 3.5 },
+        uAlphaScale: { value: 0.85 },
+      },
+      vertexShader,
+      fragmentShader,
       transparent: true,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
-      opacity: 0.88,
     });
 
-    const points = new THREE.Points(geometry, material);
-    scene.add(points);
-
-    // ── Bloom/glow post-processing layer ──
-    // We add a second, larger, dimmer copy of the same particles for bloom halo
-    const bloomMaterial = new THREE.PointsMaterial({
-      size: isMobile ? 6.0 : 8.0,
-      vertexColors: true,
-      map: texture,
+    // Bloom pass — large, soft, dim (luminous halo)
+    const bloomMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        ...shared,
+        uPointSize:  { value: isMobile ? 5.0 : 7.0 },
+        uGlowExp:    { value: 1.2 },
+        uAlphaScale: { value: 0.09 },
+      },
+      vertexShader,
+      fragmentShader,
       transparent: true,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
-      opacity: 0.12,
     });
-    const bloomPoints = new THREE.Points(geometry, bloomMaterial); // shares same geometry
-    scene.add(bloomPoints);
 
-    // ── Pointer / interaction state ──
-    let pointerX = 99999;
-    let pointerY = 99999;
+    // ── Scene graph — parent group handles rotation ──
+    const group = new THREE.Group();
+    scene.add(group);
+
+    const mainPoints = new THREE.Points(geometry, mainMaterial);
+    mainPoints.frustumCulled = false;
+    group.add(mainPoints);
+
+    const bloomPoints = new THREE.Points(geometry, bloomMaterial);
+    bloomPoints.frustumCulled = false;
+    group.add(bloomPoints);
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  INTERACTION STATE
+    // ══════════════════════════════════════════════════════════════════════
+
+    const clock = new THREE.Clock();
+
+    let pointerX = 99999, pointerY = 99999;
     let pointerActive = false;
 
-    // Camera parallax targets
-    let camTargetX = 0;
-    let camTargetY = 0;
-    let camX = 0;
-    let camY = 0;
+    // Drag rotation
+    let isDragging = false;
+    let maybeClick = false;
+    let dragStartX = 0, dragStartY = 0;
+    let dragPrevX = 0, dragPrevY = 0;
+    let dragStartTime = 0;
+
+    // Momentum after drag release
+    let momentumX = 0, momentumY = 0;
+
+    // Idle auto-rotation blend
+    let lastInteractionTime = 0;
+    let autoRotBlend = 0;
+
+    // Camera parallax
+    let camTargetX = 0, camTargetY = 0;
+    let camX = 0, camY = 0;
     let scrollY = 0;
 
-    const REPEL_RADIUS = isMobile ? 22 : 30;
-    const REPEL_STRENGTH = isMobile ? 16 : 24;
-
-    // Accurate screen → world conversion using the actual camera
+    // ── Raycaster for screen → world conversion ──
     const raycaster = new THREE.Raycaster();
     const ndcVec = new THREE.Vector2();
-    const worldPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0); // z=0 plane
+    const worldPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
     const worldIntersect = new THREE.Vector3();
 
     const updatePointerWorld = (clientX, clientY) => {
-      // Use canvas bounding rect for correct coords (not window.innerWidth)
       const rect = renderer.domElement.getBoundingClientRect();
       ndcVec.x = ((clientX - rect.left) / rect.width) * 2 - 1;
       ndcVec.y = -((clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(ndcVec, camera);
-      raycaster.ray.intersectPlane(worldPlane, worldIntersect);
-      if (worldIntersect) {
+      if (raycaster.ray.intersectPlane(worldPlane, worldIntersect)) {
         pointerX = worldIntersect.x;
         pointerY = worldIntersect.y;
       }
     };
 
-    // ── Mouse events ──
+    // Skip drag-start if clicking on a button/link
+    const isInteractive = (e) =>
+      e.target && e.target.closest && e.target.closest('button, a, input, [role=button]');
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  MOUSE EVENTS
+    // ══════════════════════════════════════════════════════════════════════
+
+    const onMouseDown = (e) => {
+      if (isInteractive(e)) return;
+      maybeClick = true;
+      isDragging = false;
+      dragStartX = dragPrevX = e.clientX;
+      dragStartY = dragPrevY = e.clientY;
+      dragStartTime = performance.now();
+    };
+
     const onMouseMove = (e) => {
       updatePointerWorld(e.clientX, e.clientY);
       pointerActive = true;
       camTargetX = (e.clientX / width - 0.5) * 2;
       camTargetY = -(e.clientY / height - 0.5) * 2;
-    };
-    const onMouseLeave = () => {
-      pointerActive = false;
-      pointerX = 99999;
-      pointerY = 99999;
+      lastInteractionTime = clock.getElapsedTime();
+
+      // Detect drag threshold
+      if (maybeClick) {
+        if (Math.abs(e.clientX - dragStartX) > 4 || Math.abs(e.clientY - dragStartY) > 4) {
+          maybeClick = false;
+          isDragging = true;
+        }
+      }
+
+      // Apply rotation during drag
+      if (isDragging) {
+        const dx = e.clientX - dragPrevX;
+        const dy = e.clientY - dragPrevY;
+        const sens = 0.004;
+        group.rotation.y += dx * sens;
+        group.rotation.x = Math.max(-1, Math.min(1, group.rotation.x + dy * sens));
+        momentumY = momentumY * 0.5 + dx * sens * 0.5; // smooth
+        momentumX = momentumX * 0.5 + dy * sens * 0.5;
+        dragPrevX = e.clientX;
+        dragPrevY = e.clientY;
+      }
     };
 
-    // ── Touch events ──
-    const onTouchStart = (e) => {
-      if (e.touches.length > 0) {
-        const t = e.touches[0];
-        updatePointerWorld(t.clientX, t.clientY);
-        pointerActive = true;
+    const onMouseUp = (e) => {
+      if (maybeClick && performance.now() - dragStartTime < 250) {
+        // Short click → trigger color pulse
+        updatePointerWorld(e.clientX, e.clientY);
+        shared.uClickPulseTime.value = clock.getElapsedTime();
+        shared.uClickOrigin.value.set(pointerX, pointerY);
       }
+      maybeClick = false;
+      isDragging = false;
+      lastInteractionTime = clock.getElapsedTime();
     };
-    const onTouchMove = (e) => {
-      if (e.touches.length > 0) {
-        const t = e.touches[0];
-        updatePointerWorld(t.clientX, t.clientY);
-        pointerActive = true;
-        camTargetX = (t.clientX / width - 0.5) * 2;
-        camTargetY = -(t.clientY / height - 0.5) * 2;
-      }
-    };
-    const onTouchEnd = () => {
+
+    const onMouseLeave = () => {
       pointerActive = false;
-      pointerX = 99999;
-      pointerY = 99999;
+      pointerX = pointerY = 99999;
+      maybeClick = false;
+      isDragging = false;
+    };
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  TOUCH EVENTS
+    // ══════════════════════════════════════════════════════════════════════
+
+    let touchId = null;
+
+    const onTouchStart = (e) => {
+      if (isInteractive(e) || e.touches.length !== 1) return;
+      const t = e.touches[0];
+      touchId = t.identifier;
+      maybeClick = true;
+      isDragging = false;
+      dragStartX = dragPrevX = t.clientX;
+      dragStartY = dragPrevY = t.clientY;
+      dragStartTime = performance.now();
+      updatePointerWorld(t.clientX, t.clientY);
+      pointerActive = true;
+    };
+
+    const onTouchMove = (e) => {
+      const t = Array.from(e.touches).find(tt => tt.identifier === touchId);
+      if (!t) return;
+      updatePointerWorld(t.clientX, t.clientY);
+      pointerActive = true;
+      lastInteractionTime = clock.getElapsedTime();
+
+      if (maybeClick) {
+        if (Math.abs(t.clientX - dragStartX) > 6 || Math.abs(t.clientY - dragStartY) > 6) {
+          maybeClick = false;
+          isDragging = true;
+        }
+      }
+
+      if (isDragging) {
+        const dx = t.clientX - dragPrevX;
+        const dy = t.clientY - dragPrevY;
+        const sens = 0.004;
+        group.rotation.y += dx * sens;
+        group.rotation.x = Math.max(-1, Math.min(1, group.rotation.x + dy * sens));
+        momentumY = momentumY * 0.5 + dx * sens * 0.5;
+        momentumX = momentumX * 0.5 + dy * sens * 0.5;
+        dragPrevX = t.clientX;
+        dragPrevY = t.clientY;
+      }
+    };
+
+    const onTouchEnd = (e) => {
+      if (!Array.from(e.touches).find(tt => tt.identifier === touchId)) {
+        if (maybeClick && performance.now() - dragStartTime < 300) {
+          shared.uClickPulseTime.value = clock.getElapsedTime();
+          shared.uClickOrigin.value.set(pointerX, pointerY);
+        }
+        maybeClick = false;
+        isDragging = false;
+        pointerActive = false;
+        pointerX = pointerY = 99999;
+        touchId = null;
+        lastInteractionTime = clock.getElapsedTime();
+      }
     };
 
     const onScroll = () => { scrollY = window.scrollY; };
 
-    // ── Attach events to WINDOW (not canvas) to avoid z-index blocking ──
-    // The hero section's z-10 div sits above the canvas, so canvas mouse events
-    // never fire. Using window-level listeners ensures we always capture pointer.
+    // All listeners on window (hero section z-10 blocks canvas events)
+    window.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('scroll', onScroll);
-
-    // Touch listeners on the container (these work because touch events
-    // fire on the element under the finger, and bubbling handles the rest)
-    // But for safety, also on window
+    window.addEventListener('mouseup', onMouseUp);
     window.addEventListener('touchstart', onTouchStart, { passive: true });
     window.addEventListener('touchmove', onTouchMove, { passive: true });
     window.addEventListener('touchend', onTouchEnd);
+    window.addEventListener('scroll', onScroll);
 
-    // ── Resize ──
     const onResize = () => {
       width = window.innerWidth;
       height = window.innerHeight;
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height);
+      shared.uPixelRatio.value = renderer.getPixelRatio();
     };
     window.addEventListener('resize', onResize);
 
-    // ── Formation convergence ──
-    let formationT = 0;
-    const FORMATION_SPEED = 0.008;
+    // ══════════════════════════════════════════════════════════════════════
+    //  ANIMATION LOOP — only uniform updates, no per-particle JS work
+    // ══════════════════════════════════════════════════════════════════════
 
-    // ── Animation loop ──
-    const clock = new THREE.Clock();
     let animId;
 
     const animate = () => {
       animId = requestAnimationFrame(animate);
       const time = clock.getElapsedTime();
 
-      // Formation convergence (smoothstep)
-      if (formationT < 1) {
-        formationT = Math.min(1, formationT + FORMATION_SPEED);
+      // ── Formation convergence ──
+      if (shared.uFormation.value < 1) {
+        shared.uFormation.value = Math.min(1, shared.uFormation.value + 0.006);
       }
-      const ease = formationT * formationT * (3 - 2 * formationT);
 
-      // Smooth camera parallax
-      camX += (camTargetX - camX) * 0.03;
-      camY += (camTargetY - camY) * 0.03;
+      // ── Rotation: momentum + auto-rotation ──
+      const timeSinceInteraction = time - lastInteractionTime;
+
+      if (isDragging) {
+        autoRotBlend = Math.max(0, autoRotBlend - 0.03);
+      } else {
+        // Decay momentum
+        momentumX *= 0.965;
+        momentumY *= 0.965;
+        if (Math.abs(momentumX) < 0.00001) momentumX = 0;
+        if (Math.abs(momentumY) < 0.00001) momentumY = 0;
+        group.rotation.y += momentumY;
+        group.rotation.x += momentumX;
+        group.rotation.x = Math.max(-1, Math.min(1, group.rotation.x));
+
+        // Auto-rotation: fade in after 2.5s idle + near-zero momentum
+        if (Math.abs(momentumY) < 0.0002 && Math.abs(momentumX) < 0.0002 && timeSinceInteraction > 2.5) {
+          autoRotBlend = Math.min(1, autoRotBlend + 0.004);
+        } else {
+          autoRotBlend = Math.max(0, autoRotBlend - 0.01);
+        }
+      }
+      // Gentle idle tumble
+      group.rotation.y += autoRotBlend * 0.0018;
+      group.rotation.x += autoRotBlend * 0.0004;
+
+      // ── Camera parallax (reduced during drag) ──
+      if (!isDragging) {
+        camX += (camTargetX - camX) * 0.03;
+        camY += (camTargetY - camY) * 0.03;
+      } else {
+        camX += (0 - camX) * 0.05;
+        camY += (0 - camY) * 0.05;
+      }
       camera.position.x = camX * 8;
-      camera.position.y = camY * 6 - scrollY * 0.025;
+      camera.position.y = camY * 6 - scrollY * 0.02;
       camera.lookAt(0, 0, 0);
 
-      const pos = geometry.attributes.position.array;
+      // ── Update shared uniforms (both materials receive these) ──
+      shared.uTime.value          = time;
+      shared.uPointer.value.set(pointerX, pointerY);
+      shared.uPointerActive.value = pointerActive ? 1 : 0;
+      shared.uDragging.value      = isDragging ? 1 : 0;
+      shared.uColorPhase.value    = (time * 0.667) % 5; // ~1.5s per palette
 
-      for (let i = 0; i < count; i++) {
-        const i3 = i * 3;
-        const phase = phases[i];
-
-        // Gentle breathing noise around home position
-        const breathAmp = 0.8;
-        const breathX = Math.sin(time * 0.5 + phase) * breathAmp
-                      + Math.sin(time * 0.23 + phase * 2.3) * breathAmp * 0.4;
-        const breathY = Math.cos(time * 0.4 + phase * 1.7) * breathAmp
-                      + Math.cos(time * 0.19 + phase * 3.1) * breathAmp * 0.4;
-        const breathZ = Math.sin(time * 0.35 + phase * 0.8) * 0.4;
-
-        let targetX = homePositions[i3]     + breathX;
-        let targetY = homePositions[i3 + 1] + breathY;
-        let targetZ = homePositions[i3 + 2] + breathZ;
-
-        // ── Pointer repulsion ──
-        if (pointerActive) {
-          const dx = targetX - pointerX;
-          const dy = targetY - pointerY;
-          const distSq = dx * dx + dy * dy;
-          const rr = REPEL_RADIUS * REPEL_RADIUS;
-          if (distSq < rr && distSq > 0.01) {
-            const dist = Math.sqrt(distSq);
-            const force = 1 - dist / REPEL_RADIUS;
-            const strength = force * force * force * REPEL_STRENGTH;
-            targetX += (dx / dist) * strength;
-            targetY += (dy / dist) * strength;
-          }
-        }
-
-        // Lerp toward target
-        const lerpRate = 0.04 + ease * 0.04;
-        const formBlend = ease * 0.5 + 0.5; // at least 0.5 speed even at start
-
-        pos[i3]     += (targetX - pos[i3])     * lerpRate * formBlend;
-        pos[i3 + 1] += (targetY - pos[i3 + 1]) * lerpRate * formBlend;
-        pos[i3 + 2] += (targetZ - pos[i3 + 2]) * lerpRate * formBlend;
-      }
-
-      geometry.attributes.position.needsUpdate = true;
       renderer.render(scene, camera);
     };
 
@@ -335,19 +546,20 @@ export default function HeroStarfield() {
     // ── Cleanup ──
     return () => {
       cancelAnimationFrame(animId);
+      window.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('mouseup', onMouseUp);
       window.removeEventListener('touchstart', onTouchStart);
       window.removeEventListener('touchmove', onTouchMove);
       window.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onResize);
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
       }
       geometry.dispose();
-      material.dispose();
+      mainMaterial.dispose();
       bloomMaterial.dispose();
-      texture.dispose();
       renderer.dispose();
     };
   }, []);

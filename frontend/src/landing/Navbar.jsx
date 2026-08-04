@@ -61,11 +61,11 @@ export default function Navbar({ onLaunchApp }) {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
-          ? 'bg-black/60 backdrop-blur-2xl border-b border-white/[0.06] shadow-lg py-2.5'
-          : 'bg-transparent py-4'
+          ? 'bg-black/60 backdrop-blur-2xl border-b border-white/[0.06] shadow-lg py-3.5'
+          : 'bg-transparent py-5'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14">
 
         {/* ── Left: Logo mark + wordmark ── */}
         <div
@@ -76,16 +76,16 @@ export default function Navbar({ onLaunchApp }) {
           <img
             src={doxaLogo}
             alt="Doxa"
-            className="w-7 h-7 object-contain"
+            className="w-9 h-9 object-contain"
             style={{ filter: 'invert(1) brightness(2)' }}
           />
-          <span className="text-[17px] font-semibold tracking-tight text-white">
+          <span className="text-[21px] font-semibold tracking-tight text-white">
             Doxa
           </span>
         </div>
 
         {/* ── Center: Nav links (desktop) ── */}
-        <nav className="hidden md:flex items-center gap-1 text-[14px] text-neutral-400 font-medium">
+        <nav className="hidden md:flex items-center gap-1.5 text-[15px] text-neutral-400 font-medium">
 
           {/* What Doxa Can Do — dropdown */}
           <div className="relative" ref={capRef}>
@@ -204,7 +204,7 @@ export default function Navbar({ onLaunchApp }) {
             onClick={onLaunchApp}
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-semibold text-white cursor-pointer overflow-hidden"
+            className="hidden sm:flex items-center gap-2 px-5 py-2.5 rounded-full text-[14px] font-semibold text-white cursor-pointer overflow-hidden"
             style={{
               background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 50%, #06b6d4 100%)',
             }}
@@ -212,7 +212,7 @@ export default function Navbar({ onLaunchApp }) {
             <img
               src={doxaLogo}
               alt=""
-              className="w-4 h-4 object-contain"
+              className="w-[18px] h-[18px] object-contain"
               style={{ filter: 'invert(1) brightness(2)' }}
             />
             <span>Try Doxa</span>

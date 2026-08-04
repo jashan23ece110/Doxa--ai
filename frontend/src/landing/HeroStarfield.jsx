@@ -128,6 +128,7 @@ export default function HeroStarfield() {
       uniform float uPointSize;
       uniform float uPixelRatio;
       uniform float uDeform;
+      uniform float uDeformMode;
       uniform float uFlowOffset;
 
       varying vec3 vColor;
@@ -183,8 +184,18 @@ export default function HeroStarfield() {
         float f = smoothstep(ringDelay, ringDelay + 0.7, uFormation);
         vec3 localPos = mix(position + aScatter, breathPos, f);
 
-        // Deform effect (organic breakaway/scatter offset)
-        vec3 deformOffset = aScatter * 0.55;
+        // Deform effect (Forward or Backward depending on uDeformMode)
+        vec3 deformOffset;
+        if (uDeformMode < 0.5) {
+          // Mode 0: Forward/outward scatter (uses aScatter directly)
+          deformOffset = aScatter * 0.55;
+        } else {
+          // Mode 1: Backward/peeling scatter
+          // Tangent vector of circle at currentAngle is (-sin, cos, 0)
+          vec3 tangent = vec3(-sin(currentAngle), cos(currentAngle), 0.0);
+          // Push backward along tangent (-tangent) with a scatter spread
+          deformOffset = -tangent * aRadius * 0.35 + aScatter * 0.25;
+        }
         localPos = mix(localPos, breathPos + deformOffset, uDeform * f);
 
         // 3 ── World transform (includes group rotation via modelMatrix)
@@ -259,6 +270,7 @@ export default function HeroStarfield() {
       uTime:           { value: 0 },
       uFormation:      { value: 0 },
       uDeform:         { value: 0 },
+      uDeformMode:     { value: 0 },
       uFlowOffset:     { value: 0 },
       uPointer:        { value: new THREE.Vector2(99999, 99999) },
       uPointerActive:  { value: 0 },
@@ -336,13 +348,32 @@ export default function HeroStarfield() {
     let lastInteractionTime = 0;
     let autoRotBlend = 0;
 
-    // Deform / reform cycle state
-    let cycleTimer = 0;
+    // State machine cycle constants
+    const STATE_FORMED = 0;
+    const STATE_DEFORMING_FORWARD = 1;
+    const STATE_HELD_FORWARD = 2;
+    const STATE_REFORMING_FORWARD = 3;
+    const STATE_REVERSE_FLOW = 4;
+    const STATE_RESETTING = 5;
+    const STATE_DEFORMING_BACKWARD = 6;
+    const STATE_HELD_BACKWARD = 7;
+    const STATE_REFORMING_BACKWARD = 8;
+
+    let cycleState = STATE_FORMED;
+    let cycleStateTimer = 0.0;
+
     let uDeformVal = 0.0;
+    let uDeformModeVal = 0.0; // 0 = forward, 1 = backward
 
     // Flow path offset variables
     let flowSpeed = 0.05;
     let flowOffset = 0.0;
+    let startFlowOffset = 0.0;
+
+    // Reset rotation tracking
+    let resetStartRotX = 0.0;
+    let resetStartRotY = 0.0;
+    let resetTargetRotY = 0.0;
 
     // Camera parallax
     let camTargetX = 0, camTargetY = 0;
@@ -531,49 +562,148 @@ export default function HeroStarfield() {
         shared.uFormation.value = Math.min(1, shared.uFormation.value + 0.006);
       }
 
-      // ── Deform / reform / reverse / reset cycle logic ──
-      const phaseDuration = 8.6;
-      const localTime = cycleTimer % phaseDuration;
-      const isResetting = (shared.uFormation.value > 0.95 && !isDragging && localTime >= 7.1);
+      // ── Deform / reform / reverse / reset cycle logic (State Machine) ──
+      const isResetting = (shared.uFormation.value > 0.95 && !isDragging && cycleState === STATE_RESETTING);
 
       if (shared.uFormation.value > 0.95) {
         if (isDragging) {
-          // Pause cycle and smoothly reform logo (lerp to 0.0) during active drag rotation
+          // Reset to baseline and pause cycles while user is manually drag-rotating
           uDeformVal += (0.0 - uDeformVal) * 0.08;
           flowSpeed += (0.05 - flowSpeed) * 0.08;
-          cycleTimer = 0; // reset cycle so it starts fresh after drag release
+          uDeformModeVal += (0.0 - uDeformModeVal) * 0.08;
+          cycleState = STATE_FORMED;
+          cycleStateTimer = 0.0;
         } else {
-          // Advance cycle timer
-          cycleTimer += delta;
+          // Advance state timer
+          cycleStateTimer += delta;
 
-          if (localTime < 3.0) {
-            // Formed state
-            uDeformVal = 0.0;
-            flowSpeed = 0.05;
-          } else if (localTime < 4.0) {
-            // Deforming transition (0.0 -> 1.0)
-            const t = (localTime - 3.0) / 1.0;
-            uDeformVal = t * t * (3.0 - 2.0 * t);
-            flowSpeed = 0.05;
-          } else if (localTime < 4.6) {
-            // Held deformed state
-            uDeformVal = 1.0;
-            flowSpeed = 0.05;
-          } else if (localTime < 5.6) {
-            // Reforming transition (1.0 -> 0.0)
-            const t = (localTime - 4.6) / 1.0;
-            uDeformVal = 1.0 - (t * t * (3.0 - 2.0 * t));
-            flowSpeed = 0.05;
-          } else if (localTime < 7.1) {
-            // Reverse-Motion Mode (1.5 seconds)
-            uDeformVal = 0.0;
-            const t = (localTime - 5.6) / 1.5;
-            // Dip flow speed down to negative (reverse) and back
-            flowSpeed = THREE.MathUtils.lerp(0.05, -0.65, Math.sin(t * Math.PI));
-          } else {
-            // Default Reset Mode (1.5 seconds)
-            uDeformVal = 0.0;
-            flowSpeed = 0.05;
+          // Process state transitions and set uniforms/speeds
+          switch (cycleState) {
+            case STATE_FORMED:
+              uDeformVal = 0.0;
+              uDeformModeVal = 0.0;
+              flowSpeed = 0.05;
+              if (cycleStateTimer >= 3.0) {
+                cycleState = STATE_DEFORMING_FORWARD;
+                cycleStateTimer = 0.0;
+              }
+              break;
+
+            case STATE_DEFORMING_FORWARD:
+              uDeformModeVal = 0.0;
+              flowSpeed = 0.05;
+              {
+                const t = Math.min(1.0, cycleStateTimer / 1.0);
+                uDeformVal = t * t * (3.0 - 2.0 * t); // cubic ease-in-out
+                if (cycleStateTimer >= 1.0) {
+                  cycleState = STATE_HELD_FORWARD;
+                  cycleStateTimer = 0.0;
+                }
+              }
+              break;
+
+            case STATE_HELD_FORWARD:
+              uDeformVal = 1.0;
+              uDeformModeVal = 0.0;
+              flowSpeed = 0.05;
+              if (cycleStateTimer >= 0.6) {
+                cycleState = STATE_REFORMING_FORWARD;
+                cycleStateTimer = 0.0;
+              }
+              break;
+
+            case STATE_REFORMING_FORWARD:
+              uDeformModeVal = 0.0;
+              flowSpeed = 0.05;
+              {
+                const t = Math.min(1.0, cycleStateTimer / 1.0);
+                uDeformVal = 1.0 - (t * t * (3.0 - 2.0 * t)); // cubic ease-in-out
+                if (cycleStateTimer >= 1.0) {
+                  cycleState = STATE_REVERSE_FLOW;
+                  cycleStateTimer = 0.0;
+                  startFlowOffset = flowOffset;
+                }
+              }
+              break;
+
+            case STATE_REVERSE_FLOW:
+              uDeformVal = 0.0;
+              uDeformModeVal = 0.0;
+              // Reverse speed: -2.5 rad/s
+              flowSpeed = -2.5;
+              // Wait until flow offset completes exactly one full loop (2*PI radians) backward
+              if (flowOffset <= startFlowOffset - 2.0 * Math.PI) {
+                cycleState = STATE_RESETTING;
+                cycleStateTimer = 0.0;
+                // Capture current rotation states for fixed-duration eased reset
+                resetStartRotX = group.rotation.x;
+                resetStartRotY = group.rotation.y;
+                // Target Y rotation is the nearest multiple of 2*PI (keeps front-facing)
+                resetTargetRotY = Math.round(group.rotation.y / (Math.PI * 2)) * Math.PI * 2;
+              }
+              break;
+
+            case STATE_RESETTING:
+              uDeformVal = 0.0;
+              uDeformModeVal = 0.0;
+              flowSpeed = 0.05;
+              {
+                // Fixed duration reset: 2.0 seconds (visibly slower/smoother)
+                const duration = 2.0;
+                const t = Math.min(1.0, cycleStateTimer / duration);
+                const ease = t * t * (3.0 - 2.0 * t); // cubic ease-in-out
+                
+                group.rotation.x = THREE.MathUtils.lerp(resetStartRotX, 0.0, ease);
+                group.rotation.y = THREE.MathUtils.lerp(resetStartRotY, resetTargetRotY, ease);
+                momentumX = 0;
+                momentumY = 0;
+
+                if (cycleStateTimer >= duration) {
+                  // Normalize rotation to exactly 0 to avoid numeric drift
+                  group.rotation.x = 0.0;
+                  group.rotation.y = 0.0;
+                  cycleState = STATE_DEFORMING_BACKWARD;
+                  cycleStateTimer = 0.0;
+                }
+              }
+              break;
+
+            case STATE_DEFORMING_BACKWARD:
+              uDeformModeVal = 1.0; // backward scatter mode
+              flowSpeed = 0.05;
+              {
+                const t = Math.min(1.0, cycleStateTimer / 1.0);
+                uDeformVal = t * t * (3.0 - 2.0 * t); // cubic ease-in-out
+                if (cycleStateTimer >= 1.0) {
+                  cycleState = STATE_HELD_BACKWARD;
+                  cycleStateTimer = 0.0;
+                }
+              }
+              break;
+
+            case STATE_HELD_BACKWARD:
+              uDeformVal = 1.0;
+              uDeformModeVal = 1.0;
+              flowSpeed = 0.05;
+              if (cycleStateTimer >= 4.0) { // hold for 4 seconds as requested
+                cycleState = STATE_REFORMING_BACKWARD;
+                cycleStateTimer = 0.0;
+              }
+              break;
+
+            case STATE_REFORMING_BACKWARD:
+              uDeformModeVal = 1.0;
+              flowSpeed = 0.05;
+              {
+                const t = Math.min(1.0, cycleStateTimer / 1.0);
+                uDeformVal = 1.0 - (t * t * (3.0 - 2.0 * t)); // cubic ease-in-out
+                if (cycleStateTimer >= 1.0) {
+                  cycleState = STATE_FORMED;
+                  cycleStateTimer = 0.0;
+                  uDeformModeVal = 0.0;
+                }
+              }
+              break;
           }
         }
       } else {
@@ -585,6 +715,7 @@ export default function HeroStarfield() {
       flowOffset += flowSpeed * delta;
       shared.uFlowOffset.value = flowOffset;
       shared.uDeform.value = uDeformVal;
+      shared.uDeformMode.value = uDeformModeVal;
 
       // ── Rotation: momentum + auto-rotation ──
       const timeSinceInteraction = time - lastInteractionTime;

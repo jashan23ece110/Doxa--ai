@@ -1,0 +1,26 @@
+.doxa-logo-motion {
+  overflow: visible;
+}
+
+.doxa-logo-motion circle {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Base glowing for final form */
+.doxa-logo-motion.is-final-form {
+  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.4));
+  transition: filter 1s ease-in-out;
+}
+
+/* Subtle glow for resting state */
+.doxa-logo-motion.is-form {
+  filter: drop-shadow(0 0 2px rgba(139, 92, 246, 0.15));
+  transition: filter 1s ease-in-out;
+}
+
+/* Extra energy for transform state */
+.doxa-logo-motion.is-transform {
+  filter: drop-shadow(0 0 15px rgba(6, 182, 212, 0.5));
+  transition: filter 1.5s ease-in-out;
+}

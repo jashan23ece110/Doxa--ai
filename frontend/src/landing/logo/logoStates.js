@@ -1,65 +1,54 @@
 /**
- * Doxa Logo Motion System — 5-State Micro-Interaction Model
+ * Doxa Logo Motion System — 5-Mode State Machine & Timing Definition
  *
- * STATE 1 — FORM: Canonical resting state (balanced, stable, subtle glow)
- * STATE 2 — DEFORM: Independent ring shift (translation, scaling, rotation, timing offsets)
- * STATE 3 — TRANSFORM: Dynamic expansion & offset configuration
- * STATE 4 — REFORM: System self-reorganization returning toward baseline
- * STATE 5 — FINAL FORM: Snap alignment with peak glow pulse before settling back to FORM
+ * MODE 1 — FORM: Canonical 3-ring baseline (Resting)
+ * MODE 2 — DEFORM: Organic triangular wave shield envelope
+ * MODE 3 — TRANSFORM: Intertwined double-helix swirl vortex
+ * MODE 4 — RETRIEVE: Information particle spiral galaxy
+ * MODE 5 — REFORM: Restructuring particle-to-ring convergence
  */
 
-export const LOGO_STATES = {
-  FORM: 'FORM',
-  DEFORM: 'DEFORM',
-  TRANSFORM: 'TRANSFORM',
-  REFORM: 'REFORM',
-  FINAL_FORM: 'FINAL_FORM',
+export const MODES = {
+  FORM: 1,
+  DEFORM: 2,
+  TRANSFORM: 3,
+  RETRIEVE: 4,
+  REFORM: 5,
 };
 
-// Timing parameters (in seconds)
-export const MOTION_TIMINGS = {
-  totalDuration: 1.35,
-  times: [0, 0.22, 0.52, 0.78, 0.92, 1.0], // Normalized timeline steps
+export const MODE_NAMES = {
+  1: 'FORM',
+  2: 'DEFORM',
+  3: 'TRANSFORM',
+  4: 'RETRIEVE',
+  5: 'REFORM',
 };
 
-// Outer Ring Keyframes (cx=50, cy=40, r=32, strokeWidth=3.6)
-export const OUTER_RING_KEYFRAMES = {
-  x: [0, -2.5, 3.5, 0.8, 0, 0],
-  y: [0, -2.0, -3.8, -0.8, 0, 0],
-  scale: [1, 1.03, 1.07, 1.02, 1.0, 1.0],
-  rotate: [0, 6, -14, -3, 0, 0],
-  strokeWidth: [3.6, 3.8, 4.1, 3.7, 3.6, 3.6],
-  opacity: [0.95, 1, 1, 0.95, 1, 0.95],
+// Durations for each phase in milliseconds
+export const TIMINGS = {
+  DEFORM_DURATION: 350,
+  TRANSFORM_DURATION: 450,
+  RETRIEVE_DURATION: 500,
+  REFORM_DURATION: 500,
+  FINAL_REST_DURATION: 400,
+  TOTAL_ANIMATION_TIME: 2200, // ~2.2 seconds
 };
 
-// Middle Ring Keyframes (cx=45, cy=53, r=22, strokeWidth=3.4)
-export const MIDDLE_RING_KEYFRAMES = {
-  x: [0, 3.2, -4.5, -1.0, 0, 0],
-  y: [0, -1.5, 3.2, 1.0, 0, 0],
-  scale: [1, 0.95, 1.05, 0.98, 1.0, 1.0],
-  rotate: [0, -10, 18, 4, 0, 0],
-  strokeWidth: [3.4, 3.6, 3.9, 3.5, 3.4, 3.4],
-  opacity: [0.9, 0.85, 1, 0.9, 1, 0.9],
-};
+// Mode timeline breakpoints (normalized 0 to 1)
+export const TIMELINE_BREAKPOINTS = [
+  { modeFrom: 1, modeTo: 2, start: 0, end: 0.16 },       // 0 - 350ms
+  { modeFrom: 2, modeTo: 3, start: 0.16, end: 0.36 },    // 350 - 800ms
+  { modeFrom: 3, modeTo: 4, start: 0.36, end: 0.59 },    // 800 - 1300ms
+  { modeFrom: 4, modeTo: 5, start: 0.59, end: 0.82 },    // 1300 - 1800ms
+  { modeFrom: 5, modeTo: 1, start: 0.82, end: 1.0 },     // 1800 - 2200ms
+];
 
-// Inner Ring Keyframes (cx=42, cy=64, r=13, strokeWidth=3.2)
-export const INNER_RING_KEYFRAMES = {
-  x: [0, -1.8, 4.2, 0.9, 0, 0],
-  y: [0, 2.8, -3.2, -0.9, 0, 0],
-  scale: [1, 1.06, 0.91, 1.01, 1.0, 1.0],
-  rotate: [0, 14, -22, -5, 0, 0],
-  strokeWidth: [3.2, 3.5, 3.8, 3.3, 3.2, 3.2],
-  opacity: [1, 1, 0.95, 1, 1, 1],
-};
-
-// Glow filter keyframes across states
-export const GLOW_KEYFRAMES = {
-  filter: [
-    'drop-shadow(0 0 3px rgba(168, 85, 247, 0.25))',
-    'drop-shadow(0 0 6px rgba(168, 85, 247, 0.45)) drop-shadow(0 0 10px rgba(6, 182, 212, 0.3))',
-    'drop-shadow(0 0 10px rgba(6, 182, 212, 0.6)) drop-shadow(0 0 16px rgba(168, 85, 247, 0.5))',
-    'drop-shadow(0 0 7px rgba(168, 85, 247, 0.4)) drop-shadow(0 0 12px rgba(6, 182, 212, 0.4))',
-    'drop-shadow(0 0 12px rgba(6, 182, 212, 0.7)) drop-shadow(0 0 18px rgba(168, 85, 247, 0.6))',
-    'drop-shadow(0 0 3px rgba(168, 85, 247, 0.25))',
-  ],
+// Color palette mapping
+export const PALETTE = {
+  purple: '#a855f7',
+  indigo: '#818cf8',
+  cyan: '#06b6d4',
+  pink: '#ec4899',
+  glowPurple: 'rgba(168, 85, 247, 0.65)',
+  glowCyan: 'rgba(6, 182, 212, 0.75)',
 };

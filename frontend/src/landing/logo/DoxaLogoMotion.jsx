@@ -155,6 +155,7 @@ export default function DoxaLogoMotion({
     if (!interactive || shouldReduceMotion || isAnimating) return;
     setIsAnimating(true);
     startTimeRef.current = null;
+    window.dispatchEvent(new CustomEvent('doxa-trigger-logo-motion'));
     animFrameRef.current = requestAnimationFrame(renderFrame);
   }, [interactive, shouldReduceMotion, isAnimating, renderFrame]);
 

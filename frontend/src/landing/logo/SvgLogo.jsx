@@ -1,11 +1,12 @@
 import React from 'react';
+import DoxaLogoMotion from './DoxaLogoMotion';
 
 /**
- * SvgLogo — Reusable, accessible, scalable 2D vector logo for Doxa.
+ * SvgLogo — Canonical 2D Logo entry point for Doxa.
  *
- * Renders Doxa's signature 3 nested offset rings mark.
- * Uses `currentColor` for effortless theme adaptation (light/dark/gradients).
- * Target individual rings via data-ring / id for future animation/morphing.
+ * Automatically wraps `DoxaLogoMotion` for interactive 5-state micro-animations
+ * (FORM → DEFORM → TRANSFORM → REFORM → FINAL FORM).
+ * Set `animated={false}` for static vector rendering where micro-interaction is unnecessary.
  */
 export default function SvgLogo({
   size,
@@ -14,9 +15,27 @@ export default function SvgLogo({
   className = '',
   color = 'currentColor',
   ariaLabel = 'Doxa Logo',
+  animated = true,
+  interactive = true,
   style = {},
   ...props
 }) {
+  if (animated) {
+    return (
+      <DoxaLogoMotion
+        size={size}
+        width={width}
+        height={height}
+        className={className}
+        color={color}
+        ariaLabel={ariaLabel}
+        interactive={interactive}
+        style={style}
+        {...props}
+      />
+    );
+  }
+
   const w = size || width;
   const h = size || height;
 
@@ -30,7 +49,10 @@ export default function SvgLogo({
       role="img"
       aria-label={ariaLabel}
       className={`shrink-0 ${className}`}
-      style={style}
+      style={{
+        ...style,
+        filter: 'drop-shadow(0 0 3px rgba(168, 85, 247, 0.25))',
+      }}
       {...props}
     >
       {/* Outer Ring */}
@@ -43,7 +65,6 @@ export default function SvgLogo({
         stroke={color}
         strokeWidth="3.6"
         strokeLinecap="round"
-        className="transition-colors duration-300"
       />
 
       {/* Middle Ring */}
@@ -56,7 +77,6 @@ export default function SvgLogo({
         stroke={color}
         strokeWidth="3.4"
         strokeLinecap="round"
-        className="transition-colors duration-300"
       />
 
       {/* Inner Ring */}
@@ -69,8 +89,9 @@ export default function SvgLogo({
         stroke={color}
         strokeWidth="3.2"
         strokeLinecap="round"
-        className="transition-colors duration-300"
       />
     </svg>
   );
 }
+
+export { DoxaLogoMotion };

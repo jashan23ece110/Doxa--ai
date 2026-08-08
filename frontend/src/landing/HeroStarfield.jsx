@@ -131,6 +131,7 @@ export default function HeroStarfield() {
       uniform float uDeform;
       uniform float uDeformMode;
       uniform float uFlowOffset;
+      uniform float uLogoModeProgress;
 
       varying vec3 vColor;
 
@@ -183,21 +184,59 @@ export default function HeroStarfield() {
         //      Stagger: inner ring forms first, outer last
         float ringDelay = (2.0 - aRingIndex) * 0.12;
         float f = smoothstep(ringDelay, ringDelay + 0.7, uFormation);
-        vec3 localPos = mix(position + aScatter, breathPos, f);
+
+        // 2.5 ── 5-Mode Intelligence Cycle (FORM → DEFORM → TRANSFORM → RETRIEVE → REFORM)
+        vec3 mPos1 = breathPos;
+
+        // Mode 2: DEFORM (Organic rounded triangular wave shield - Ref Image Mode 2)
+        float triMod = 1.0 + 0.35 * cos(3.0 * currentAngle - 1.5707963) + 0.08 * sin(6.0 * currentAngle);
+        vec3 mPos2 = vec3(aCenter.x + cos(currentAngle) * aRadius * triMod, (aCenter.y + 4.0) + sin(currentAngle) * aRadius * triMod, position.z + sin(currentAngle * 4.0) * 3.0);
+
+        // Mode 3: TRANSFORM (Intertwined swirl vortex - Ref Image Mode 3)
+        float swirlA = currentAngle + aRingIndex * 2.0943951;
+        float rMod = aRadius * (1.0 + 0.35 * sin(2.0 * currentAngle + aRingIndex));
+        vec3 mPos3 = vec3(cos(swirlA + 0.4 * sin(3.0 * currentAngle)) * rMod * 1.15, sin(swirlA + 0.4 * cos(3.0 * currentAngle)) * rMod * 1.15, position.z + sin(swirlA * 3.0) * 6.0);
+
+        // Mode 4: RETRIEVE (6-arm logarithmic particle spiral stream flowing into core - Ref Image Mode 4)
+        float normR = clamp(aRadius / 60.0, 0.0, 1.0);
+        float spiralAngle = currentAngle * 2.5 + aRingIndex * 2.0943951 + (1.0 - normR) * 3.5 + uTime * 2.5;
+        float spirR = 6.0 + normR * 36.0;
+        vec3 mPos4 = vec3(cos(spiralAngle) * spirR, sin(spiralAngle) * spirR, (fract(aPhase * 10.0) - 0.5) * 15.0);
+
+        // Mode 5: REFORM (Particle-to-ring snap-back)
+        vec3 mPos5 = mix(mPos4, mPos1, 0.85);
+
+        vec3 activeModePos = mPos1;
+        if (uLogoModeProgress > 0.0001) {
+          if (uLogoModeProgress <= 0.20) {
+            float tVal = smoothstep(0.0, 1.0, uLogoModeProgress / 0.20);
+            activeModePos = mix(mPos1, mPos2, tVal);
+          } else if (uLogoModeProgress <= 0.45) {
+            float tVal = smoothstep(0.0, 1.0, (uLogoModeProgress - 0.20) / 0.25);
+            activeModePos = mix(mPos2, mPos3, tVal);
+          } else if (uLogoModeProgress <= 0.70) {
+            float tVal = smoothstep(0.0, 1.0, (uLogoModeProgress - 0.45) / 0.25);
+            activeModePos = mix(mPos3, mPos4, tVal);
+          } else if (uLogoModeProgress <= 0.90) {
+            float tVal = smoothstep(0.0, 1.0, (uLogoModeProgress - 0.70) / 0.20);
+            activeModePos = mix(mPos4, mPos5, tVal);
+          } else {
+            float tVal = smoothstep(0.0, 1.0, (uLogoModeProgress - 0.90) / 0.10);
+            activeModePos = mix(mPos5, mPos1, tVal);
+          }
+        }
 
         // Deform effect (Forward or Backward depending on uDeformMode)
         vec3 deformOffset;
         if (uDeformMode < 0.5) {
-          // Mode 0: Forward/outward scatter (uses aScatter directly)
           deformOffset = aScatter * 0.55;
         } else {
-          // Mode 1: Backward/peeling scatter
-          // Tangent vector of circle at currentAngle is (-sin, cos, 0)
           vec3 tangent = vec3(-sin(currentAngle), cos(currentAngle), 0.0);
-          // Push backward along tangent (-tangent) with a scatter spread
           deformOffset = -tangent * aRadius * 0.35 + aScatter * 0.25;
         }
-        localPos = mix(localPos, breathPos + deformOffset, uDeform * f);
+
+        vec3 targetPos = mix(activeModePos, breathPos + deformOffset, uDeform * f);
+        vec3 localPos = mix(position + aScatter, targetPos, f);
 
         // 3 ── World transform (includes group rotation via modelMatrix)
         vec4 worldPos = modelMatrix * vec4(localPos, 1.0);
@@ -282,6 +321,7 @@ export default function HeroStarfield() {
       uClickPulseTime: { value: -100 },
       uClickOrigin:    { value: new THREE.Vector2(0, 0) },
       uPixelRatio:     { value: renderer.getPixelRatio() },
+      uLogoModeProgress: { value: 0 },
     };
 
     // Main pass — sharp, full brightness
@@ -413,6 +453,7 @@ export default function HeroStarfield() {
       dragStartX = dragPrevX = e.clientX;
       dragStartY = dragPrevY = e.clientY;
       dragStartTime = performance.now();
+      triggerHeroModeCycle();
     };
 
     const onMouseMove = (e) => {
@@ -480,6 +521,7 @@ export default function HeroStarfield() {
       dragStartTime = performance.now();
       updatePointerWorld(t.clientX, t.clientY);
       pointerActive = true;
+      triggerHeroModeCycle();
     };
 
     const onTouchMove = (e) => {
@@ -552,11 +594,36 @@ export default function HeroStarfield() {
     let animId;
     let lastTime = 0;
 
+    // ── 5-Mode Intelligence Cycle Triggering ──
+    let modeCycleActive = false;
+    let modeCycleStartTime = 0;
+
+    const triggerHeroModeCycle = () => {
+      if (modeCycleActive) return;
+      modeCycleActive = true;
+      modeCycleStartTime = clock.getElapsedTime();
+    };
+
+    window.addEventListener('doxa-trigger-logo-motion', triggerHeroModeCycle);
+
     const animate = () => {
       animId = requestAnimationFrame(animate);
       const time = clock.getElapsedTime();
       const delta = Math.min(0.1, time - lastTime); // clamp delta to avoid huge jumps on tab background
       lastTime = time;
+
+      // ── Drive 5-Mode Intelligence Cycle Uniform ──
+      if (modeCycleActive) {
+        const modeElapsed = time - modeCycleStartTime;
+        const p = Math.min(modeElapsed / 2.2, 1.0);
+        shared.uLogoModeProgress.value = p;
+        if (p >= 1.0) {
+          modeCycleActive = false;
+          shared.uLogoModeProgress.value = 0.0;
+        }
+      } else {
+        shared.uLogoModeProgress.value = 0.0;
+      }
 
       // ── Formation convergence ──
       if (shared.uFormation.value < 1) {
@@ -800,6 +867,7 @@ export default function HeroStarfield() {
       window.removeEventListener('touchend', onTouchEnd);
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onResize);
+      window.removeEventListener('doxa-trigger-logo-motion', triggerHeroModeCycle);
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
       }

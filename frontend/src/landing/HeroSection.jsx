@@ -2,7 +2,6 @@ import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, ChevronDown, Sparkles, Cpu, Database, Globe, Mic } from 'lucide-react';
 import SvgLogo from './logo/SvgLogo';
-import HeroLogoMotion, { HeroLogoErrorBoundary } from './logo/HeroLogoMotion';
 
 const CAPABILITY_PILLS = [
   { label: 'Autonomous Reasoning', icon: Cpu },
@@ -64,13 +63,6 @@ export default function HeroSection({ onLaunchApp }) {
         animate="visible"
         className="max-w-4xl mx-auto flex flex-col items-center gap-6 sm:gap-8"
       >
-        {/* ── 0. Primary Hero Intelligence Logo Overlay ── */}
-        <motion.div variants={itemVariants} className="flex justify-center">
-          <HeroLogoErrorBoundary fallback={<SvgLogo size={80} className="w-20 h-20" />}>
-            <HeroLogoMotion size={88} className="w-20 h-20 sm:w-24 sm:h-24" />
-          </HeroLogoErrorBoundary>
-        </motion.div>
-
         {/* ── 1. Enterprise Tag Badge ── */}
         <motion.div variants={itemVariants}>
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.12] backdrop-blur-md shadow-inner text-xs sm:text-sm font-medium text-neutral-300">
@@ -167,14 +159,14 @@ export default function HeroSection({ onLaunchApp }) {
           opacity: { delay: 1, duration: 0.6 },
           y: { repeat: Infinity, duration: 2.5, ease: 'easeInOut' },
         }}
-        className="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 text-neutral-500 hover:text-white transition-colors cursor-pointer p-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 rounded-full"
+        className="absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer opacity-70 hover:opacity-100 transition-opacity"
         onClick={scrollToFeatures}
-        aria-label="Scroll down to features"
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => e.key === 'Enter' && scrollToFeatures()}
+        aria-label="Scroll to exploration"
       >
-        <ChevronDown className="w-6 h-6 text-violet-400/70" />
+        <span className="text-[11px] font-mono tracking-widest text-neutral-300 uppercase">
+          EXPLORE SYSTEM
+        </span>
+        <ChevronDown className="w-4 h-4 text-cyan-400" />
       </motion.div>
     </section>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import doxaLogo from '../assets/logo.png';
+import SvgLogo from './logo/SvgLogo';
 
 export default function Footer({ onLaunchApp }) {
   const scrollToSection = (id) => {
@@ -19,13 +19,8 @@ export default function Footer({ onLaunchApp }) {
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           title="Scroll to Top"
         >
-          {/* Plain icon — no container, no border, no glow */}
-          <img
-            src={doxaLogo}
-            alt="Doxa Logo"
-            className="w-8 h-8 object-contain"
-            style={{ filter: 'invert(1) brightness(2)' }}
-          />
+          {/* Plain icon — SVG component */}
+          <SvgLogo size={32} className="w-8 h-8" />
           <span className="text-lg font-semibold tracking-tight text-white">
             Doxa
           </span>

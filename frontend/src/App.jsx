@@ -13,7 +13,7 @@ import NeuralBackground from './components/NeuralBackground';
 import EmergentAnswerCard from './components/EmergentAnswerCard';
 import LibreSidebar from './components/LibreSidebar';
 import LandingPage from './landing/LandingPage';
-import doxaLogoAsset from './assets/logo.png';
+import SvgLogo from './landing/logo/SvgLogo';
 import { THEMES } from './theme';
 
 /* ── animation variants (kept for overlay tab views) ── */
@@ -777,11 +777,7 @@ function App() {
           className="relative w-20 h-20 flex items-center justify-center"
         >
           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-violet-600 to-cyan-500 blur-xl opacity-60 animate-pulse" />
-          <img
-            src={doxaLogoAsset}
-            alt="Doxa Logo"
-            className="w-16 h-16 object-contain relative z-10 filter invert brightness-200"
-          />
+          <SvgLogo size={64} className="w-16 h-16 relative z-10" />
         </motion.div>
         <span className="text-xs font-mono tracking-widest text-violet-400 font-bold uppercase animate-pulse" style={{ fontFamily: 'Orbitron, sans-serif' }}>
           INITIALIZING DOXA AGENT CORE...
@@ -1095,8 +1091,7 @@ function App() {
             animate={{ width: 280, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="hidden md:flex flex-col border-r border-[var(--jarvis-accent)]/15 bg-neutral-950/45 backdrop-blur-lg shrink-0 h-full p-4 gap-4 z-20"
-            style={{ fontFamily: 'Rajdhani, sans-serif' }}
+            className="hidden md:flex flex-col border-r border-[var(--jarvis-accent)]/15 bg-neutral-950/45 backdrop-blur-lg shrink-0 h-full z-20"
           >
             {renderSidebarContent()}
           </motion.div>
@@ -1104,29 +1099,27 @@ function App() {
       </AnimatePresence>
 
       {/* ── Main App Content Wrapper ── */}
-      <div className="flex-1 flex flex-col min-w-0 h-full relative">
-        {/* ── Dashboard Area (takes remaining vertical space) ── */}
-        <div className="flex-1 min-h-0 relative">
-          <Dashboard
-            user={user}
-            agentLoading={agentLoading}
-            agentStatus={agentStatus}
-            isSpeaking={isSpeaking}
-            queriesCount={history.length}
-            sessionStart={sessionStart}
-            activeOverlay={activeOverlay}
-            onNavigate={handleNavigate}
-            themeName={theme}
-            sentiment={sentiment}
-            isDebating={isDebating}
-            steps={agentStatus?.steps || []}
-            morphText={agentStatus?.final_result || ''}
-            toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-            sidebarOpen={sidebarOpen}
-            isSphereMode={sphereMode}
-            onToggleSphereMode={() => setSphereMode(!sphereMode)}
-          />
-        </div>
+      <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden">
+        {/* ── TopBar / Dashboard Header Area ── */}
+        <Dashboard
+          user={user}
+          agentLoading={agentLoading}
+          agentStatus={agentStatus}
+          isSpeaking={isSpeaking}
+          queriesCount={history.length}
+          sessionStart={sessionStart}
+          activeOverlay={activeOverlay}
+          onNavigate={handleNavigate}
+          themeName={theme}
+          sentiment={sentiment}
+          isDebating={isDebating}
+          steps={agentStatus?.steps || []}
+          morphText={agentStatus?.final_result || ''}
+          toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          sidebarOpen={sidebarOpen}
+          isSphereMode={sphereMode}
+          onToggleSphereMode={() => setSphereMode(!sphereMode)}
+        />
 
         {/* ── Voice Speaking Telemetry HUD ── */}
         <AnimatePresence>
@@ -1137,40 +1130,42 @@ function App() {
           )}
         </AnimatePresence>
 
-        {/* ── Sleek Fixed Bottom Chat Panel ── */}
+        {/* ── Main Conversation Area (reclaims full vertical space in normal chat mode) ── */}
         {!sphereMode && (
-          <ChatPanel
-            chatHistory={(() => {
-              if (!activeMessageId || !Array.isArray(chatHistory)) return [];
-              const chain = [];
-              let current = chatHistory.find(m => m && m.id === activeMessageId);
-              const visited = new Set();
-              while (current && !visited.has(current.id)) {
-                visited.add(current.id);
-                chain.unshift(current);
-                current = chatHistory.find(m => m && m.id === current.parentId);
-              }
-              return chain;
-            })()}
-            fullHistory={chatHistory}
-            activeMessageId={activeMessageId}
-            setActiveMessageId={setActiveMessageId}
-            agentGoal={agentGoal}
-            setAgentGoal={setAgentGoal}
-            agentLoading={agentLoading}
-            agentStatus={agentStatus}
-            agentError={agentError}
-            onStartAgent={handleStartAgent}
-            chatMode={chatMode}
-            setChatMode={setChatMode}
-            language={language}
-            setLanguage={handleLanguageChange}
-            toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-            onExportChat={handleExportChat}
-            onUploadDoc={handleUploadDoc}
-            proactiveSuggestions={proactiveSuggestions}
-            setProactiveSuggestions={setProactiveSuggestions}
-          />
+          <div className="flex-1 min-h-0 flex flex-col h-full relative z-20">
+            <ChatPanel
+              chatHistory={(() => {
+                if (!activeMessageId || !Array.isArray(chatHistory)) return [];
+                const chain = [];
+                let current = chatHistory.find(m => m && m.id === activeMessageId);
+                const visited = new Set();
+                while (current && !visited.has(current.id)) {
+                  visited.add(current.id);
+                  chain.unshift(current);
+                  current = chatHistory.find(m => m && m.id === current.parentId);
+                }
+                return chain;
+              })()}
+              fullHistory={chatHistory}
+              activeMessageId={activeMessageId}
+              setActiveMessageId={setActiveMessageId}
+              agentGoal={agentGoal}
+              setAgentGoal={setAgentGoal}
+              agentLoading={agentLoading}
+              agentStatus={agentStatus}
+              agentError={agentError}
+              onStartAgent={handleStartAgent}
+              chatMode={chatMode}
+              setChatMode={setChatMode}
+              language={language}
+              setLanguage={handleLanguageChange}
+              toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+              onExportChat={handleExportChat}
+              onUploadDoc={handleUploadDoc}
+              proactiveSuggestions={proactiveSuggestions}
+              setProactiveSuggestions={setProactiveSuggestions}
+            />
+          </div>
         )}
       </div>
 

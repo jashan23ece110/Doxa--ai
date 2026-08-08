@@ -1,0 +1,48 @@
+[
+  {
+    "connector_id": "conn_0ffc88b5",
+    "name": "GitHub API Connector",
+    "connector_type": "rest",
+    "base_url": "https://api.github.com",
+    "auth_type": "bearer",
+    "auth_credentials": {
+      "token": "mock_github_token"
+    },
+    "enabled": true,
+    "version": "1.0.0",
+    "created_at": 1786026824.469602
+  },
+  {
+    "connector_id": "conn_47b8dce9",
+    "name": "Enterprise SQL Database Connector",
+    "connector_type": "database",
+    "base_url": "postgresql://localhost:5432/doxa",
+    "auth_type": "basic",
+    "auth_credentials": {},
+    "enabled": true,
+    "version": "1.0.0",
+    "created_at": 1786026824.4696121
+  },
+  {
+    "connector_id": "conn_dab5d5fb",
+    "name": "Model Context Protocol Server",
+    "connector_type": "mcp",
+    "base_url": "mcp://localhost:8080",
+    "auth_type": "api_key",
+    "auth_credentials": {},
+    "enabled": true,
+    "version": "1.0.0",
+    "created_at": 1786026824.469617
+  },
+  {
+    "connector_id": "conn_a768a179",
+    "name": "External Postgres MCP",
+    "connector_type": "mcp",
+    "base_url": "mcp://localhost:9090",
+    "auth_type": "api_key",
+    "auth_credentials": {},
+    "enabled": true,
+    "version": "1.0.0",
+    "created_at": 1786026824.470473
+  }
+]

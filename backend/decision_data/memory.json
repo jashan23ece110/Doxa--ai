@@ -1,0 +1,12 @@
+[
+  {
+    "record_id": "dmr_7fbe8024",
+    "decision_topic": "Migrate enterprise database to distributed multi-region cluster",
+    "action_taken": "Deployed roadmap 'road_b3b436a3' across 3 milestones.",
+    "outcome_status": "SUCCESS",
+    "lessons_learned": [
+      "Execute parallel workers for faster throughput"
+    ],
+    "timestamp": 1786027564.664656
+  }
+]

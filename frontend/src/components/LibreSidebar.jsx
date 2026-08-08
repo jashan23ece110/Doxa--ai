@@ -15,7 +15,7 @@ import {
   User,
   ShieldCheck
 } from 'lucide-react';
-import doxaLogo from '../assets/logo.png';
+import SvgLogo from '../landing/logo/SvgLogo';
 
 function groupSessionsByDate(sessions = []) {
   const now = new Date();
@@ -86,11 +86,11 @@ export default function LibreSidebar({
     <AnimatePresence>
       {isOpen && (
         <motion.aside
-          initial={{ x: -280, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: -280, opacity: 0 }}
-          transition={{ duration: 0.25, ease: 'easeOut' }}
-          className="fixed top-0 left-0 bottom-0 z-40 w-72 bg-black/90 backdrop-blur-2xl border-r border-[var(--jarvis-accent)]/15 flex flex-col justify-between p-3 select-none text-xs font-mono shadow-2xl"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          className="w-full h-full flex flex-col justify-between p-3 select-none text-xs font-mono bg-black/90 backdrop-blur-2xl"
         >
           {/* Top Section */}
           <div className="flex flex-col gap-3">
@@ -98,11 +98,7 @@ export default function LibreSidebar({
             <div className="flex items-center justify-between gap-2 pt-1 pb-1 border-b border-[var(--jarvis-accent)]/10">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-[var(--jarvis-accent)]/15 border border-[var(--jarvis-accent)]/30 flex items-center justify-center p-1 overflow-hidden">
-                  <img
-                    src={doxaLogo}
-                    alt="Doxa Logo"
-                    className="w-full h-full object-contain filter invert brightness-200"
-                  />
+                  <SvgLogo size={20} className="w-full h-full" />
                 </div>
                 <span className="font-bold text-white tracking-widest uppercase font-orbitron text-sm">
                   DOXA AI

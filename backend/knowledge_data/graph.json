@@ -1,0 +1,13 @@
+{
+  "graph_id": "kgraph_b04277f3",
+  "nodes": {
+    "knode_ba35ac38": {
+      "node_id": "knode_ba35ac38",
+      "label": "Distributed AI Scaling",
+      "entity_type": "concept",
+      "properties": {}
+    }
+  },
+  "edges": [],
+  "updated_at": 1786027498.375136
+}

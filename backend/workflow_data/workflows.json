@@ -1,0 +1,206 @@
+{
+  "wf_d7fde73099": {
+    "workflow_id": "wf_d7fde73099",
+    "name": "Research Report: Build a startup business propo",
+    "template_name": "Research Report",
+    "user_id": "default_user",
+    "status": "completed",
+    "tasks": {
+      "t1": {
+        "task_id": "t1",
+        "name": "Query Analysis",
+        "type": "agent_task",
+        "assigned_agent": "PlannerAgent",
+        "dependencies": [],
+        "status": "completed",
+        "retries": 0,
+        "max_retries": 3,
+        "timeout_seconds": 300.0,
+        "output": "Based on knowledge retrieved from 'company_policy.txt', here is the verified analysis for: Build a startup business proposal and financial model",
+        "confidence": 1.0,
+        "compensation_action": null,
+        "requires_approval": false,
+        "metadata": {},
+        "latency_ms": 20990.87
+      },
+      "t2": {
+        "task_id": "t2",
+        "name": "Hybrid RAG Search",
+        "type": "agent_task",
+        "assigned_agent": "RetrieverAgent",
+        "dependencies": [
+          "t1"
+        ],
+        "status": "completed",
+        "retries": 0,
+        "max_retries": 3,
+        "timeout_seconds": 300.0,
+        "output": "Based on knowledge retrieved from 'company_policy.txt', here is the verified analysis for: Build a startup business proposal and financial model",
+        "confidence": 1.0,
+        "compensation_action": null,
+        "requires_approval": false,
+        "metadata": {},
+        "latency_ms": 184.98
+      },
+      "t3": {
+        "task_id": "t3",
+        "name": "Web Search Gathering",
+        "type": "agent_task",
+        "assigned_agent": "ResearcherAgent",
+        "dependencies": [
+          "t1"
+        ],
+        "status": "completed",
+        "retries": 0,
+        "max_retries": 3,
+        "timeout_seconds": 300.0,
+        "output": "Based on knowledge retrieved from 'company_policy.txt', here is the verified analysis for: Build a startup business proposal and financial model",
+        "confidence": 1.0,
+        "compensation_action": null,
+        "requires_approval": false,
+        "metadata": {},
+        "latency_ms": 183.0
+      },
+      "t4": {
+        "task_id": "t4",
+        "name": "Cognitive Reasoning",
+        "type": "agent_task",
+        "assigned_agent": "ReasoningAgent",
+        "dependencies": [
+          "t2",
+          "t3"
+        ],
+        "status": "completed",
+        "retries": 0,
+        "max_retries": 3,
+        "timeout_seconds": 300.0,
+        "output": "Based on knowledge retrieved from 'company_policy.txt', here is the verified analysis for: Build a startup business proposal and financial model",
+        "confidence": 1.0,
+        "compensation_action": null,
+        "requires_approval": false,
+        "metadata": {},
+        "latency_ms": 100.82
+      },
+      "t5": {
+        "task_id": "t5",
+        "name": "Evidence Verification",
+        "type": "agent_task",
+        "assigned_agent": "VerifierAgent",
+        "dependencies": [
+          "t4"
+        ],
+        "status": "completed",
+        "retries": 0,
+        "max_retries": 3,
+        "timeout_seconds": 300.0,
+        "output": "Based on knowledge retrieved from 'company_policy.txt', here is the verified analysis for: Build a startup business proposal and financial model",
+        "confidence": 1.0,
+        "compensation_action": null,
+        "requires_approval": false,
+        "metadata": {},
+        "latency_ms": 96.81
+      },
+      "t6": {
+        "task_id": "t6",
+        "name": "Report Synthesis",
+        "type": "agent_task",
+        "assigned_agent": "SynthesizerAgent",
+        "dependencies": [
+          "t5"
+        ],
+        "status": "completed",
+        "retries": 0,
+        "max_retries": 3,
+        "timeout_seconds": 300.0,
+        "output": "Based on knowledge retrieved from 'company_policy.txt', here is the verified analysis for: Build a startup business proposal and financial model",
+        "confidence": 1.0,
+        "compensation_action": null,
+        "requires_approval": false,
+        "metadata": {},
+        "latency_ms": 98.26
+      }
+    },
+    "state_variables": {
+      "goal": "Build a startup business proposal and financial model"
+    },
+    "checkpoints": [
+      {
+        "checkpoint_id": "chk_8716dd09",
+        "workflow_id": "wf_d7fde73099",
+        "step_number": 1,
+        "completed_task_ids": [
+          "t1"
+        ],
+        "state_variables": {
+          "goal": "Build a startup business proposal and financial model"
+        },
+        "timestamp": 1786025908.07936
+      },
+      {
+        "checkpoint_id": "chk_bc77815a",
+        "workflow_id": "wf_d7fde73099",
+        "step_number": 3,
+        "completed_task_ids": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "state_variables": {
+          "goal": "Build a startup business proposal and financial model"
+        },
+        "timestamp": 1786025908.265074
+      },
+      {
+        "checkpoint_id": "chk_36b28923",
+        "workflow_id": "wf_d7fde73099",
+        "step_number": 4,
+        "completed_task_ids": [
+          "t1",
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "state_variables": {
+          "goal": "Build a startup business proposal and financial model"
+        },
+        "timestamp": 1786025908.3669279
+      },
+      {
+        "checkpoint_id": "chk_397f2927",
+        "workflow_id": "wf_d7fde73099",
+        "step_number": 5,
+        "completed_task_ids": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "state_variables": {
+          "goal": "Build a startup business proposal and financial model"
+        },
+        "timestamp": 1786025908.4647622
+      },
+      {
+        "checkpoint_id": "chk_c32a044d",
+        "workflow_id": "wf_d7fde73099",
+        "step_number": 6,
+        "completed_task_ids": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6"
+        ],
+        "state_variables": {
+          "goal": "Build a startup business proposal and financial model"
+        },
+        "timestamp": 1786025908.563873
+      }
+    ],
+    "created_at": 1786025887.087451,
+    "updated_at": 1786025908.5646348,
+    "error_message": null
+  }
+}

@@ -1,43 +1,55 @@
 import React, { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { Upload, Cpu, Database, Sparkles } from 'lucide-react';
+import { Brain, Database, Cpu, GitBranch, Play, RefreshCw } from 'lucide-react';
 
 const STEPS = [
   {
     step: '01',
-    title: 'Ask or Upload',
-    desc: 'Submit a goal or upload documents to seed Doxa’s reasoning space.',
-    icon: Upload,
-    colorClass: 'text-violet-600',
-    iconBgClass: 'bg-violet-50 text-violet-600 border-violet-100',
-    hoverClass: 'hover:border-violet-300 hover:shadow-violet-100/60'
+    title: 'Understand',
+    desc: 'Parses user intent, context parameters, and security policies to construct the initial reasoning state.',
+    icon: Brain,
+    accentColor: 'text-violet-400',
+    iconBgClass: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
   },
   {
     step: '02',
-    title: 'Doxa Plans',
-    desc: 'The planning core breaks the goal down into an optimal multi-step tool sequence.',
-    icon: Cpu,
-    colorClass: 'text-indigo-600',
-    iconBgClass: 'bg-indigo-50 text-indigo-600 border-indigo-100',
-    hoverClass: 'hover:border-indigo-300 hover:shadow-indigo-100/60'
+    title: 'Retrieve',
+    desc: 'Executes parallel vector document search and live Tavily web queries for zero-hallucination grounding.',
+    icon: Database,
+    accentColor: 'text-indigo-400',
+    iconBgClass: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
   },
   {
     step: '03',
-    title: 'Retrieves & Searches',
-    desc: 'Runs parallel queries against RAG databases and live web search for factual grounding.',
-    icon: Database,
-    colorClass: 'text-cyan-600',
-    iconBgClass: 'bg-cyan-50 text-cyan-600 border-cyan-100',
-    hoverClass: 'hover:border-cyan-300 hover:shadow-cyan-100/60'
+    title: 'Reason',
+    desc: 'Synthesizes retrieved facts, triggers dual-model Optimist vs Skeptic debate, and evaluates evidence.',
+    icon: Cpu,
+    accentColor: 'text-cyan-400',
+    iconBgClass: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
   },
   {
     step: '04',
-    title: 'Responds & Acts',
-    desc: 'Streams the citation-backed response and runs calendar/scheduler actions.',
-    icon: Sparkles,
-    colorClass: 'text-violet-600',
-    iconBgClass: 'bg-violet-50 text-violet-600 border-violet-100',
-    hoverClass: 'hover:border-violet-300 hover:shadow-violet-100/60'
+    title: 'Plan',
+    desc: 'Deconstructs complex goals into optimal multi-step tool invocation sequences and agent sub-tasks.',
+    icon: GitBranch,
+    accentColor: 'text-purple-400',
+    iconBgClass: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  },
+  {
+    step: '05',
+    title: 'Act',
+    desc: 'Streams real-time citation-backed tokens, executes external workspace APIs, and triggers daemons.',
+    icon: Play,
+    accentColor: 'text-emerald-400',
+    iconBgClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+  },
+  {
+    step: '06',
+    title: 'Learn',
+    desc: 'Consolidates execution telemetry into persistent memory and feeds back learnings to refine future decisions.',
+    icon: RefreshCw,
+    accentColor: 'text-sky-400',
+    iconBgClass: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
   }
 ];
 
@@ -49,101 +61,65 @@ export default function HowItWorks() {
     <section 
       ref={containerRef}
       id="how-it-works" 
-      className="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto z-10 relative bg-white select-none overflow-hidden"
+      className="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto z-10 relative select-none overflow-hidden"
     >
       {/* Section Header */}
       <div className="text-center max-w-3xl mx-auto mb-20">
-        <h2 className="text-xs font-mono font-bold uppercase tracking-widest text-violet-600 mb-3">
-          EXECUTION ARCHITECTURE
+        <h2 className="text-xs font-mono font-bold uppercase tracking-widest text-violet-400 mb-3">
+          INTELLIGENCE LIFECYCLE
         </h2>
-        <p className="text-3xl sm:text-5xl font-extrabold text-neutral-900 tracking-tight font-orbitron" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+        <h3 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight font-orbitron" style={{ fontFamily: 'Orbitron, sans-serif' }}>
           How Doxa Works Under the Hood
-        </p>
-        <p className="mt-4 text-sm text-neutral-600 max-w-xl mx-auto font-sans leading-relaxed">
-          Trace the exact lifecycle of an execution request as it passes from raw prompt to grounded output.
+        </h3>
+        <p className="mt-4 text-base text-neutral-400 max-w-xl mx-auto font-sans leading-relaxed">
+          Trace the exact 6-stage lifecycle of an execution request from initial prompt to persistent memory.
         </p>
       </div>
 
-      {/* Steps Container */}
-      <div className="relative">
-        {/* Animated Connector Line (Desktop Only) */}
-        <div className="absolute top-[3.75rem] left-0 w-full h-[4px] z-0 pointer-events-none hidden xl:block">
-          <svg className="w-full h-full overflow-visible" viewBox="0 0 1000 100" preserveAspectRatio="none">
-            {/* Background inactive track */}
-            <path 
-              d="M 125 50 L 875 50" 
-              stroke="#e5e7eb" 
-              strokeWidth="4" 
-              strokeDasharray="8 8"
-              fill="none"
-            />
-            {/* Animated active gradient line */}
-            <motion.path 
-              d="M 125 50 L 875 50" 
-              stroke="url(#flow-gradient)" 
-              strokeWidth="5" 
-              strokeLinecap="round"
-              fill="none"
-              initial={{ pathLength: 0 }}
-              animate={isInView ? { pathLength: 1 } : { pathLength: 0 }}
-              transition={{ duration: 1.5, ease: 'easeInOut', delay: 0.1 }}
-            />
-            <defs>
-              <linearGradient id="flow-gradient" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#8b5cf6" />
-                <stop offset="50%" stopColor="#6366f1" />
-                <stop offset="100%" stopColor="#06b6d4" />
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
+      {/* Steps Container Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
+        {STEPS.map((s, idx) => {
+          const Icon = s.icon;
+          
+          const cardVariants = {
+            hidden: { opacity: 0, y: 25 },
+            visible: { 
+              opacity: 1, 
+              y: 0,
+              transition: { duration: 0.5, ease: 'easeOut', delay: idx * 0.15 }
+            }
+          };
 
-        {/* Horizontal steps columns */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 relative z-10">
-          {STEPS.map((s, idx) => {
-            const Icon = s.icon;
-            
-            // Sequential stagger animation config
-            const cardVariants = {
-              hidden: { opacity: 0, y: 25 },
-              visible: { 
-                opacity: 1, 
-                y: 0,
-                transition: { duration: 0.5, ease: 'easeOut', delay: idx * 0.45 }
-              }
-            };
-
-            return (
-              <motion.div
-                key={idx}
-                variants={cardVariants}
-                initial="hidden"
-                animate={isInView ? 'visible' : 'hidden'}
-                className={`relative p-6 rounded-2xl bg-white border border-neutral-200/80 flex flex-col gap-4 shadow-sm shadow-neutral-100/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-md cursor-default ${s.hoverClass}`}
-              >
-                {/* Step number badge & Icon */}
-                <div className="flex items-center justify-between z-10">
-                  <span className={`text-xs font-mono font-bold ${s.colorClass}`}>
-                    STEP {s.step}
-                  </span>
-                  <div className={`p-2.5 rounded-xl border flex items-center justify-center ${s.iconBgClass}`}>
-                    <Icon className="w-5 h-5" />
-                  </div>
+          return (
+            <motion.div
+              key={idx}
+              variants={cardVariants}
+              initial="hidden"
+              animate={isInView ? 'visible' : 'hidden'}
+              className="relative p-6 rounded-3xl bg-neutral-950/80 border border-white/[0.08] backdrop-blur-2xl flex flex-col justify-between gap-4 shadow-2xl transition-all duration-300 hover:border-violet-500/40 hover:-translate-y-1 cursor-default group"
+            >
+              {/* Step Number Badge & Icon */}
+              <div className="flex items-center justify-between z-10">
+                <span className={`text-xs font-mono font-bold ${s.accentColor} tracking-wider`}>
+                  LIFECYCLE {s.step}
+                </span>
+                <div className={`p-3 rounded-2xl border flex items-center justify-center ${s.iconBgClass} group-hover:scale-110 transition-transform duration-300`}>
+                  <Icon className="w-5 h-5" />
                 </div>
+              </div>
 
-                {/* Step Title & Details */}
-                <div className="flex flex-col gap-2">
-                  <h3 className="text-lg font-bold text-neutral-900 font-sans tracking-tight">
-                    {s.title}
-                  </h3>
-                  <p className="text-xs text-neutral-600 leading-relaxed font-sans">
-                    {s.desc}
-                  </p>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
+              {/* Step Title & Details */}
+              <div className="flex flex-col gap-2">
+                <h4 className="text-xl font-bold text-white font-sans tracking-tight">
+                  {s.title}
+                </h4>
+                <p className="text-xs text-neutral-400 leading-relaxed font-sans">
+                  {s.desc}
+                </p>
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
     </section>
   );

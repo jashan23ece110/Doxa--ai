@@ -152,7 +152,6 @@ function RenderFeatureVisual({ type, isInView }) {
     }
   }, [type, isInView]);
 
-  // Shared framer motion visual hover configurations
   const hoverProps = {
     whileHover: { scale: 1.015, y: -4 },
     transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] }
@@ -161,32 +160,32 @@ function RenderFeatureVisual({ type, isInView }) {
   switch (type) {
     case 'agent':
       return (
-        <motion.div {...hoverProps} className="relative w-full h-80 rounded-3xl bg-white border border-neutral-200/80 p-6 flex flex-col justify-between overflow-hidden shadow-xl transition-all duration-300 hover:border-violet-500/25 hover:shadow-[0_15px_40px_rgba(139,92,246,0.05)]">
-          <div className="flex items-center justify-between text-xs font-mono text-violet-600 border-b border-neutral-100 pb-3">
+        <motion.div {...hoverProps} className="relative w-full h-80 rounded-3xl bg-neutral-950/80 border border-white/[0.08] p-6 flex flex-col justify-between overflow-hidden shadow-2xl transition-all duration-300 hover:border-violet-500/40">
+          <div className="flex items-center justify-between text-xs font-mono text-violet-400 border-b border-white/[0.08] pb-3">
             <span className="flex items-center gap-2 font-bold">
-              <Terminal className="w-4 h-4 text-violet-500" /> REASONING_LOOP // ACTIVE
+              <Terminal className="w-4 h-4 text-violet-400" /> REASONING_LOOP // ACTIVE
             </span>
-            <span className="flex items-center gap-1.5 text-cyan-600 font-semibold animate-pulse">
-              <span className="w-2 h-2 rounded-full bg-cyan-500" /> EXECUTING
+            <span className="flex items-center gap-1.5 text-cyan-400 font-semibold animate-pulse">
+              <span className="w-2 h-2 rounded-full bg-cyan-400" /> EXECUTING
             </span>
           </div>
 
           <div className="flex flex-col gap-3 my-auto">
-            <div className="p-3.5 rounded-2xl bg-violet-50 border border-violet-100 text-neutral-800 text-xs font-mono flex items-center justify-between shadow-sm">
+            <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.08] text-neutral-200 text-xs font-mono flex items-center justify-between shadow-sm">
               <span className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-4.5 h-4.5 text-cyan-500 shrink-0" /> 1. Query vector database & web search
+                <CheckCircle2 className="w-4.5 h-4.5 text-cyan-400 shrink-0" /> 1. Query vector database & web search
               </span>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-100 text-cyan-700 font-bold">DONE</span>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-300 font-bold border border-cyan-500/20">DONE</span>
             </div>
-            <div className="p-3.5 rounded-2xl bg-cyan-50 border border-cyan-100 text-cyan-950 text-xs font-mono flex items-center justify-between shadow-sm animate-pulse">
+            <div className="p-3.5 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-200 text-xs font-mono flex items-center justify-between shadow-sm animate-pulse">
               <span className="flex items-center gap-2.5 font-semibold">
-                <Cpu className="w-4.5 h-4.5 text-cyan-500 animate-spin shrink-0" /> 2. Synthesize multi-source reasoning
+                <Cpu className="w-4.5 h-4.5 text-cyan-400 animate-spin shrink-0" /> 2. Synthesize multi-source reasoning
               </span>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-100 text-cyan-700 font-bold">RUNNING</span>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30">RUNNING</span>
             </div>
-            <div className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-neutral-450 text-xs font-mono flex items-center justify-between">
+            <div className="p-3.5 rounded-2xl bg-white/[0.01] border border-white/[0.04] text-neutral-500 text-xs font-mono flex items-center justify-between">
               <span>3. Format final answer & citations</span>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-neutral-100 text-neutral-400">PENDING</span>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-white/[0.04] text-neutral-500">PENDING</span>
             </div>
           </div>
         </motion.div>
@@ -194,29 +193,29 @@ function RenderFeatureVisual({ type, isInView }) {
 
     case 'rag':
       return (
-        <motion.div {...hoverProps} className="relative w-full h-80 rounded-3xl bg-white border border-neutral-200/80 p-6 flex flex-col justify-between overflow-hidden shadow-xl transition-all duration-300 hover:border-indigo-500/25 hover:shadow-[0_15px_40px_rgba(99,102,241,0.05)]">
-          <div className="flex items-center justify-between text-xs font-mono text-indigo-600 border-b border-neutral-100 pb-3">
+        <motion.div {...hoverProps} className="relative w-full h-80 rounded-3xl bg-neutral-950/80 border border-white/[0.08] p-6 flex flex-col justify-between overflow-hidden shadow-2xl transition-all duration-300 hover:border-indigo-500/40">
+          <div className="flex items-center justify-between text-xs font-mono text-indigo-400 border-b border-white/[0.08] pb-3">
             <span className="flex items-center gap-2 font-bold">
-              <Database className="w-4 h-4 text-indigo-500" /> CHROMADB // VECTOR_STORE
+              <Database className="w-4 h-4 text-indigo-400" /> CHROMADB // VECTOR_STORE
             </span>
-            <span className="text-cyan-600 font-bold font-mono">COSINE: 0.948</span>
+            <span className="text-cyan-400 font-bold font-mono">COSINE: 0.948</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 my-auto">
-            <div className="p-4 rounded-2xl bg-indigo-50/40 border border-indigo-100 text-xs font-mono flex flex-col gap-1.5 text-indigo-950 shadow-sm">
-              <span className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider">company_policy.txt</span>
-              <span className="text-xs text-neutral-800 font-sans truncate font-medium">Chunk #42: PTO & remote guidelines</span>
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-indigo-100">
-                <span className="text-[10px] text-neutral-400 font-sans">Similarity</span>
-                <span className="text-[11px] font-bold text-emerald-600">96.8% MATCH</span>
+            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.08] text-xs font-mono flex flex-col gap-1.5 text-neutral-200 shadow-sm">
+              <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">company_policy.txt</span>
+              <span className="text-xs text-neutral-300 font-sans truncate font-medium">Chunk #42: PTO & remote guidelines</span>
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/[0.06]">
+                <span className="text-[10px] text-neutral-500 font-sans">Similarity</span>
+                <span className="text-[11px] font-bold text-emerald-400">96.8% MATCH</span>
               </div>
             </div>
-            <div className="p-4 rounded-2xl bg-indigo-50/40 border border-indigo-100 text-xs font-mono flex flex-col gap-1.5 text-indigo-950 shadow-sm">
-              <span className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider">resume_guide.pdf</span>
-              <span className="text-xs text-neutral-800 font-sans truncate font-medium">Chunk #12: Action verbs strategy</span>
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-indigo-100">
-                <span className="text-[10px] text-neutral-400 font-sans">Similarity</span>
-                <span className="text-[11px] font-bold text-emerald-600">91.4% MATCH</span>
+            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.08] text-xs font-mono flex flex-col gap-1.5 text-neutral-200 shadow-sm">
+              <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">resume_guide.pdf</span>
+              <span className="text-xs text-neutral-300 font-sans truncate font-medium">Chunk #12: Action verbs strategy</span>
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/[0.06]">
+                <span className="text-[10px] text-neutral-500 font-sans">Similarity</span>
+                <span className="text-[11px] font-bold text-emerald-400">91.4% MATCH</span>
               </div>
             </div>
           </div>
@@ -225,19 +224,19 @@ function RenderFeatureVisual({ type, isInView }) {
 
     case 'search':
       return (
-        <motion.div {...hoverProps} className="relative w-full h-80 rounded-3xl bg-white border border-neutral-200/80 p-6 flex flex-col justify-between overflow-hidden shadow-xl transition-all duration-300 hover:border-cyan-500/25 hover:shadow-[0_15px_40px_rgba(34,211,238,0.05)]">
-          <div className="flex items-center justify-between text-xs font-mono text-cyan-600 border-b border-neutral-100 pb-3">
+        <motion.div {...hoverProps} className="relative w-full h-80 rounded-3xl bg-neutral-950/80 border border-white/[0.08] p-6 flex flex-col justify-between overflow-hidden shadow-2xl transition-all duration-300 hover:border-cyan-500/40">
+          <div className="flex items-center justify-between text-xs font-mono text-cyan-400 border-b border-white/[0.08] pb-3">
             <span className="flex items-center gap-2 font-bold">
-              <Globe className="w-4 h-4 text-cyan-500" /> TAVILY_SEARCH // RADAR
+              <Globe className="w-4 h-4 text-cyan-400" /> TAVILY_SEARCH // RADAR
             </span>
-            <span className="text-cyan-600 font-bold">3 LIVE SOURCES</span>
+            <span className="text-cyan-400 font-bold">3 LIVE SOURCES</span>
           </div>
 
           <div className="flex flex-col gap-2.5 my-auto">
             {['docs.doxa.ai/api/v2', 'github.com/vstorm-co/template', 'arxiv.org/abs/2401.0912'].map((url, idx) => (
-              <div key={idx} className="p-3 rounded-xl bg-cyan-50/20 border border-cyan-100 text-xs font-mono flex items-center justify-between text-neutral-800 transition-colors duration-300 hover:border-cyan-300/30">
-                <span className="truncate text-cyan-700 font-sans font-medium">{url}</span>
-                <ArrowUpRight className="w-4 h-4 text-cyan-500 shrink-0" />
+              <div key={idx} className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-xs font-mono flex items-center justify-between text-cyan-200 transition-colors duration-300 hover:border-cyan-400/40">
+                <span className="truncate font-sans font-medium">{url}</span>
+                <ArrowUpRight className="w-4 h-4 text-cyan-400 shrink-0" />
               </div>
             ))}
           </div>
@@ -246,20 +245,20 @@ function RenderFeatureVisual({ type, isInView }) {
 
     case 'streaming':
       return (
-        <motion.div {...hoverProps} className="relative w-full h-80 rounded-3xl bg-white border border-neutral-200/80 p-6 flex flex-col justify-between overflow-hidden shadow-xl transition-all duration-300 hover:border-violet-500/25 hover:shadow-[0_15px_40px_rgba(139,92,246,0.05)]">
-          <div className="flex items-center justify-between text-xs font-mono text-violet-600 border-b border-neutral-100 pb-3">
+        <motion.div {...hoverProps} className="relative w-full h-80 rounded-3xl bg-neutral-950/80 border border-white/[0.08] p-6 flex flex-col justify-between overflow-hidden shadow-2xl transition-all duration-300 hover:border-violet-500/40">
+          <div className="flex items-center justify-between text-xs font-mono text-violet-400 border-b border-white/[0.08] pb-3">
             <span className="flex items-center gap-2 font-bold">
-              <Zap className="w-4 h-4 text-violet-500" /> STREAMING_ENGINE // LOW_LATENCY
+              <Zap className="w-4 h-4 text-violet-400" /> STREAMING_ENGINE // LOW_LATENCY
             </span>
-            <span className="text-cyan-600 font-bold">38ms / TOKEN</span>
+            <span className="text-cyan-400 font-bold">38ms / TOKEN</span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-violet-50/30 border border-violet-100 text-xs font-mono text-neutral-800 my-auto min-h-[100px] flex flex-col justify-between">
-            <p className="leading-relaxed font-sans text-sm text-neutral-850">
+          <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.08] text-xs font-mono text-neutral-200 my-auto min-h-[100px] flex flex-col justify-between">
+            <p className="leading-relaxed font-sans text-sm text-neutral-200">
               {streamText}
             </p>
-            <div className="flex items-center gap-1.5 mt-3 text-violet-600 font-mono text-[10px]">
-              <span className="w-2 h-2 rounded-full bg-violet-500 animate-ping" />
+            <div className="flex items-center gap-1.5 mt-3 text-violet-400 font-mono text-[10px]">
+              <span className="w-2 h-2 rounded-full bg-violet-400 animate-ping" />
               <span className="font-semibold">TOKEN_STREAM_ACTIVE</span>
             </div>
           </div>
@@ -268,42 +267,42 @@ function RenderFeatureVisual({ type, isInView }) {
 
     case 'voice':
       return (
-        <motion.div {...hoverProps} className="relative w-full h-80 rounded-3xl bg-white border border-neutral-200/80 p-6 flex flex-col justify-between overflow-hidden shadow-xl transition-all duration-300 hover:border-indigo-500/25 hover:shadow-[0_15px_40px_rgba(99,102,241,0.05)]">
-          <div className="flex items-center justify-between text-xs font-mono text-indigo-600 border-b border-neutral-100 pb-3">
+        <motion.div {...hoverProps} className="relative w-full h-80 rounded-3xl bg-neutral-950/80 border border-white/[0.08] p-6 flex flex-col justify-between overflow-hidden shadow-2xl transition-all duration-300 hover:border-indigo-500/40">
+          <div className="flex items-center justify-between text-xs font-mono text-indigo-400 border-b border-white/[0.08] pb-3">
             <span className="flex items-center gap-2 font-bold">
-              <Mic className="w-4 h-4 text-indigo-500" /> VOICE_LISTENER // CONTINUOUS
+              <Mic className="w-4 h-4 text-indigo-400" /> VOICE_LISTENER // CONTINUOUS
             </span>
-            <span className="text-cyan-600 font-bold">WAKE PHRASE: 'DOXA'</span>
+            <span className="text-cyan-400 font-bold">WAKE PHRASE: 'DOXA'</span>
           </div>
 
           <div className="flex flex-col items-center justify-center gap-4 my-auto">
-            <div className="relative w-20 h-20 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full bg-indigo-100/60 animate-ping" />
-              <Volume2 className="w-8 h-8 text-indigo-500 relative z-10" />
+            <div className="relative w-20 h-20 rounded-full bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full bg-indigo-500/20 animate-ping" />
+              <Volume2 className="w-8 h-8 text-indigo-400 relative z-10" />
             </div>
-            <span className="text-xs font-mono text-neutral-500 font-semibold">Listening for wake phrase...</span>
+            <span className="text-xs font-mono text-neutral-400 font-semibold">Listening for wake phrase...</span>
           </div>
         </motion.div>
       );
 
     case 'debate':
       return (
-        <motion.div {...hoverProps} className="relative w-full h-80 rounded-3xl bg-white border border-neutral-200/80 p-6 flex flex-col justify-between overflow-hidden shadow-xl transition-all duration-300 hover:border-violet-500/25 hover:shadow-[0_15px_40px_rgba(139,92,246,0.05)]">
-          <div className="flex items-center justify-between text-xs font-mono text-violet-600 border-b border-neutral-100 pb-3">
+        <motion.div {...hoverProps} className="relative w-full h-80 rounded-3xl bg-neutral-950/80 border border-white/[0.08] p-6 flex flex-col justify-between overflow-hidden shadow-2xl transition-all duration-300 hover:border-violet-500/40">
+          <div className="flex items-center justify-between text-xs font-mono text-violet-400 border-b border-white/[0.08] pb-3">
             <span className="flex items-center gap-2 font-bold">
-              <ShieldCheck className="w-4 h-4 text-violet-500" /> DUAL_ENGINE // CONSENSUS
+              <ShieldCheck className="w-4 h-4 text-violet-400" /> DUAL_ENGINE // CONSENSUS
             </span>
-            <span className="text-cyan-600 font-bold">VERDICT: VERIFIED</span>
+            <span className="text-cyan-400 font-bold">VERDICT: VERIFIED</span>
           </div>
 
           <div className="grid grid-cols-2 gap-3 my-auto text-xs font-mono">
-            <div className="p-3.5 rounded-2xl bg-violet-50/50 border border-violet-100 flex flex-col gap-1 text-violet-950">
-              <span className="text-[10px] text-violet-600 font-bold uppercase">Optimist Model</span>
-              <span className="text-[11px] font-sans text-neutral-800 font-medium">Proposes hypothesis plan</span>
+            <div className="p-3.5 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex flex-col gap-1 text-violet-200">
+              <span className="text-[10px] text-violet-400 font-bold uppercase">Optimist Model</span>
+              <span className="text-[11px] font-sans text-neutral-300 font-medium">Proposes hypothesis plan</span>
             </div>
-            <div className="p-3.5 rounded-2xl bg-cyan-50/50 border border-cyan-100 flex flex-col gap-1 text-cyan-950">
-              <span className="text-[10px] text-cyan-600 font-bold uppercase">Skeptic Model</span>
-              <span className="text-[11px] font-sans text-neutral-800 font-medium">Cross-checks edge cases</span>
+            <div className="p-3.5 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex flex-col gap-1 text-cyan-200">
+              <span className="text-[10px] text-cyan-400 font-bold uppercase">Skeptic Model</span>
+              <span className="text-[11px] font-sans text-neutral-300 font-medium">Cross-checks edge cases</span>
             </div>
           </div>
         </motion.div>
@@ -311,22 +310,22 @@ function RenderFeatureVisual({ type, isInView }) {
 
     case 'branching':
       return (
-        <motion.div {...hoverProps} className="relative w-full h-80 rounded-3xl bg-white border border-neutral-200/80 p-6 flex flex-col justify-between overflow-hidden shadow-xl transition-all duration-300 hover:border-indigo-500/25 hover:shadow-[0_15px_40px_rgba(99,102,241,0.05)]">
-          <div className="flex items-center justify-between text-xs font-mono text-indigo-600 border-b border-neutral-100 pb-3">
+        <motion.div {...hoverProps} className="relative w-full h-80 rounded-3xl bg-neutral-950/80 border border-white/[0.08] p-6 flex flex-col justify-between overflow-hidden shadow-2xl transition-all duration-300 hover:border-indigo-500/40">
+          <div className="flex items-center justify-between text-xs font-mono text-indigo-400 border-b border-white/[0.08] pb-3">
             <span className="flex items-center gap-2 font-bold">
-              <GitBranch className="w-4 h-4 text-indigo-500" /> TIMELINE_BRANCH // GIT_TREE
+              <GitBranch className="w-4 h-4 text-indigo-400" /> TIMELINE_BRANCH // GIT_TREE
             </span>
-            <span className="text-cyan-600 font-bold">3 BRANCHES</span>
+            <span className="text-cyan-400 font-bold">3 BRANCHES</span>
           </div>
 
           <div className="flex flex-col gap-2.5 my-auto text-xs font-mono">
-            <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-100 text-neutral-800 flex items-center justify-between shadow-sm">
+            <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-200 flex items-center justify-between shadow-sm">
               <span className="font-sans font-medium">Main Thread (Active)</span>
-              <span className="text-[10px] text-indigo-600 font-bold">CURRENT</span>
+              <span className="text-[10px] text-indigo-400 font-bold">CURRENT</span>
             </div>
-            <div className="p-3 rounded-xl bg-neutral-55 border border-neutral-200 text-neutral-500 flex items-center justify-between">
+            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] text-neutral-400 flex items-center justify-between">
               <span className="font-sans">Fork #1: Explore Python RAG</span>
-              <span className="text-[10px] text-neutral-400 font-bold">FORKED</span>
+              <span className="text-[10px] text-neutral-500 font-bold">FORKED</span>
             </div>
           </div>
         </motion.div>
@@ -334,22 +333,22 @@ function RenderFeatureVisual({ type, isInView }) {
 
     case 'suggestions':
       return (
-        <motion.div {...hoverProps} className="relative w-full h-80 rounded-3xl bg-white border border-neutral-200/80 p-6 flex flex-col justify-between overflow-hidden shadow-xl transition-all duration-300 hover:border-cyan-500/25 hover:shadow-[0_15px_40px_rgba(34,211,238,0.05)]">
-          <div className="flex items-center justify-between text-xs font-mono text-cyan-600 border-b border-neutral-100 pb-3">
+        <motion.div {...hoverProps} className="relative w-full h-80 rounded-3xl bg-neutral-950/80 border border-white/[0.08] p-6 flex flex-col justify-between overflow-hidden shadow-2xl transition-all duration-300 hover:border-cyan-500/40">
+          <div className="flex items-center justify-between text-xs font-mono text-cyan-400 border-b border-white/[0.08] pb-3">
             <span className="flex items-center gap-2 font-bold">
-              <Sparkles className="w-4 h-4 text-cyan-500" /> ANTICIPATORY // SUGGESTIONS
+              <Sparkles className="w-4 h-4 text-cyan-400" /> ANTICIPATORY // SUGGESTIONS
             </span>
-            <span className="text-cyan-600 font-bold">CONTEXT_AWARE</span>
+            <span className="text-cyan-400 font-bold">CONTEXT_AWARE</span>
           </div>
 
           <div className="flex flex-col gap-2.5 my-auto text-xs font-sans">
-            <div className="p-3 rounded-xl bg-cyan-50 border border-cyan-100 text-cyan-950 flex items-center justify-between shadow-sm transition-colors duration-300 hover:border-cyan-300">
+            <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-200 flex items-center justify-between shadow-sm transition-colors duration-300 hover:border-cyan-400/40">
               <span className="font-medium">"Can you summarize the vector search performance benchmarks?"</span>
-              <ArrowRight className="w-4 h-4 text-cyan-600" />
+              <ArrowRight className="w-4 h-4 text-cyan-400" />
             </div>
-            <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-200 text-neutral-600 flex items-center justify-between">
+            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] text-neutral-400 flex items-center justify-between">
               <span>"Show me how to set up custom document embeddings."</span>
-              <ArrowRight className="w-4 h-4 text-neutral-400" />
+              <ArrowRight className="w-4 h-4 text-neutral-500" />
             </div>
           </div>
         </motion.div>
@@ -357,41 +356,41 @@ function RenderFeatureVisual({ type, isInView }) {
 
     case 'timers':
       return (
-        <motion.div {...hoverProps} className="relative w-full h-80 rounded-3xl bg-white border border-neutral-200/80 p-6 flex flex-col justify-between overflow-hidden shadow-xl transition-all duration-300 hover:border-violet-500/25 hover:shadow-[0_15px_40px_rgba(139,92,246,0.05)]">
-          <div className="flex items-center justify-between text-xs font-mono text-violet-600 border-b border-neutral-100 pb-3">
+        <motion.div {...hoverProps} className="relative w-full h-80 rounded-3xl bg-neutral-950/80 border border-white/[0.08] p-6 flex flex-col justify-between overflow-hidden shadow-2xl transition-all duration-300 hover:border-violet-500/40">
+          <div className="flex items-center justify-between text-xs font-mono text-violet-400 border-b border-white/[0.08] pb-3">
             <span className="flex items-center gap-2 font-bold">
-              <Clock className="w-4 h-4 text-violet-500" /> DAEMON_SCHEDULER // TIMER
+              <Clock className="w-4 h-4 text-violet-400" /> DAEMON_SCHEDULER // TIMER
             </span>
-            <span className="text-violet-600 font-bold">ACTIVE DAEMON</span>
+            <span className="text-violet-400 font-bold">ACTIVE DAEMON</span>
           </div>
 
           <div className="flex flex-col items-center justify-center gap-3 my-auto">
-            <span className="text-4xl font-extrabold font-orbitron text-violet-600" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+            <span className="text-4xl font-extrabold font-orbitron text-violet-400" style={{ fontFamily: 'Orbitron, sans-serif' }}>
               00:04:59
             </span>
-            <span className="text-xs font-mono text-neutral-500">Background reminder running...</span>
+            <span className="text-xs font-mono text-neutral-400">Background reminder running...</span>
           </div>
         </motion.div>
       );
 
     case 'calendar':
       return (
-        <motion.div {...hoverProps} className="relative w-full h-80 rounded-3xl bg-white border border-neutral-200/80 p-6 flex flex-col justify-between overflow-hidden shadow-xl transition-all duration-300 hover:border-indigo-500/25 hover:shadow-[0_15px_40px_rgba(99,102,241,0.05)]">
-          <div className="flex items-center justify-between text-xs font-mono text-indigo-600 border-b border-neutral-100 pb-3">
+        <motion.div {...hoverProps} className="relative w-full h-80 rounded-3xl bg-neutral-950/80 border border-white/[0.08] p-6 flex flex-col justify-between overflow-hidden shadow-2xl transition-all duration-300 hover:border-indigo-500/40">
+          <div className="flex items-center justify-between text-xs font-mono text-indigo-400 border-b border-white/[0.08] pb-3">
             <span className="flex items-center gap-2 font-bold">
-              <Calendar className="w-4 h-4 text-indigo-500" /> GOOGLE_WORKSPACE // SYNC
+              <Calendar className="w-4 h-4 text-indigo-400" /> GOOGLE_WORKSPACE // SYNC
             </span>
-            <span className="text-indigo-600 font-bold font-mono">CONNECTED</span>
+            <span className="text-indigo-400 font-bold font-mono">CONNECTED</span>
           </div>
 
           <div className="grid grid-cols-1 gap-2.5 my-auto text-xs font-sans">
-            <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-950 flex items-center justify-between shadow-sm">
+            <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-200 flex items-center justify-between shadow-sm">
               <span className="font-medium">📅 Product Architecture Review @ 2:00 PM</span>
-              <span className="text-[10px] font-mono text-indigo-500 font-bold">TODAY</span>
+              <span className="text-[10px] font-mono text-indigo-400 font-bold">TODAY</span>
             </div>
-            <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-200 text-neutral-600 flex items-center justify-between">
+            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] text-neutral-400 flex items-center justify-between">
               <span>📅 Vector Store Deployment Sync @ 4:30 PM</span>
-              <span className="text-[10px] font-mono text-neutral-400">SCHEDULED</span>
+              <span className="text-[10px] font-mono text-neutral-500">SCHEDULED</span>
             </div>
           </div>
         </motion.div>
@@ -399,16 +398,16 @@ function RenderFeatureVisual({ type, isInView }) {
 
     case 'hinglish':
       return (
-        <motion.div {...hoverProps} className="relative w-full h-80 rounded-3xl bg-white border border-neutral-200/80 p-6 flex flex-col justify-between overflow-hidden shadow-xl transition-all duration-300 hover:border-violet-500/25 hover:shadow-[0_15px_40px_rgba(139,92,246,0.05)]">
-          <div className="flex items-center justify-between text-xs font-mono text-violet-600 border-b border-neutral-100 pb-3">
+        <motion.div {...hoverProps} className="relative w-full h-80 rounded-3xl bg-neutral-950/80 border border-white/[0.08] p-6 flex flex-col justify-between overflow-hidden shadow-2xl transition-all duration-300 hover:border-violet-500/40">
+          <div className="flex items-center justify-between text-xs font-mono text-violet-400 border-b border-white/[0.08] pb-3">
             <span className="flex items-center gap-2 font-bold">
               <Languages className="w-4 h-4 text-violet-400" /> BILINGUAL_ENGINE // ADAPTIVE
             </span>
-            <span className="text-violet-600 font-bold">ENGLISH ↔ HINGLISH</span>
+            <span className="text-violet-400 font-bold">ENGLISH ↔ HINGLISH</span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-violet-50/30 border border-violet-100 text-xs font-mono text-neutral-800 my-auto min-h-[100px] flex items-center justify-center text-center">
-            <p className="text-sm font-sans font-semibold text-violet-850 transition-all duration-300">
+          <div className="p-4 rounded-2xl bg-violet-500/10 border border-violet-500/20 text-xs font-mono text-neutral-200 my-auto min-h-[100px] flex items-center justify-center text-center">
+            <p className="text-sm font-sans font-semibold text-violet-300 transition-all duration-300">
               "{hinglishText}"
             </p>
           </div>
@@ -423,10 +422,8 @@ function RenderFeatureVisual({ type, isInView }) {
 function FeatureShowcaseRow({ feature, isEven, onLaunchApp }) {
   const rowRef = useRef(null);
   const isInView = useInView(rowRef, { once: false, margin: "-100px 0px" });
-
   const Icon = feature.icon;
 
-  // Staggered entry transitions
   const textVariants = {
     hidden: { opacity: 0, x: isEven ? -40 : 40, y: 20 },
     visible: { 
@@ -463,23 +460,23 @@ function FeatureShowcaseRow({ feature, isEven, onLaunchApp }) {
           <div className={`p-3 rounded-2xl bg-gradient-to-r ${feature.color} text-white shadow-xl`}>
             <Icon className="w-5 h-5" />
           </div>
-          <span className="text-xs font-mono font-bold tracking-wider text-violet-600 uppercase">
+          <span className="text-xs font-mono font-bold tracking-wider text-violet-400 uppercase">
             {feature.title}
           </span>
         </div>
 
-        <h3 className="text-3xl sm:text-4xl font-bold text-neutral-900 tracking-tight font-orbitron leading-snug" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+        <h3 className="text-3xl sm:text-4xl font-bold text-white tracking-tight font-orbitron leading-snug" style={{ fontFamily: 'Orbitron, sans-serif' }}>
           {feature.headline}
         </h3>
 
-        <p className="text-sm sm:text-base text-neutral-600 leading-relaxed font-sans font-normal">
+        <p className="text-sm sm:text-base text-neutral-400 leading-relaxed font-sans font-normal">
           {feature.desc}
         </p>
 
         {/* Badges */}
         <div className="flex flex-wrap gap-2.5 pt-2">
           {feature.badges.map((b, bIdx) => (
-            <span key={bIdx} className="px-3.5 py-1.5 rounded-full bg-white border border-neutral-200 text-[11px] font-mono text-neutral-500 transition-colors duration-300 hover:border-violet-500/20 hover:text-neutral-800">
+            <span key={bIdx} className="px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-[11px] font-mono text-neutral-400 transition-colors duration-300 hover:border-violet-500/40 hover:text-white">
               {b}
             </span>
           ))}
@@ -491,7 +488,7 @@ function FeatureShowcaseRow({ feature, isEven, onLaunchApp }) {
             <button
               type="button"
               onClick={onLaunchApp}
-              className="inline-flex items-center gap-2 text-xs font-bold font-mono text-violet-600 hover:text-cyan-600 transition-colors group cursor-pointer"
+              className="inline-flex items-center gap-2 text-xs font-bold font-mono text-violet-400 hover:text-cyan-400 transition-colors group cursor-pointer"
             >
               <span>TEST THIS IN DOXA</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -515,14 +512,14 @@ function FeatureShowcaseRow({ feature, isEven, onLaunchApp }) {
 
 export default function FeatureShowcase({ onLaunchApp }) {
   return (
-    <section id="features" className="relative py-32 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto z-10">
+    <section id="features" className="relative py-32 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto z-10 select-none">
       <div className="text-center max-w-3xl mx-auto mb-28">
-        <h2 className="text-xs font-mono font-bold uppercase tracking-widest text-violet-600 mb-3">
+        <h2 className="text-xs font-mono font-bold uppercase tracking-widest text-violet-400 mb-3">
           COMPLETE FEATURE SHOWCASE
         </h2>
-        <p className="text-3xl sm:text-5xl font-extrabold text-neutral-900 tracking-tight font-orbitron" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-          Built for Autonomous Precision & Scale.
-        </p>
+        <h3 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight font-orbitron" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+          Built for Autonomous Precision & Scale
+        </h3>
       </div>
 
       {/* 11 Full Alternating Feature Blocks */}

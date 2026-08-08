@@ -1,0 +1,10 @@
+{
+  "strategy_success_counts": {
+    "coding": 1
+  },
+  "model_success_counts": {},
+  "avg_retrieval_similarity": 0.85,
+  "total_signals_processed": 1,
+  "learned_dense_weight": 0.55,
+  "learned_bm25_weight": 0.45
+}

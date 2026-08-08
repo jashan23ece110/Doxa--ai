@@ -1,0 +1,65 @@
+{
+  "ad10dc8c-e9ef-4999-aaf9-05e89421db50": {
+    "id": "ad10dc8c-e9ef-4999-aaf9-05e89421db50",
+    "user_id": "default_user",
+    "type": "project",
+    "title": "Building Project: Doxa and my favorite language ",
+    "content": "Building Project: Doxa and my favorite language is Python.",
+    "embedding": null,
+    "tags": [
+      "project",
+      "auto_extracted"
+    ],
+    "metadata": {},
+    "importance_score": 0.85,
+    "confidence": 0.9,
+    "created_at": 1785943193.788865,
+    "updated_at": 1786025821.067958,
+    "last_accessed": 1786025821.0678568,
+    "access_count": 4,
+    "expires_at": null,
+    "pinned": false
+  },
+  "ffaec97b-7b88-46c1-8753-926f5f4b8663": {
+    "id": "ffaec97b-7b88-46c1-8753-926f5f4b8663",
+    "user_id": "default_user",
+    "type": "preference",
+    "title": "Preferred Language: Python.",
+    "content": "Preferred Language: Python.",
+    "embedding": null,
+    "tags": [
+      "preference",
+      "auto_extracted"
+    ],
+    "metadata": {},
+    "importance_score": 0.85,
+    "confidence": 0.9,
+    "created_at": 1785943193.7888808,
+    "updated_at": 1786025821.068338,
+    "last_accessed": 1786025821.068328,
+    "access_count": 4,
+    "expires_at": null,
+    "pinned": false
+  },
+  "a1fe9c66-fbb2-4f1a-8dfb-04d587e5ba2b": {
+    "id": "a1fe9c66-fbb2-4f1a-8dfb-04d587e5ba2b",
+    "user_id": "default_user",
+    "type": "identity",
+    "title": "Location: Delhi and work at Microsoft.",
+    "content": "Location: Delhi and work at Microsoft.",
+    "embedding": null,
+    "tags": [
+      "identity",
+      "auto_extracted"
+    ],
+    "metadata": {},
+    "importance_score": 0.85,
+    "confidence": 0.9,
+    "created_at": 1785943201.015373,
+    "updated_at": 1786025821.068556,
+    "last_accessed": 1786025821.068553,
+    "access_count": 4,
+    "expires_at": null,
+    "pinned": false
+  }
+}

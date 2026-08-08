@@ -1,0 +1,13 @@
+{
+  "backup_id": "bak_07e8089a",
+  "components_included": [
+    "memory",
+    "chromadb",
+    "bm25",
+    "audit_logs",
+    "config"
+  ],
+  "file_path": "./backup_data/snapshot_latest.json",
+  "size_bytes": 131072,
+  "created_at": 1786027183.3669739
+}

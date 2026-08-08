@@ -83,18 +83,18 @@ export default function ChatPanel({
   }, []);
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 pb-6 pt-2 z-30 pointer-events-auto">
+    <div className="w-full max-w-5xl mx-auto px-4 pb-4 pt-1 h-full flex flex-col min-h-0 z-30 pointer-events-auto">
       <div 
-        className="backdrop-blur-xl bg-black/15 border border-[var(--jarvis-accent)]/20 rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col transition-all duration-300"
+        className="backdrop-blur-xl bg-black/15 border border-[var(--jarvis-accent)]/20 rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col h-full min-h-0 transition-all duration-300"
       >
-        {/* ── Chat History Drawer (Floating Upward Answer Stream) ── */}
+        {/* ── Chat History Drawer (Full Height Vertical Stream) ── */}
         <AnimatePresence>
           {true && (
             <motion.div 
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="border-b border-[var(--jarvis-accent)]/10 max-h-[380px] overflow-y-auto hud-scrollbar p-4 flex flex-col gap-4 bg-transparent"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="border-b border-[var(--jarvis-accent)]/10 flex-1 min-h-0 overflow-y-auto hud-scrollbar p-4 flex flex-col gap-4 bg-transparent"
             >
               {chatHistory.length === 0 && !agentLoading ? (
                 <div className="flex flex-col items-center justify-center py-6 text-center text-neutral-500 font-mono text-xs select-none">

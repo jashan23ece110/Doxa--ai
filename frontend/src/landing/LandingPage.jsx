@@ -2,8 +2,13 @@ import React from 'react';
 import HeroStarfield from './HeroStarfield';
 import Navbar from './Navbar';
 import HeroSection from './HeroSection';
-import FeatureShowcase from './FeatureShowcase';
 import CapabilityStrip from './CapabilityStrip';
+import StageExplorer from './StageExplorer';
+import SecurityHumanExplorer from './SecurityHumanExplorer';
+import MassiveDataIntelligence from './MassiveDataIntelligence';
+import AutonomousSoftwareAgents from './AutonomousSoftwareAgents';
+import EnterpriseDecisionIntelligence from './EnterpriseDecisionIntelligence';
+import FeatureShowcase from './FeatureShowcase';
 import HowItWorks from './HowItWorks';
 import FinalCTA from './FinalCTA';
 import Footer from './Footer';
@@ -11,7 +16,7 @@ import Footer from './Footer';
 export default function LandingPage({ onLaunchApp }) {
   return (
     <div className="min-h-screen bg-black text-white relative overflow-x-hidden selection:bg-violet-500/30 selection:text-white font-sans">
-      {/* Three.js Heavy Motion Background */}
+      {/* Three.js GPU Motion Background */}
       <HeroStarfield />
 
       {/* Navbar */}
@@ -20,18 +25,30 @@ export default function LandingPage({ onLaunchApp }) {
       {/* Hero Section */}
       <HeroSection onLaunchApp={onLaunchApp} />
 
-      {/* Transition Seam: Black to White/Off-white */}
-      <div className="relative w-full h-40 bg-gradient-to-b from-black to-[#fafafa] z-10 pointer-events-none" />
-
-      {/* White background content wrap */}
-      <div className="bg-[#fafafa] text-neutral-900 z-10 relative selection:bg-violet-100 selection:text-violet-900">
-        {/* Capability Numbers & Stats Strip */}
+      {/* Main Dark Content Wrapper */}
+      <div className="bg-black text-white z-10 relative selection:bg-violet-500/30 selection:text-white">
+        {/* Capability Indicators Strip */}
         <CapabilityStrip />
 
-        {/* 11 Full Feature Showcase Blocks */}
+        {/* Interactive Stages 1–5 Intelligence Explorer */}
+        <StageExplorer />
+
+        {/* Stage 6 & Stage 7 Security & Human Intelligence Showcase */}
+        <SecurityHumanExplorer />
+
+        {/* Stage 8 Massive-Scale Data Intelligence Showcase */}
+        <MassiveDataIntelligence />
+
+        {/* Stage 9 Autonomous Software Agents Showcase */}
+        <AutonomousSoftwareAgents />
+
+        {/* Stage 10 Enterprise Decision Intelligence Showcase */}
+        <EnterpriseDecisionIntelligence />
+
+        {/* 11 Full Product Capability Showcase Blocks */}
         <FeatureShowcase onLaunchApp={onLaunchApp} />
 
-        {/* How It Works Flow */}
+        {/* 6-Stage Intelligence Lifecycle Flow */}
         <HowItWorks />
 
         {/* Closing CTA */}

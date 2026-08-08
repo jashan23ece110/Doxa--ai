@@ -1,0 +1,111 @@
+[
+  {
+    "mission_id": "mission_feb1b699",
+    "name": "Mission: Architect and deploy autonomous enterpri",
+    "user_id": "default_user",
+    "status": "completed",
+    "primary_goal": "Architect and deploy autonomous enterprise AI platform on AWS and GCP",
+    "goals": {
+      "goal_92791db3": {
+        "goal_id": "goal_92791db3",
+        "title": "Primary Mission Objective",
+        "description": "Architect and deploy autonomous enterprise AI platform on AWS and GCP",
+        "parent_goal_id": null,
+        "sub_goal_ids": [
+          "goal_0e2b21d8",
+          "goal_87126f00"
+        ],
+        "dependencies": [],
+        "priority_score": 0.91,
+        "business_value": 1.0,
+        "urgency": 0.8,
+        "risk_score": 0.1,
+        "completed": true,
+        "workflow_id": "wf_90604b7c",
+        "output": "Reasoning analysis for 'Execute query: Architect and deploy auto': Validated logic."
+      },
+      "goal_0e2b21d8": {
+        "goal_id": "goal_0e2b21d8",
+        "title": "Domain Research & Architectural Specification",
+        "description": "Gather knowledge and define spec for 'Architect and deploy autonomou'",
+        "parent_goal_id": "goal_92791db3",
+        "sub_goal_ids": [],
+        "dependencies": [],
+        "priority_score": 0.8,
+        "business_value": 0.8,
+        "urgency": 0.7,
+        "risk_score": 0.1,
+        "completed": true,
+        "workflow_id": "wf_0997cffb",
+        "output": "Reasoning analysis for 'Execute query: Gather knowledge and defi': Validated logic."
+      },
+      "goal_87126f00": {
+        "goal_id": "goal_87126f00",
+        "title": "Autonomous Execution & Implementation",
+        "description": "Execute workflows for 'Architect and deploy autonomou'",
+        "parent_goal_id": "goal_92791db3",
+        "sub_goal_ids": [],
+        "dependencies": [
+          "goal_0e2b21d8"
+        ],
+        "priority_score": 0.75,
+        "business_value": 0.9,
+        "urgency": 0.6,
+        "risk_score": 0.15,
+        "completed": true,
+        "workflow_id": "wf_2ce8abe6",
+        "output": "Reasoning analysis for 'Execute query: Execute workflows for 'Ar': Validated logic."
+      }
+    },
+    "milestones": [
+      {
+        "milestone_id": "ms_58092270",
+        "title": "Phase 1: Domain & Architectural Specification",
+        "description": "Complete initial research and architectural design.",
+        "target_goal_ids": [],
+        "completed": true,
+        "reward_score": 1.0,
+        "completed_at": 1786026762.416474
+      },
+      {
+        "milestone_id": "ms_daaf1c9c",
+        "title": "Phase 2: Autonomous Implementation & Synthesis",
+        "description": "Execute implementation workflows and verify output.",
+        "target_goal_ids": [],
+        "completed": true,
+        "reward_score": 2.0,
+        "completed_at": 1786026762.417377
+      }
+    ],
+    "snapshots": [
+      {
+        "snapshot_id": "snap_8855ac9f",
+        "mission_id": "mission_feb1b699",
+        "progress_percentage": 33.33,
+        "completed_goals_count": 1,
+        "total_goals_count": 3,
+        "timestamp": 1786026762.415742
+      },
+      {
+        "snapshot_id": "snap_a8fec172",
+        "mission_id": "mission_feb1b699",
+        "progress_percentage": 66.67,
+        "completed_goals_count": 2,
+        "total_goals_count": 3,
+        "timestamp": 1786026762.4164648
+      },
+      {
+        "snapshot_id": "snap_cdffc465",
+        "mission_id": "mission_feb1b699",
+        "progress_percentage": 100.0,
+        "completed_goals_count": 3,
+        "total_goals_count": 3,
+        "timestamp": 1786026762.417373
+      }
+    ],
+    "recovery_events": [],
+    "overall_progress_percentage": 100.0,
+    "created_at": 1786026762.4146502,
+    "updated_at": 1786026762.4146502
+  }
+]

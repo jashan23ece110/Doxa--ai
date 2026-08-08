@@ -1,0 +1,15 @@
+[
+  {
+    "audit_id": "aud_4539bc36e7ea",
+    "timestamp": 1786026978.511717,
+    "user_id": "usr_100",
+    "tenant_id": "tenant_alpha",
+    "resource": "secrets",
+    "action": "rotate",
+    "result": "success",
+    "ip_address": "127.0.0.1",
+    "request_id": null,
+    "trace_id": null,
+    "details": {}
+  }
+]

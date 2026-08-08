@@ -1,6 +1,6 @@
 import React from 'react';
 import { Shield, User, Menu, Settings as SettingsIcon, Radio } from 'lucide-react';
-import doxaLogo from '../assets/logo.png';
+import SvgLogo from '../landing/logo/SvgLogo';
 
 const TopBar = ({ user, toggleSidebar, sidebarOpen, onNavigate, activeOverlay, isSphereMode, onToggleSphereMode }) => {
   const truncatedEmail = user && user.includes('@')
@@ -29,11 +29,7 @@ const TopBar = ({ user, toggleSidebar, sidebarOpen, onNavigate, activeOverlay, i
 
       {/* Center — Center-aligned DOXA title/logo */}
       <div className="flex items-center gap-2 leading-none">
-        <img
-          src={doxaLogo}
-          alt="Doxa Logo"
-          className="w-5 h-5 object-contain filter invert brightness-200"
-        />
+        <SvgLogo size={20} className="w-5 h-5" />
         <span
           className="font-bold text-lg tracking-widest text-white uppercase font-orbitron"
           style={{ fontFamily: "'Orbitron', sans-serif" }}

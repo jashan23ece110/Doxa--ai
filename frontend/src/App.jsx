@@ -12,6 +12,7 @@ import VoiceTelemetry from './components/VoiceTelemetry';
 import NeuralBackground from './components/NeuralBackground';
 import EmergentAnswerCard from './components/EmergentAnswerCard';
 import LibreSidebar from './components/LibreSidebar';
+import IntelligencePanel from './components/IntelligencePanel';
 import LandingPage from './landing/LandingPage';
 import SvgLogo from './landing/logo/SvgLogo';
 import { THEMES } from './theme';
@@ -72,6 +73,7 @@ function App() {
   const [chatVisible, setChatVisible] = useState(false);
   const [sessionStart] = useState(() => new Date());
   const [sphereMode, setSphereMode] = useState(false);
+  const [rightPanelOpen, setRightPanelOpen] = useState(true);
   const [micPermissionDenied, setMicPermissionDenied] = useState(false);
 
   const API_BASE = import.meta.env.VITE_API_URL;
@@ -804,195 +806,174 @@ function App() {
 
   if (!user) {
     return (
-      <div className="min-h-screen w-full bg-[#eef2f6] flex items-center justify-center p-4 selection:bg-indigo-100 relative overflow-hidden select-none" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
-        
-        {/* Style block for liquid animation morphing */}
-        <style dangerouslySetInnerHTML={{ __html: `
-          @keyframes morph-main {
-            0% { border-radius: 42% 58% 62% 38% / 55% 59% 41% 45%; }
-            50% { border-radius: 48% 52% 56% 44% / 50% 54% 46% 50%; }
-            100% { border-radius: 42% 58% 62% 38% / 55% 59% 41% 45%; }
-          }
-          @keyframes morph-sub1 {
-            0% { border-radius: 53% 47% 43% 57% / 46% 56% 44% 54%; }
-            50% { border-radius: 48% 52% 50% 50% / 52% 48% 52% 48%; }
-            100% { border-radius: 53% 47% 43% 57% / 46% 56% 44% 54%; }
-          }
-          @keyframes morph-sub2 {
-            0% { border-radius: 47% 53% 57% 43% / 52% 42% 58% 48%; }
-            50% { border-radius: 51% 49% 48% 52% / 47% 53% 47% 53%; }
-            100% { border-radius: 47% 53% 57% 43% / 52% 42% 58% 48%; }
-          }
-          .animate-liquid-main {
-            animation: morph-main 12s ease-in-out infinite;
-          }
-          .animate-liquid-sub1 {
-            animation: morph-sub1 9s ease-in-out infinite;
-          }
-          .animate-liquid-sub2 {
-            animation: morph-sub2 10s ease-in-out infinite;
-          }
-        `}} />
+      <div className="min-h-screen w-full bg-neutral-950 flex items-center justify-center p-4 sm:p-6 relative overflow-hidden select-none" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
+        {/* Ambient atmospheric radial glow background */}
+        <div className="absolute inset-0 pointer-events-none -z-10 flex items-center justify-center overflow-hidden" aria-hidden="true">
+          <div className="w-[600px] sm:w-[900px] h-[400px] sm:h-[600px] bg-[radial-gradient(ellipse_at_center,rgba(124,58,237,0.18)_0%,rgba(99,102,241,0.10)_35%,rgba(6,182,212,0.05)_60%,transparent_80%)] blur-3xl opacity-90" />
+        </div>
 
-        {/* Ambient blurred colored backdrops (matching reference) */}
-        <div className="absolute top-[10%] left-[20%] w-[320px] h-[320px] rounded-full bg-cyan-200/40 blur-[80px] pointer-events-none" />
-        <div className="absolute bottom-[10%] right-[20%] w-[420px] h-[420px] rounded-full bg-violet-200/40 blur-[100px] pointer-events-none" />
-
-        {/* Outer relative container for absolute positioning of satellites */}
-        <div className="relative flex flex-col md:flex-row items-center justify-center max-w-lg md:max-w-2xl w-full z-10 gap-8 md:gap-14">
-          
-          {/* ── Main Liquid Glass Sign-In Blob ── */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.92, y: 15 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.55, ease: 'easeOut' }}
-            className="w-[360px] h-[360px] sm:w-[410px] sm:h-[410px] bg-white/70 backdrop-blur-xl border border-white/40 flex flex-col items-center justify-center p-8 sm:p-10 animate-liquid-main shadow-[25px_35px_20px_rgba(99,102,241,0.06),25px_30px_30px_rgba(99,102,241,0.06)]"
-            style={{
-              boxShadow: 'inset 10px 10px 10px rgba(139,92,246,0.03), 25px 35px 20px rgba(99,102,241,0.06), 25px 30px 30px rgba(99,102,241,0.06), inset -10px -10px 15px rgba(255,255,255,0.85)'
-            }}
-          >
-            {/* Header branding */}
-            <div className="flex flex-col items-center mb-5">
-              <h2 className="text-[26px] font-extrabold text-neutral-800 tracking-tight leading-none font-sans">
-                Doxa
-              </h2>
-              <span className="text-[11px] text-neutral-500 font-mono uppercase tracking-wider mt-1.5 font-bold">
-                {authMode === 'login' && 'Sign in to account'}
-                {authMode === 'signup' && 'Create an account'}
-                {authMode === 'phone' && 'Enter mobile number'}
-                {authMode === 'otp' && 'Verify security code'}
+        {/* Centered Dark Glass Auth Panel */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 15 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+          className="max-w-md w-full bg-neutral-900/60 backdrop-blur-2xl border border-white/[0.1] rounded-3xl p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.7),0_0_30px_rgba(124,58,237,0.15)] flex flex-col items-center gap-6 relative z-10"
+        >
+          {/* Header Brand Badge & Title */}
+          <div className="flex flex-col items-center text-center gap-2">
+            <div className="p-3 rounded-2xl bg-white/[0.04] border border-white/[0.1] flex items-center justify-center shadow-inner">
+              <SvgLogo size={32} className="w-8 h-8" />
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="font-extrabold text-xl tracking-widest text-white uppercase font-mono" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                DOXA
+              </span>
+              <span className="text-[10px] font-mono tracking-widest uppercase text-neutral-400 font-semibold mt-0.5">
+                ENTERPRISE AI OPERATING SYSTEM
               </span>
             </div>
-
-            {/* Auth Form */}
-            <form className="w-full flex flex-col items-center gap-4" onSubmit={handleAuth}>
-              {(authMode === 'login' || authMode === 'signup') && (
-                <div className="w-full flex flex-col gap-3.5">
-                  <div className="w-full flex flex-col gap-1">
-                    <label htmlFor="email" className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider pl-1.5">Email Address</label>
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      required
-                      placeholder="name@company.com"
-                      className="w-full bg-[#f3f5f8] text-neutral-800 placeholder-neutral-400/70 border border-neutral-200/10 text-xs px-4 py-3 rounded-2xl focus:outline-none focus:bg-[#edf0f5] transition-all"
-                      style={{
-                        fontFamily: 'JetBrains Mono, monospace',
-                        boxShadow: 'inset 3px 3px 6px rgba(160,170,190,0.18), inset -3px -3px 6px rgba(255,255,255,0.85)'
-                      }}
-                    />
-                  </div>
-                  
-                  {/* Decorative Password Input (for visual alignment with Reference) */}
-                  <div className="w-full flex flex-col gap-1">
-                    <label htmlFor="pass-decor" className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider pl-1.5">Password</label>
-                    <input
-                      id="pass-decor"
-                      name="password"
-                      type="password"
-                      placeholder="••••••••"
-                      className="w-full bg-[#f3f5f8] text-neutral-800 placeholder-neutral-400/60 border border-neutral-200/10 text-xs px-4 py-3 rounded-2xl focus:outline-none focus:bg-[#edf0f5] transition-all"
-                      style={{
-                        fontFamily: 'JetBrains Mono, monospace',
-                        boxShadow: 'inset 3px 3px 6px rgba(160,170,190,0.18), inset -3px -3px 6px rgba(255,255,255,0.85)'
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {authMode === 'phone' && (
-                <div className="w-full flex flex-col gap-1">
-                  <label htmlFor="phone" className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider pl-1.5">Phone Number</label>
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    required
-                    placeholder="+1 (555) 000-0000"
-                    className="w-full bg-[#f3f5f8] text-neutral-800 placeholder-neutral-400/70 border border-neutral-200/10 text-xs px-4 py-3 rounded-2xl focus:outline-none focus:bg-[#edf0f5] transition-all text-center"
-                    style={{
-                      fontFamily: 'JetBrains Mono, monospace',
-                      boxShadow: 'inset 3px 3px 6px rgba(160,170,190,0.18), inset -3px -3px 6px rgba(255,255,255,0.85)'
-                    }}
-                  />
-                </div>
-              )}
-
-              {authMode === 'otp' && (
-                <div className="w-full flex flex-col gap-1">
-                  <label htmlFor="otp" className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider pl-1.5">Verification Code</label>
-                  <input
-                    id="otp"
-                    name="otp"
-                    type="text"
-                    required
-                    placeholder="123456"
-                    className="w-full bg-[#f3f5f8] text-neutral-800 placeholder-neutral-400/60 border border-neutral-200/10 text-sm px-4 py-3 rounded-2xl focus:outline-none focus:bg-[#edf0f5] transition-all text-center tracking-widest font-bold"
-                    style={{
-                      fontFamily: 'JetBrains Mono, monospace',
-                      boxShadow: 'inset 3px 3px 6px rgba(160,170,190,0.18), inset -3px -3px 6px rgba(255,255,255,0.85)'
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* Action Submit Button: Large Premium pill-shaped gradient */}
-              <motion.button
-                type="submit"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="w-[200px] mt-2 py-3.5 px-6 rounded-full text-[11px] font-bold text-white bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 hover:brightness-110 shadow-[0_8px_20px_rgba(99,102,241,0.3)] transition-all uppercase tracking-widest cursor-pointer"
-                style={{ fontFamily: 'Orbitron, sans-serif' }}
-              >
-                {authMode === 'login' ? 'LOGIN' : authMode === 'signup' ? 'REGISTER' : authMode === 'phone' ? 'SEND CODE' : 'VERIFY'}
-              </motion.button>
-            </form>
-          </motion.div>
-
-          {/* ── Secondary Floating Satellite Glass Blobs (Stacked/Floating) ── */}
-          <div className="flex flex-row md:flex-col gap-5 shrink-0 select-none">
-            
-            {/* Blob 1: Sign Up / Sign In toggle (Cyan Glass Theme) */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.85 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.55, delay: 0.15 }}
-              onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
-              className="w-[105px] h-[105px] sm:w-[120px] sm:h-[120px] bg-cyan-50/45 backdrop-blur-md border border-cyan-200/40 text-cyan-800 flex flex-col items-center justify-center p-3 text-center cursor-pointer md:absolute md:-right-16 md:top-14 z-20 animate-liquid-sub1 shadow-[0_12px_24px_rgba(6,182,212,0.1)] hover:shadow-[0_12px_24px_rgba(6,182,212,0.22)]"
-              whileHover={{ scale: 1.06, y: -2 }}
-              whileTap={{ scale: 0.94 }}
-              style={{
-                boxShadow: 'inset 5px 5px 8px rgba(255, 255, 255, 0.95), inset -5px -5px 8px rgba(6, 182, 212, 0.04), 0 12px 24px rgba(6, 182, 212, 0.1)'
-              }}
-            >
-              <span className="text-[11px] font-extrabold font-sans uppercase tracking-wider leading-tight">
-                {authMode === 'signup' ? 'Sign In' : 'Sign Up'}
-              </span>
-            </motion.div>
-
-            {/* Blob 2: Phone / Email toggler (Violet Glass Theme) */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.85 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.55, delay: 0.25 }}
-              onClick={() => setAuthMode(authMode === 'phone' ? 'login' : 'phone')}
-              className="w-[110px] h-[110px] sm:w-[125px] sm:h-[125px] bg-violet-50/45 backdrop-blur-md border border-violet-200/40 text-violet-800 flex flex-col items-center justify-center p-3 text-center cursor-pointer md:absolute md:-right-20 md:bottom-12 z-20 animate-liquid-sub2 shadow-[0_12px_24px_rgba(139,92,246,0.1)] hover:shadow-[0_12px_24px_rgba(139,92,246,0.22)]"
-              whileHover={{ scale: 1.06, y: -2 }}
-              whileTap={{ scale: 0.94 }}
-              style={{
-                boxShadow: 'inset 5px 5px 8px rgba(255, 255, 255, 0.95), inset -5px -5px 8px rgba(139, 92, 246, 0.04), 0 12px 24px rgba(139, 92, 246, 0.1)'
-              }}
-            >
-              <span className="text-[11px] font-extrabold font-sans uppercase tracking-wider leading-tight">
-                {authMode === 'phone' ? 'Email auth' : 'Phone login'}
-              </span>
-            </motion.div>
-
+            <h2 className="text-base sm:text-lg font-semibold text-neutral-200 mt-1">
+              Enter the Doxa workspace.
+            </h2>
+            <p className="text-xs text-neutral-400 max-w-xs leading-relaxed">
+              Your intelligent operating environment for reasoning, retrieval, and autonomous action.
+            </p>
           </div>
 
-        </div>
+          {/* Segmented Auth Mode Switcher */}
+          <div className="w-full bg-white/[0.03] border border-white/[0.08] p-1 rounded-2xl flex items-center gap-1 select-none font-mono text-xs">
+            <button
+              type="button"
+              onClick={() => setAuthMode('login')}
+              className={`flex-1 py-2 px-3 rounded-xl font-bold transition-all duration-200 cursor-pointer ${
+                authMode === 'login'
+                  ? 'bg-violet-500/20 text-white border border-violet-400/40 shadow-[0_0_12px_rgba(124,58,237,0.25)] font-orbitron'
+                  : 'text-neutral-400 hover:text-neutral-200'
+              }`}
+              style={{ fontFamily: 'Orbitron, sans-serif' }}
+            >
+              SIGN IN
+            </button>
+            <button
+              type="button"
+              onClick={() => setAuthMode('signup')}
+              className={`flex-1 py-2 px-3 rounded-xl font-bold transition-all duration-200 cursor-pointer ${
+                authMode === 'signup'
+                  ? 'bg-violet-500/20 text-white border border-violet-400/40 shadow-[0_0_12px_rgba(124,58,237,0.25)] font-orbitron'
+                  : 'text-neutral-400 hover:text-neutral-200'
+              }`}
+              style={{ fontFamily: 'Orbitron, sans-serif' }}
+            >
+              CREATE ACCOUNT
+            </button>
+          </div>
+
+          {/* Form */}
+          <form className="w-full flex flex-col gap-4" onSubmit={handleAuth}>
+            {(authMode === 'login' || authMode === 'signup') && (
+              <div className="flex flex-col gap-3.5">
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="email" className="block text-[11px] font-semibold text-neutral-400 uppercase tracking-wider font-mono">
+                    Email Address
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    placeholder="name@company.com"
+                    className="w-full bg-white/[0.03] text-neutral-100 placeholder-neutral-500 border border-white/[0.08] focus:border-violet-500/50 focus:bg-white/[0.05] focus:outline-none text-xs font-mono px-4 py-3 rounded-xl transition-all"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="pass-decor" className="block text-[11px] font-semibold text-neutral-400 uppercase tracking-wider font-mono">
+                    Password
+                  </label>
+                  <input
+                    id="pass-decor"
+                    name="password"
+                    type="password"
+                    placeholder="••••••••"
+                    className="w-full bg-white/[0.03] text-neutral-100 placeholder-neutral-500 border border-white/[0.08] focus:border-violet-500/50 focus:bg-white/[0.05] focus:outline-none text-xs font-mono px-4 py-3 rounded-xl transition-all"
+                  />
+                </div>
+              </div>
+            )}
+
+            {authMode === 'phone' && (
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="phone" className="block text-[11px] font-semibold text-neutral-400 uppercase tracking-wider font-mono">
+                  Phone Number
+                </label>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  required
+                  placeholder="+1 (555) 000-0000"
+                  className="w-full bg-white/[0.03] text-neutral-100 placeholder-neutral-500 border border-white/[0.08] focus:border-violet-500/50 focus:bg-white/[0.05] focus:outline-none text-xs font-mono px-4 py-3 rounded-xl transition-all text-center"
+                />
+              </div>
+            )}
+
+            {authMode === 'otp' && (
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="otp" className="block text-[11px] font-semibold text-neutral-400 uppercase tracking-wider font-mono">
+                  Verification Code
+                </label>
+                <input
+                  id="otp"
+                  name="otp"
+                  type="text"
+                  required
+                  placeholder="123456"
+                  className="w-full bg-white/[0.03] text-neutral-100 placeholder-neutral-500 border border-white/[0.08] focus:border-violet-500/50 focus:bg-white/[0.05] focus:outline-none text-sm font-mono px-4 py-3 rounded-xl transition-all text-center tracking-widest font-bold"
+                />
+              </div>
+            )}
+
+            {/* Action Submit Button */}
+            <motion.button
+              type="submit"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full mt-2 py-3.5 px-6 rounded-xl font-bold text-xs uppercase tracking-widest text-white cursor-pointer shadow-[0_0_25px_rgba(124,58,237,0.35)] hover:shadow-[0_0_35px_rgba(6,182,212,0.45)] hover:brightness-110 active:scale-[0.98] transition-all border border-white/[0.15]"
+              style={{
+                background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 50%, #06b6d4 100%)',
+                fontFamily: 'Orbitron, sans-serif',
+              }}
+            >
+              {authMode === 'login'
+                ? 'AUTHENTICATE & ENTER'
+                : authMode === 'signup'
+                ? 'REGISTER WORKSPACE'
+                : authMode === 'phone'
+                ? 'SEND CODE'
+                : 'VERIFY CODE'}
+            </motion.button>
+
+            {/* Secondary Phone Auth Toggle */}
+            <div className="text-center mt-1">
+              <button
+                type="button"
+                onClick={() => setAuthMode(authMode === 'phone' ? 'login' : 'phone')}
+                className="text-xs text-neutral-400 hover:text-cyan-400 transition-colors font-mono cursor-pointer"
+              >
+                {authMode === 'phone' ? 'Use email address authentication' : 'Use phone number authentication'}
+              </button>
+            </div>
+          </form>
+
+          {/* System Status Indicator Footer */}
+          <div className="pt-4 border-t border-white/[0.08] w-full flex items-center justify-between text-[11px] font-mono text-neutral-400">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)] animate-pulse" />
+              <span className="font-semibold text-neutral-300">DOXA CORE ONLINE</span>
+            </div>
+            <span>Secure workspace initialization</span>
+          </div>
+        </motion.div>
       </div>
     );
   }
@@ -1083,23 +1064,8 @@ function App() {
         </div>
       )}
 
-      {/* ── Desktop Inline Collapsible History Sidebar (side-by-side layout) ── */}
-      <AnimatePresence initial={false}>
-        {sidebarOpen && !sphereMode && (
-          <motion.div
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 280, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="hidden md:flex flex-col border-r border-[var(--jarvis-accent)]/15 bg-neutral-950/45 backdrop-blur-lg shrink-0 h-full z-20"
-          >
-            {renderSidebarContent()}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* ── Main App Content Wrapper ── */}
-      <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden bg-neutral-950">
         {/* ── TopBar / Dashboard Header Area ── */}
         <Dashboard
           user={user}
@@ -1119,6 +1085,8 @@ function App() {
           sidebarOpen={sidebarOpen}
           isSphereMode={sphereMode}
           onToggleSphereMode={() => setSphereMode(!sphereMode)}
+          rightPanelOpen={rightPanelOpen}
+          onToggleRightPanel={() => setRightPanelOpen(!rightPanelOpen)}
         />
 
         {/* ── Voice Speaking Telemetry HUD ── */}
@@ -1130,43 +1098,87 @@ function App() {
           )}
         </AnimatePresence>
 
-        {/* ── Main Conversation Area (reclaims full vertical space in normal chat mode) ── */}
-        {!sphereMode && (
-          <div className="flex-1 min-h-0 flex flex-col h-full relative z-20">
-            <ChatPanel
-              chatHistory={(() => {
-                if (!activeMessageId || !Array.isArray(chatHistory)) return [];
-                const chain = [];
-                let current = chatHistory.find(m => m && m.id === activeMessageId);
-                const visited = new Set();
-                while (current && !visited.has(current.id)) {
-                  visited.add(current.id);
-                  chain.unshift(current);
-                  current = chatHistory.find(m => m && m.id === current.parentId);
-                }
-                return chain;
-              })()}
-              fullHistory={chatHistory}
-              activeMessageId={activeMessageId}
-              setActiveMessageId={setActiveMessageId}
-              agentGoal={agentGoal}
-              setAgentGoal={setAgentGoal}
-              agentLoading={agentLoading}
-              agentStatus={agentStatus}
-              agentError={agentError}
-              onStartAgent={handleStartAgent}
-              chatMode={chatMode}
-              setChatMode={setChatMode}
-              language={language}
-              setLanguage={handleLanguageChange}
-              toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-              onExportChat={handleExportChat}
-              onUploadDoc={handleUploadDoc}
-              proactiveSuggestions={proactiveSuggestions}
-              setProactiveSuggestions={setProactiveSuggestions}
-            />
-          </div>
-        )}
+        {/* ── Unified 3-Pane Body Workspace Layout (Left Sidebar | Center Chat | Right Intelligence) ── */}
+        <div className="flex-1 min-h-0 flex flex-row w-full h-full relative z-20 overflow-hidden">
+          {/* Left Pane: Desktop Inline Collapsible History Sidebar */}
+          <AnimatePresence initial={false}>
+            {sidebarOpen && !sphereMode && (
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 280, opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="hidden md:flex flex-col border-r border-white/[0.08] bg-neutral-950/90 backdrop-blur-2xl shrink-0 h-full z-20"
+              >
+                {renderSidebarContent()}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Center Pane: Primary AI Assistant Chat Area */}
+          {!sphereMode && (
+            <div className="flex-1 min-w-0 flex flex-col h-full relative z-20 overflow-hidden">
+              <ChatPanel
+                chatHistory={(() => {
+                  if (!activeMessageId || !Array.isArray(chatHistory)) return [];
+                  const chain = [];
+                  let current = chatHistory.find(m => m && m.id === activeMessageId);
+                  const visited = new Set();
+                  while (current && !visited.has(current.id)) {
+                    visited.add(current.id);
+                    chain.unshift(current);
+                    current = chatHistory.find(m => m && m.id === current.parentId);
+                  }
+                  return chain;
+                })()}
+                fullHistory={chatHistory}
+                activeMessageId={activeMessageId}
+                setActiveMessageId={setActiveMessageId}
+                agentGoal={agentGoal}
+                setAgentGoal={setAgentGoal}
+                agentLoading={agentLoading}
+                agentStatus={agentStatus}
+                agentError={agentError}
+                onStartAgent={handleStartAgent}
+                chatMode={chatMode}
+                setChatMode={setChatMode}
+                language={language}
+                setLanguage={handleLanguageChange}
+                toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+                onExportChat={handleExportChat}
+                onUploadDoc={handleUploadDoc}
+                proactiveSuggestions={proactiveSuggestions}
+                setProactiveSuggestions={setProactiveSuggestions}
+              />
+            </div>
+          )}
+
+          {/* Right Pane: Intelligence Context Panel (Desktop inline, slide-in drawer on mobile/medium) */}
+          <AnimatePresence initial={false}>
+            {rightPanelOpen && !sphereMode && (
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 310, opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="hidden lg:flex flex-col border-l border-white/[0.08] bg-neutral-950/90 backdrop-blur-2xl shrink-0 h-full z-20"
+              >
+                <IntelligencePanel
+                  agentStatus={agentStatus}
+                  agentLoading={agentLoading}
+                  currentSessionId={currentSessionId}
+                  documents={documents}
+                  retrievedContext={retrievedContext}
+                  onUploadDoc={handleUploadDoc}
+                  onDeleteDoc={handleDeleteDoc}
+                  uploadingDoc={uploadingDoc}
+                  isOpen={rightPanelOpen}
+                  onClose={() => setRightPanelOpen(false)}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* ── Mobile Sidebar Drawer Overlay ── */}
@@ -1187,10 +1199,45 @@ function App() {
               animate={{ x: 0 }}
               exit={{ x: -280 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed left-0 top-0 bottom-0 w-[280px] bg-neutral-950/95 border-r border-[var(--jarvis-accent)]/15 backdrop-blur-lg z-50 p-4 flex flex-col gap-4 shadow-2xl"
+              className="fixed left-0 top-0 bottom-0 w-[280px] bg-neutral-950/95 border-r border-white/[0.08] backdrop-blur-2xl z-50 p-4 flex flex-col gap-4 shadow-2xl"
               style={{ fontFamily: 'Rajdhani, sans-serif' }}
             >
               {renderSidebarContent()}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Mobile / Medium Viewport Intelligence Panel Drawer Overlay ── */}
+      <AnimatePresence>
+        {rightPanelOpen && !sphereMode && (
+          <div className="lg:hidden">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.4 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setRightPanelOpen(false)}
+              className="fixed inset-0 bg-black/60 z-40"
+            />
+            <motion.div
+              initial={{ x: 310 }}
+              animate={{ x: 0 }}
+              exit={{ x: 310 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed right-0 top-0 bottom-0 w-[310px] bg-neutral-950/95 border-l border-white/[0.08] backdrop-blur-2xl z-50 p-2 flex flex-col shadow-2xl"
+            >
+              <IntelligencePanel
+                agentStatus={agentStatus}
+                agentLoading={agentLoading}
+                currentSessionId={currentSessionId}
+                documents={documents}
+                retrievedContext={retrievedContext}
+                onUploadDoc={handleUploadDoc}
+                onDeleteDoc={handleDeleteDoc}
+                uploadingDoc={uploadingDoc}
+                isOpen={rightPanelOpen}
+                onClose={() => setRightPanelOpen(false)}
+              />
             </motion.div>
           </div>
         )}

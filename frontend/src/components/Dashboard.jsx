@@ -26,6 +26,8 @@ export default function Dashboard({
   sidebarOpen,
   isSphereMode = false,
   onToggleSphereMode,
+  rightPanelOpen = true,
+  onToggleRightPanel,
 }) {
   const isAgentActive = agentLoading || agentStatus?.status === 'running' || isDebating;
   const isAgentThinking = (agentStatus?.status === 'running' && (agentStatus?.steps?.length || 0) < 5) || isDebating;
@@ -51,6 +53,8 @@ export default function Dashboard({
           activeOverlay={activeOverlay}
           isSphereMode={isSphereMode}
           onToggleSphereMode={onToggleSphereMode}
+          rightPanelOpen={rightPanelOpen}
+          onToggleRightPanel={onToggleRightPanel}
         />
       </div>
 

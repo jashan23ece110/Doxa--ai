@@ -443,21 +443,21 @@ export default function ChatPanel({
           </div>
         )}
 
-        {/* ── Main Input Form (LibreChat-Style Rounded Container) ── */}
-        <div className="p-3 bg-black/20">
+        {/* ── Main Input Form (Doxa Enterprise Rounded Container) ── */}
+        <div className="p-3 bg-black/40 border-t border-white/[0.08]">
           <form 
             onSubmit={onStartAgent} 
-            className="flex items-center gap-2 p-1.5 rounded-[22px] bg-neutral-900/90 border border-[var(--jarvis-accent)]/20 shadow-2xl focus-within:border-[var(--jarvis-accent)]/50 focus-within:shadow-[0_0_20px_rgba(var(--jarvis-accent-rgb),0.15)] transition-all"
+            className="flex items-center gap-2 p-2 rounded-[22px] bg-neutral-900/90 border border-white/[0.1] shadow-2xl focus-within:border-violet-500/50 focus-within:shadow-[0_0_20px_rgba(124,58,237,0.25)] transition-all"
           >
             {/* File Upload Paperclip Button */}
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={agentLoading}
-              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-[#7a7060] hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer ml-1"
+              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-neutral-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer ml-1"
               title="Upload document to Knowledge Base (RAG)"
             >
-              <Upload className="w-4 h-4" />
+              <Upload className="w-4 h-4 text-cyan-400" />
             </button>
             <input
               ref={fileInputRef}
@@ -486,8 +486,7 @@ export default function ChatPanel({
                     ? 'Ask Doxa to execute a complex task...'
                     : 'Ask Doxa anything...'
               }
-              className="flex-1 bg-transparent border-none text-xs md:text-sm text-white placeholder-[#7a7060] focus:outline-none px-1 min-w-0"
-              style={{ fontFamily: 'Rajdhani, sans-serif' }}
+              className="flex-1 bg-transparent border-none text-xs md:text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none px-1 min-w-0 font-sans"
             />
 
             {/* Mic (Voice input) Button */}
@@ -498,7 +497,7 @@ export default function ChatPanel({
               className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-colors ${
                 isRecording 
                   ? 'bg-red-500/20 text-red-400 animate-pulse'
-                  : 'text-[#7a7060] hover:text-white hover:bg-neutral-800'
+                  : 'text-neutral-400 hover:text-white hover:bg-white/10'
               }`}
             >
               {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
@@ -511,10 +510,13 @@ export default function ChatPanel({
               className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all ${
                 !agentGoal.trim() || agentLoading
                   ? 'bg-neutral-800 text-neutral-600 cursor-not-allowed'
-                  : 'bg-[var(--jarvis-accent)] text-black hover:brightness-110 shadow-[0_0_10px_rgba(var(--jarvis-accent-rgb),0.3)]'
+                  : 'text-white shadow-[0_0_15px_rgba(124,58,237,0.4)] hover:brightness-110 cursor-pointer'
               }`}
+              style={{
+                background: agentGoal.trim() && !agentLoading ? 'linear-gradient(135deg, #7c3aed 0%, #6366f1 50%, #06b6d4 100%)' : undefined
+              }}
             >
-              {agentLoading ? <Loader2 className="w-4 h-4 animate-spin text-black" /> : <Send className="w-4 h-4" />}
+              {agentLoading ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <Send className="w-4 h-4" />}
             </button>
           </form>
         </div>

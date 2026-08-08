@@ -1,7 +1,7 @@
 // force rebuild v2
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Activity, Clock, Zap, History, Settings, Bot, Code2, AlertTriangle, LogOut, CheckCircle2, Play, Download, Loader2, FileText, Upload, Trash2, BookOpen, ChevronDown, ChevronUp, Terminal, Menu, X, Cpu, Layers, Inbox, Paintbrush, MessageSquare } from 'lucide-react';
+import { Sparkles, Activity, Clock, Zap, History, Settings, Bot, Code2, AlertTriangle, LogOut, CheckCircle2, Play, Download, Loader2, FileText, Upload, Trash2, BookOpen, ChevronDown, ChevronUp, Terminal, Menu, X, Inbox } from 'lucide-react';
 import axios from 'axios';
 
 /* ── new Jarvis components ── */
@@ -12,16 +12,11 @@ import VoiceTelemetry from './components/VoiceTelemetry';
 import NeuralBackground from './components/NeuralBackground';
 import EmergentAnswerCard from './components/EmergentAnswerCard';
 import LibreSidebar from './components/LibreSidebar';
-import LandingPage from './landing/LandingPage';
+import LandingPage from './landing/layouts/LandingPage';
 import doxaLogoAsset from './assets/logo.png';
 import { THEMES } from './theme';
 
 /* ── animation variants (kept for overlay tab views) ── */
-const pageVariants = {
-  initial: { opacity: 0, y: 12 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.14, ease: [0.25, 0.1, 0.25, 1] } },
-  exit:    { opacity: 0, y: -8, transition: { duration: 0.08 } },
-};
 
 const staggerContainer = {
   animate: { transition: { staggerChildren: 0.04 } },
@@ -69,7 +64,6 @@ function App() {
 
   /* overlay state (null = dashboard visible, string = overlay type) */
   const [activeOverlay, setActiveOverlay] = useState(null);
-  const [chatVisible, setChatVisible] = useState(false);
   const [sessionStart] = useState(() => new Date());
   const [sphereMode, setSphereMode] = useState(false);
   const [micPermissionDenied, setMicPermissionDenied] = useState(false);
@@ -293,6 +287,7 @@ function App() {
       setChatHistory([]);
       setActiveMessageId(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSessionId]);
 
   // Sync real-time chatHistory changes back to session list
@@ -363,6 +358,9 @@ function App() {
     try { const res = await axios.get(`${API_BASE}/documents`); setDocuments(res.data.documents || []); }
     catch (err) { console.error('Failed to fetch documents', err); }
   };
+  // We omit fetchDocuments from dependency array since it is re-created on each render, or we could move it outside/wrap in useCallback.
+  // We'll just disable the lint warning for this specific line since changing function references might cause issues.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (activeOverlay === 'documents' && user) fetchDocuments(); }, [activeOverlay, user]);
 
   const handleUploadDoc = async (file) => {
@@ -384,7 +382,7 @@ function App() {
       await fetchDocuments(); 
       showToast('Document uploaded successfully!', 'success');
     }
-    catch (err) { 
+    catch (_err) {
       showToast('Failed to upload document.', 'error'); 
     }
     finally { setUploadingDoc(false); }
@@ -501,6 +499,7 @@ function App() {
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentRunId, API_BASE]);
 
   const handleStartAgent = async (eOrGoal) => {
@@ -662,7 +661,7 @@ function App() {
      ═══════════════════════════════════════════ */
 
   /* result panel (eval) */
-  const ResultPanel = ({ title, data, delay }) => (
+  const ResultPanel = ({ title, data }) => (
     <motion.div
       variants={staggerItem}
       className="bg-[#141414] border panel-glow rounded-xl flex flex-col overflow-hidden shadow-sm h-full"

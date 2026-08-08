@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, ChevronDown } from 'lucide-react';
-import doxaLogo from '../assets/logo.png';
+import SvgLogo from '../logo/SvgLogo';
 
 export default function HeroSection({ onLaunchApp }) {
   return (
@@ -36,12 +36,7 @@ export default function HeroSection({ onLaunchApp }) {
             background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 50%, #06b6d4 100%)',
           }}
         >
-          <img
-            src={doxaLogo}
-            alt=""
-            className="w-5 h-5 object-contain"
-            style={{ filter: 'invert(1) brightness(2)' }}
-          />
+          <SvgLogo className="w-5 h-5 text-white" />
           <span>Try Doxa</span>
           <ArrowRight className="w-4 h-4 opacity-70 group-hover:translate-x-0.5 transition-transform" />
         </motion.button>

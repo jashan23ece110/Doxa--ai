@@ -1,22 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ArrowRight, Cpu, Database, Globe, Mic, GitBranch, ShieldCheck, Zap, Bell, Menu, X } from 'lucide-react';
-import doxaLogo from '../assets/logo.png';
-
-const CAPABILITIES = [
-  { label: 'Autonomous Reasoning', desc: 'Multi-step planning & tool execution', icon: Cpu },
-  { label: 'RAG Knowledge Base', desc: 'Vector document search over your data', icon: Database },
-  { label: 'Live Web Search', desc: 'Real-time Tavily web citations', icon: Globe },
-  { label: 'Native Voice Mode', desc: 'Conversational voice synthesis', icon: Mic },
-  { label: 'Timeline Branching', desc: 'Non-linear thread exploration', icon: GitBranch },
-  { label: 'Dual Model Debate', desc: 'Optimist vs Skeptic consensus engine', icon: ShieldCheck }
-];
-
-const WHATS_NEW = [
-  { label: 'Voice Mode 2.0', desc: 'Natural conversation with streaming TTS' },
-  { label: 'Timeline Branching', desc: 'Explore alternative reasoning paths' },
-  { label: 'Processing Engine Selector', desc: 'Choose your AI model on-the-fly' },
-];
+import { ChevronDown, ArrowRight, Zap, Menu, X } from 'lucide-react';
+import { NAV_CAPABILITIES, WHATS_NEW } from '../../data/landingData';
+import SvgLogo from '../logo/SvgLogo';
 
 export default function Navbar({ onLaunchApp }) {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -69,16 +55,11 @@ export default function Navbar({ onLaunchApp }) {
 
         {/* ── Left: Logo mark + wordmark ── */}
         <div
-          className="flex items-center gap-2.5 cursor-pointer select-none shrink-0"
+          className="flex items-center gap-2.5 cursor-pointer select-none shrink-0 text-white"
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         >
           {/* Plain icon — no container, no border, no glow */}
-          <img
-            src={doxaLogo}
-            alt="Doxa"
-            className="w-9 h-9 object-contain"
-            style={{ filter: 'invert(1) brightness(2)' }}
-          />
+          <SvgLogo className="w-9 h-9 text-white" />
           <span className="text-[21px] font-semibold tracking-tight text-white">
             Doxa
           </span>
@@ -110,7 +91,7 @@ export default function Navbar({ onLaunchApp }) {
                   transition={{ duration: 0.15, ease: 'easeOut' }}
                   className="absolute left-1/2 -translate-x-1/2 mt-2 w-[320px] p-1.5 rounded-xl bg-neutral-950/95 backdrop-blur-2xl border border-white/[0.08] shadow-2xl z-50"
                 >
-                  {CAPABILITIES.map((cap, idx) => {
+                  {NAV_CAPABILITIES.map((cap, idx) => {
                     const Icon = cap.icon;
                     return (
                       <div
@@ -209,12 +190,7 @@ export default function Navbar({ onLaunchApp }) {
               background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 50%, #06b6d4 100%)',
             }}
           >
-            <img
-              src={doxaLogo}
-              alt=""
-              className="w-[18px] h-[18px] object-contain"
-              style={{ filter: 'invert(1) brightness(2)' }}
-            />
+            <SvgLogo className="w-[18px] h-[18px] text-white" />
             <span>Try Doxa</span>
             <ArrowRight className="w-3.5 h-3.5 opacity-70" />
           </motion.button>
@@ -267,12 +243,7 @@ export default function Navbar({ onLaunchApp }) {
                     background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 50%, #06b6d4 100%)',
                   }}
                 >
-                  <img
-                    src={doxaLogo}
-                    alt=""
-                    className="w-4 h-4 object-contain"
-                    style={{ filter: 'invert(1) brightness(2)' }}
-                  />
+                  <SvgLogo className="w-4 h-4 text-white" />
                   <span>Try Doxa</span>
                   <ArrowRight className="w-3.5 h-3.5 opacity-70" />
                 </button>

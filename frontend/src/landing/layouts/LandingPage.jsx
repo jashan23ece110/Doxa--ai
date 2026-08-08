@@ -1,12 +1,13 @@
-import React from 'react';
-import HeroStarfield from './HeroStarfield';
+import React, { Suspense, lazy } from 'react';
+import HeroStarfield from '../animations/HeroStarfield';
 import Navbar from './Navbar';
-import HeroSection from './HeroSection';
-import FeatureShowcase from './FeatureShowcase';
-import CapabilityStrip from './CapabilityStrip';
-import HowItWorks from './HowItWorks';
-import FinalCTA from './FinalCTA';
 import Footer from './Footer';
+import HeroSection from '../sections/HeroSection';
+import CapabilityStrip from '../sections/CapabilityStrip';
+
+const FeatureShowcase = lazy(() => import('../sections/FeatureShowcase'));
+const HowItWorks = lazy(() => import('../sections/HowItWorks'));
+const FinalCTA = lazy(() => import('../sections/FinalCTA'));
 
 export default function LandingPage({ onLaunchApp }) {
   return (
@@ -28,14 +29,16 @@ export default function LandingPage({ onLaunchApp }) {
         {/* Capability Numbers & Stats Strip */}
         <CapabilityStrip />
 
-        {/* 11 Full Feature Showcase Blocks */}
-        <FeatureShowcase onLaunchApp={onLaunchApp} />
+        <Suspense fallback={<div className="h-96 flex items-center justify-center text-neutral-400">Loading...</div>}>
+          {/* 11 Full Feature Showcase Blocks */}
+          <FeatureShowcase onLaunchApp={onLaunchApp} />
 
-        {/* How It Works Flow */}
-        <HowItWorks />
+          {/* How It Works Flow */}
+          <HowItWorks />
 
-        {/* Closing CTA */}
-        <FinalCTA onLaunchApp={onLaunchApp} />
+          {/* Closing CTA */}
+          <FinalCTA onLaunchApp={onLaunchApp} />
+        </Suspense>
       </div>
 
       {/* Footer */}

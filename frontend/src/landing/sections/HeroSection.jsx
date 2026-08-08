@@ -1,11 +1,23 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, ChevronDown } from 'lucide-react';
-import doxaLogo from '../assets/logo.png';
+import SvgLogo from '../logo/SvgLogo';
+import DoxaLogoMotion from '../logo/DoxaLogoMotion';
 
 export default function HeroSection({ onLaunchApp }) {
   return (
     <section className="relative min-h-screen flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 pt-24 pb-16 z-10 text-center">
+
+      {/* ── Prominent Animated Logo Integration ── */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: -20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 1, delay: 0.2, ease: 'easeOut' }}
+        className="mb-10 flex flex-col items-center cursor-pointer group"
+        title="Hover to process information"
+      >
+        <DoxaLogoMotion className="w-28 h-28 text-white/90 drop-shadow-[0_0_15px_rgba(139,92,246,0.3)] transition-colors duration-500 group-hover:text-cyan-300" />
+      </motion.div>
 
       {/* ── Single bold headline ── */}
       <motion.h1
@@ -36,12 +48,7 @@ export default function HeroSection({ onLaunchApp }) {
             background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 50%, #06b6d4 100%)',
           }}
         >
-          <img
-            src={doxaLogo}
-            alt=""
-            className="w-5 h-5 object-contain"
-            style={{ filter: 'invert(1) brightness(2)' }}
-          />
+          <SvgLogo className="w-5 h-5 text-white" />
           <span>Try Doxa</span>
           <ArrowRight className="w-4 h-4 opacity-70 group-hover:translate-x-0.5 transition-transform" />
         </motion.button>

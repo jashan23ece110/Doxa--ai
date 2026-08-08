@@ -1,45 +1,6 @@
 import React, { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { Upload, Cpu, Database, Sparkles } from 'lucide-react';
-
-const STEPS = [
-  {
-    step: '01',
-    title: 'Ask or Upload',
-    desc: 'Submit a goal or upload documents to seed Doxa’s reasoning space.',
-    icon: Upload,
-    colorClass: 'text-violet-600',
-    iconBgClass: 'bg-violet-50 text-violet-600 border-violet-100',
-    hoverClass: 'hover:border-violet-300 hover:shadow-violet-100/60'
-  },
-  {
-    step: '02',
-    title: 'Doxa Plans',
-    desc: 'The planning core breaks the goal down into an optimal multi-step tool sequence.',
-    icon: Cpu,
-    colorClass: 'text-indigo-600',
-    iconBgClass: 'bg-indigo-50 text-indigo-600 border-indigo-100',
-    hoverClass: 'hover:border-indigo-300 hover:shadow-indigo-100/60'
-  },
-  {
-    step: '03',
-    title: 'Retrieves & Searches',
-    desc: 'Runs parallel queries against RAG databases and live web search for factual grounding.',
-    icon: Database,
-    colorClass: 'text-cyan-600',
-    iconBgClass: 'bg-cyan-50 text-cyan-600 border-cyan-100',
-    hoverClass: 'hover:border-cyan-300 hover:shadow-cyan-100/60'
-  },
-  {
-    step: '04',
-    title: 'Responds & Acts',
-    desc: 'Streams the citation-backed response and runs calendar/scheduler actions.',
-    icon: Sparkles,
-    colorClass: 'text-violet-600',
-    iconBgClass: 'bg-violet-50 text-violet-600 border-violet-100',
-    hoverClass: 'hover:border-violet-300 hover:shadow-violet-100/60'
-  }
-];
+import { STEPS } from '../../data/landingData';
 
 export default function HowItWorks() {
   const containerRef = useRef(null);
